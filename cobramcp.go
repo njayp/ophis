@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 
@@ -17,32 +15,19 @@ import (
 
 // CobraToMCPBridge converts a Cobra CLI application to an MCP server
 type CobraToMCPBridge struct {
-	rootCmd        *cobra.Command
-	appName        string
-	version        string
-	server         *server.MCPServer
-	executablePath string
+	rootCmd *cobra.Command
+	appName string
+	version string
+	server  *server.MCPServer
 }
 
 // NewCobraToMCPBridge creates a new bridge instance
 func NewCobraToMCPBridge(rootCmd *cobra.Command, appName, version string) *CobraToMCPBridge {
-	// Get the executable path for the current binary
-	executablePath, err := os.Executable()
-	if err != nil {
-		executablePath = os.Args[0] // fallback to program name
-	}
-
 	return &CobraToMCPBridge{
-		rootCmd:        rootCmd,
-		appName:        appName,
-		version:        version,
-		executablePath: executablePath,
+		rootCmd: rootCmd,
+		appName: appName,
+		version: version,
 	}
-}
-
-// SetExecutablePath allows overriding the executable path (useful for testing or custom setups)
-func (b *CobraToMCPBridge) SetExecutablePath(path string) {
-	b.executablePath = path
 }
 
 // CreateMCPServer creates and configures the MCP server with tools for each Cobra command
@@ -70,7 +55,7 @@ func (b *CobraToMCPBridge) registerCommands(cmd *cobra.Command, parentPath strin
 			if subCmd.Hidden {
 				continue
 			}
-			b.registerCommands(subCmd, subCmd.Name())
+			b.registerCommands(subCmd, cmd.Name())
 		}
 		return
 	}
@@ -231,54 +216,47 @@ func (b *CobraToMCPBridge) createParameterFromFlag(flag *pflag.Flag) []mcp.ToolO
 	return options
 }
 
-// executeCommand executes the Cobra command with the provided parameters
+// executeCommand executes the Cobra command directly by calling its Run function
 func (b *CobraToMCPBridge) executeCommand(ctx context.Context, cmd *cobra.Command, parentPath string, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	// Build command arguments
-	args := []string{}
+	// Process arguments and set flags
+	arguments := request.GetArguments()
+	var args []string
 
-	// Add command path
-	if parentPath != "" {
-		parts := strings.Split(parentPath, "_")
-		args = append(args, parts...)
-	}
-	args = append(args, cmd.Name())
-
-	// Process flags
+	// Process flags from MCP arguments and set them on the original command
 	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
 		if flag.Hidden {
 			return
 		}
 
 		flagName := strings.ReplaceAll(flag.Name, "-", "_")
-		value, exists := request.Params.Arguments[flagName]
+		value, exists := arguments[flagName]
 		if !exists {
 			return
 		}
 
-		flagArg := "--" + flag.Name
-
+		// Set the flag value on the command
 		switch flag.Value.Type() {
 		case "bool":
-			if boolVal, ok := value.(bool); ok && boolVal {
-				args = append(args, flagArg)
+			if boolVal, ok := value.(bool); ok {
+				cmd.Flags().Set(flag.Name, strconv.FormatBool(boolVal))
 			}
 		case "string":
-			if strVal, ok := value.(string); ok && strVal != "" {
-				args = append(args, flagArg, strVal)
+			if strVal, ok := value.(string); ok {
+				cmd.Flags().Set(flag.Name, strVal)
 			}
 		case "int", "int8", "int16", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64":
 			if numVal, ok := value.(float64); ok {
-				args = append(args, flagArg, strconv.FormatInt(int64(numVal), 10))
+				cmd.Flags().Set(flag.Name, strconv.FormatInt(int64(numVal), 10))
 			}
 		case "float32", "float64":
 			if numVal, ok := value.(float64); ok {
-				args = append(args, flagArg, strconv.FormatFloat(numVal, 'f', -1, 64))
+				cmd.Flags().Set(flag.Name, strconv.FormatFloat(numVal, 'f', -1, 64))
 			}
 		case "stringSlice", "stringArray":
 			if arrayVal, ok := value.([]interface{}); ok {
 				for _, item := range arrayVal {
 					if strItem, ok := item.(string); ok {
-						args = append(args, flagArg, strItem)
+						cmd.Flags().Set(flag.Name, strItem)
 					}
 				}
 			}
@@ -286,20 +264,20 @@ func (b *CobraToMCPBridge) executeCommand(ctx context.Context, cmd *cobra.Comman
 			if arrayVal, ok := value.([]interface{}); ok {
 				for _, item := range arrayVal {
 					if numItem, ok := item.(float64); ok {
-						args = append(args, flagArg, strconv.FormatInt(int64(numItem), 10))
+						cmd.Flags().Set(flag.Name, strconv.FormatInt(int64(numItem), 10))
 					}
 				}
 			}
 		default:
 			// Try to convert to string
 			if strVal := fmt.Sprintf("%v", value); strVal != "" && strVal != "<nil>" {
-				args = append(args, flagArg, strVal)
+				cmd.Flags().Set(flag.Name, strVal)
 			}
 		}
 	})
 
 	// Add positional arguments
-	if argsVal, exists := request.Params.Arguments["args"]; exists {
+	if argsVal, exists := arguments["args"]; exists {
 		if argsArray, ok := argsVal.([]interface{}); ok {
 			for _, arg := range argsArray {
 				if strArg, ok := arg.(string); ok {
@@ -309,23 +287,29 @@ func (b *CobraToMCPBridge) executeCommand(ctx context.Context, cmd *cobra.Comman
 		}
 	}
 
-	// Execute the command
-	execCmd := exec.CommandContext(ctx, b.executablePath, args...)
-	output, err := execCmd.CombinedOutput()
-	if err != nil {
-		slog.Error("Failed to execute command", "command", execCmd.String(), "error", err, "output", string(output))
+	// Capture output by redirecting the command's output
+	var output strings.Builder
+	cmd.SetOut(&output)
+	cmd.SetErr(&output)
 
-		// Check if it's an exit code error
-		if exitError, ok := err.(*exec.ExitError); ok {
-			return mcp.NewToolResultError(fmt.Sprintf("Command failed with exit code %d:\n%s",
-				exitError.ExitCode(), string(output))), nil
-		}
-		return mcp.NewToolResultError(fmt.Sprintf("Failed to execute command: %v\nOutput: %s",
-			err, string(output))), nil
+	// Execute the command's Run function directly
+	var err error
+	if cmd.RunE != nil {
+		err = cmd.RunE(cmd, args)
+	} else if cmd.Run != nil {
+		cmd.Run(cmd, args)
+	} else {
+		return mcp.NewToolResultError("Command has no Run or RunE function"), nil
 	}
 
-	slog.Debug("Command executed successfully", "command", execCmd.String(), "output", string(output))
-	return mcp.NewToolResultText(string(output)), nil
+	if err != nil {
+		slog.Error("Failed to execute command function", "command", cmd.Name(), "error", err, "output", output.String())
+		return mcp.NewToolResultError(fmt.Sprintf("Command failed: %v\nOutput: %s", err, output.String())), nil
+	}
+
+	result := output.String()
+	slog.Debug("Command executed successfully", "command", cmd.Name(), "output", result)
+	return mcp.NewToolResultText(result), nil
 }
 
 // StartServer starts the MCP server using stdio transport

@@ -7,36 +7,13 @@ import (
 	"log/slog"
 
 	"github.com/ophis"
-	"github.com/spf13/cobra"
+	"github.com/ophis/terraform"
 )
 
-var rootCmd = &cobra.Command{
-	Use:   "myapp",
-	Short: "My CLI application",
-	Long:  "A longer description of my CLI application",
-}
-
-var helloCmd = &cobra.Command{
-	Use:   "hello [name]",
-	Short: "Say hello to someone",
-	Args:  cobra.MaximumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		name := "World"
-		if len(args) > 0 {
-			name = args[0]
-		}
-		greeting, _ := cmd.Flags().GetString("greeting")
-		cmd.Printf("%s, %s!\n", greeting, name)
-	},
-}
-
-func init() {
-	helloCmd.Flags().String("greeting", "Hello", "The greeting to use")
-	rootCmd.AddCommand(helloCmd)
-}
+const logFilePath = "/Users/nickpowell/claude/ophis/app.log"
 
 func slogToFile(level slog.Level) {
-	logFile, err := os.OpenFile("/Users/nickpowell/claude/cobra-mcp-bridge/app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to open log file: %v", err))
 	}
@@ -55,7 +32,7 @@ func start() error { // Create the Cobra to MCP bridge
 	slogToFile(slog.LevelDebug)
 	slog.Info("Starting MCP bridge server", "app", "myapp", "version", "1.0.0")
 
-	bridge := ophis.NewCobraToMCPBridge(rootCmd, "myapp", "1.0.0")
+	bridge := ophis.NewCobraToMCPBridge(terraform.CreateTerraformCmd(), "myapp", "1.0.0")
 	slog.Info("Bridge created, starting server...")
 
 	err := bridge.StartServer()
