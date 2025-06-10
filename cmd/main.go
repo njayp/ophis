@@ -28,11 +28,17 @@ func slogToFile(level slog.Level) {
 	slog.Info("Logging initialized", "level", level.String(), "file", "/Users/nickpowell/claude/cobra-mcp-bridge/app.log")
 }
 
-func start() error { // Create the Cobra to MCP bridge
+func start() error {
 	slogToFile(slog.LevelDebug)
-	slog.Info("Starting MCP bridge server", "app", "myapp", "version", "1.0.0")
+	appName := "ophis"
+	slog.Info("Starting MCP bridge server", "app", appName, "version", "1.0.0")
 
-	bridge := ophis.NewCobraToMCPBridge(terraform.CreateTerraformCmd(), "myapp", "1.0.0")
+	// Basic hello world commands
+	//cmd := basic.NewRootCmd()
+
+	cmd := terraform.CreateTerraformCmd()
+
+	bridge := ophis.NewCobraToMCPBridge(cmd, appName, "0.0.0")
 	slog.Info("Bridge created, starting server...")
 
 	err := bridge.StartServer()

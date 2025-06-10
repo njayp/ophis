@@ -48,18 +48,6 @@ func (b *CobraToMCPBridge) CreateMCPServer() *server.MCPServer {
 
 // registerCommands recursively registers all Cobra commands as MCP tools
 func (b *CobraToMCPBridge) registerCommands(cmd *cobra.Command, parentPath string) {
-	// Skip the root command if it has no Run function and has subcommands
-	if parentPath == "" && cmd.Run == nil && cmd.RunE == nil && len(cmd.Commands()) > 0 {
-		// Register subcommands
-		for _, subCmd := range cmd.Commands() {
-			if subCmd.Hidden {
-				continue
-			}
-			b.registerCommands(subCmd, cmd.Name())
-		}
-		return
-	}
-
 	// Create the tool name
 	toolName := cmd.Name()
 	if parentPath != "" {
@@ -87,7 +75,7 @@ func (b *CobraToMCPBridge) registerCommands(cmd *cobra.Command, parentPath strin
 		mcp.WithDescription(b.getCommandDescription(cmd, parentPath)),
 	}
 
-	// Add parameters for flags
+	// Add parameters for flags (both local and persistent)
 	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
 		if flag.Hidden {
 			return
@@ -95,15 +83,43 @@ func (b *CobraToMCPBridge) registerCommands(cmd *cobra.Command, parentPath strin
 		toolOptions = append(toolOptions, b.createParameterFromFlag(flag)...)
 	})
 
-	/*
-		// Add positional arguments parameter if the command accepts them
-		if cmd.Args == nil || cmd.Args == cobra.ArbitraryArgs || cmd.Args == cobra.MinimumNArgs(0) {
-			toolOptions = append(toolOptions, mcp.WithArray("args",
-				mcp.Description("Positional arguments for the command"),
-				mcp.WithItems(mcp.NewSchemaBuilder().String().Build()),
-			))
+	// Add parameters for persistent flags from parent commands
+	cmd.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
+		if flag.Hidden {
+			return
 		}
-	*/
+		// Check if this flag was already added from local flags to avoid duplicates
+		if cmd.Flags().Lookup(flag.Name) == nil {
+			toolOptions = append(toolOptions, b.createParameterFromFlag(flag)...)
+		}
+	})
+
+	// Add inherited persistent flags from parent commands
+	for parent := cmd.Parent(); parent != nil; parent = parent.Parent() {
+		parent.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
+			if flag.Hidden {
+				return
+			}
+			// Check if this flag was already added to avoid duplicates
+			if cmd.Flags().Lookup(flag.Name) == nil && cmd.PersistentFlags().Lookup(flag.Name) == nil {
+				toolOptions = append(toolOptions, b.createParameterFromFlag(flag)...)
+			}
+		})
+	}
+
+	// Add an "args" parameter for positional arguments
+	// This allows MCP clients to pass positional arguments that aren't flags
+	argsDescription := "Space-separated positional arguments for the command"
+	if cmd.Use != "" {
+		argsDescription += fmt.Sprintf(". Usage: %s", cmd.Use)
+	}
+	if cmd.Args != nil {
+		// Try to provide more specific information about expected arguments
+		argsDescription += ". See command usage for argument requirements."
+	}
+	toolOptions = append(toolOptions, mcp.WithString("args",
+		mcp.Description(argsDescription),
+	))
 
 	// Create the tool
 	tool := mcp.NewTool(toolName, toolOptions...)
@@ -194,18 +210,6 @@ func (b *CobraToMCPBridge) createParameterFromFlag(flag *pflag.Flag) []mcp.ToolO
 		options = append(options, mcp.WithString(flagName,
 			mcp.Description(description),
 		))
-	/*
-		case "stringSlice", "stringArray":
-			options = append(options, mcp.WithArray(flagName,
-				mcp.Description(description),
-				mcp.WithItems(mcp.NewSchemaBuilder().String().Build()),
-			))
-		case "intSlice":
-			options = append(options, mcp.WithArray(flagName,
-				mcp.Description(description),
-				mcp.WithItems(mcp.NewSchemaBuilder().Number().Build()),
-			))
-	*/
 	default:
 		// Default to string for unknown types
 		options = append(options, mcp.WithString(flagName,
@@ -218,74 +222,119 @@ func (b *CobraToMCPBridge) createParameterFromFlag(flag *pflag.Flag) []mcp.ToolO
 
 // executeCommand executes the Cobra command directly by calling its Run function
 func (b *CobraToMCPBridge) executeCommand(ctx context.Context, cmd *cobra.Command, parentPath string, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	// Process arguments and set flags
+	// Process arguments and set flags DIRECTLY on the original command
+	// We'll reset flags after execution to avoid state pollution
+
 	arguments := request.GetArguments()
 	var args []string
 
-	// Process flags from MCP arguments and set them on the original command
+	// Handle positional arguments from the "args" parameter
+	if argsValue, exists := arguments["args"]; exists {
+		if argsStr, ok := argsValue.(string); ok && argsStr != "" {
+			// Split the args string by spaces to get individual arguments
+			args = strings.Fields(argsStr)
+			slog.Debug("Parsed positional arguments", "args", args)
+		}
+	}
+
+	// Store original flag values for restoration later
+	originalValues := make(map[string]string)
+
+	// Debug: log all available flags
+	slog.Debug("Available flags on command", "command", cmd.Name())
 	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
+		slog.Debug("Local flag", "name", flag.Name, "type", flag.Value.Type(), "value", flag.Value.String())
+	})
+	cmd.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
+		slog.Debug("Persistent flag", "name", flag.Name, "type", flag.Value.Type(), "value", flag.Value.String())
+	})
+
+	// Check parent commands for persistent flags
+	if cmd.Parent() != nil {
+		slog.Debug("Checking parent command flags", "parent", cmd.Parent().Name())
+		cmd.Parent().PersistentFlags().VisitAll(func(flag *pflag.Flag) {
+			slog.Debug("Parent persistent flag", "name", flag.Name, "type", flag.Value.Type(), "value", flag.Value.String())
+		})
+	}
+
+	// Helper function to set flag values directly on the correct command
+	setFlagValue := func(flag *pflag.Flag, targetCmd *cobra.Command) {
 		if flag.Hidden {
 			return
 		}
 
 		flagName := strings.ReplaceAll(flag.Name, "-", "_")
+		// Skip the special "args" parameter as it's not a flag
+		if flagName == "args" {
+			return
+		}
 		value, exists := arguments[flagName]
 		if !exists {
 			return
 		}
 
-		// Set the flag value on the command
+		// Store original value for restoration
+		originalValues[flag.Name] = flag.Value.String()
+
+		slog.Debug("Setting flag", "flag_name", flag.Name, "mcp_name", flagName, "value", value, "original", originalValues[flag.Name], "target_cmd", targetCmd.Name())
+
+		// Set the flag value on the target command
+		var err error
 		switch flag.Value.Type() {
 		case "bool":
 			if boolVal, ok := value.(bool); ok {
-				cmd.Flags().Set(flag.Name, strconv.FormatBool(boolVal))
+				err = targetCmd.Flags().Set(flag.Name, strconv.FormatBool(boolVal))
+				if err != nil {
+					slog.Error("Failed to set bool flag", "flag", flag.Name, "value", boolVal, "error", err)
+				} else {
+					slog.Debug("Successfully set bool flag", "flag", flag.Name, "value", boolVal)
+				}
 			}
 		case "string":
 			if strVal, ok := value.(string); ok {
-				cmd.Flags().Set(flag.Name, strVal)
+				err = targetCmd.Flags().Set(flag.Name, strVal)
+				if err != nil {
+					slog.Error("Failed to set string flag", "flag", flag.Name, "value", strVal, "error", err)
+				} else {
+					slog.Debug("Successfully set string flag", "flag", flag.Name, "value", strVal)
+				}
 			}
 		case "int", "int8", "int16", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64":
 			if numVal, ok := value.(float64); ok {
-				cmd.Flags().Set(flag.Name, strconv.FormatInt(int64(numVal), 10))
+				err = targetCmd.Flags().Set(flag.Name, strconv.FormatInt(int64(numVal), 10))
+				if err != nil {
+					slog.Error("Failed to set numeric flag", "flag", flag.Name, "value", numVal, "error", err)
+				}
 			}
 		case "float32", "float64":
 			if numVal, ok := value.(float64); ok {
-				cmd.Flags().Set(flag.Name, strconv.FormatFloat(numVal, 'f', -1, 64))
-			}
-		case "stringSlice", "stringArray":
-			if arrayVal, ok := value.([]interface{}); ok {
-				for _, item := range arrayVal {
-					if strItem, ok := item.(string); ok {
-						cmd.Flags().Set(flag.Name, strItem)
-					}
+				err = targetCmd.Flags().Set(flag.Name, strconv.FormatFloat(numVal, 'f', -1, 64))
+				if err != nil {
+					slog.Error("Failed to set float flag", "flag", flag.Name, "value", numVal, "error", err)
 				}
 			}
-		case "intSlice":
-			if arrayVal, ok := value.([]interface{}); ok {
-				for _, item := range arrayVal {
-					if numItem, ok := item.(float64); ok {
-						cmd.Flags().Set(flag.Name, strconv.FormatInt(int64(numItem), 10))
-					}
-				}
-			}
+		case "stringArray", "stringSlice", "intArray", "intSlice", "uintArray", "uintSlice":
+			slog.Error(("stringArray type is not supported in MCP tools"))
 		default:
 			// Try to convert to string
 			if strVal := fmt.Sprintf("%v", value); strVal != "" && strVal != "<nil>" {
-				cmd.Flags().Set(flag.Name, strVal)
-			}
-		}
-	})
-
-	// Add positional arguments
-	if argsVal, exists := arguments["args"]; exists {
-		if argsArray, ok := argsVal.([]interface{}); ok {
-			for _, arg := range argsArray {
-				if strArg, ok := arg.(string); ok {
-					args = append(args, strArg)
+				err = targetCmd.Flags().Set(flag.Name, strVal)
+				if err != nil {
+					slog.Error("Failed to set default flag", "flag", flag.Name, "value", strVal, "error", err)
 				}
 			}
 		}
 	}
+
+	// Process flags from MCP arguments and set them directly on the original command
+	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
+		setFlagValue(flag, cmd)
+	})
+
+	// Process persistent flags
+	cmd.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
+		setFlagValue(flag, cmd)
+	})
 
 	// Capture output by redirecting the command's output
 	var output strings.Builder
@@ -318,12 +367,4 @@ func (b *CobraToMCPBridge) StartServer() error {
 		b.CreateMCPServer()
 	}
 	return server.ServeStdio(b.server)
-}
-
-// GetServer returns the underlying MCP server (useful for custom transport)
-func (b *CobraToMCPBridge) GetServer() *server.MCPServer {
-	if b.server == nil {
-		b.CreateMCPServer()
-	}
-	return b.server
 }
