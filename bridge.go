@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"strconv"
 	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -13,36 +12,59 @@ import (
 	"github.com/spf13/pflag"
 )
 
+// Constants for MCP parameter names and error messages
+const (
+	// PositionalArgsParam is the parameter name for positional arguments
+	PositionalArgsParam = "args"
+
+	// Error messages
+	ErrNoRunFunction    = "Command has no Run or RunE function"
+	ErrArrayUnsupported = "Array types are not supported in MCP tools"
+)
+
 // CobraToMCPBridge converts a Cobra CLI application to an MCP server
 type CobraToMCPBridge struct {
-	rootCmd *cobra.Command
-	appName string
-	version string
-	server  *server.MCPServer
+	commandFactory func() *cobra.Command // Factory function to create fresh command instances
+	appName        string
+	version        string
+	server         *server.MCPServer // The MCP server instance
+	logger         *slog.Logger
 }
 
-// NewCobraToMCPBridge creates a new bridge instance
-func NewCobraToMCPBridge(rootCmd *cobra.Command, appName, version string) *CobraToMCPBridge {
+// NewCobraToMCPBridge creates a new bridge instance with validation
+func NewCobraToMCPBridge(cmdFactory func() *cobra.Command, appName, version string, logger *slog.Logger) *CobraToMCPBridge {
+	if cmdFactory == nil {
+		panic("cmdFactory cannot be nil")
+	}
+	if appName == "" {
+		panic("appName cannot be empty")
+	}
+	if version == "" {
+		version = "unknown"
+	}
+	if logger == nil {
+		logger = slog.Default()
+	}
+
 	return &CobraToMCPBridge{
-		rootCmd: rootCmd,
-		appName: appName,
-		version: version,
+		commandFactory: cmdFactory,
+		appName:        appName,
+		version:        version,
+		server:         server.NewMCPServer(appName, version),
+		logger:         logger,
 	}
 }
 
 // CreateMCPServer creates and configures the MCP server with tools for each Cobra command
 func (b *CobraToMCPBridge) CreateMCPServer() *server.MCPServer {
-	slog.Info("Creating MCP server", "app_name", b.appName, "version", b.version)
+	b.logger.Info("Creating MCP server", "app_name", b.appName, "version", b.version)
 
 	s := server.NewMCPServer(
 		b.appName,
 		b.version,
 	)
 
-	b.server = s
-	slog.Info("Registering Cobra commands as MCP tools")
-	b.registerCommands(b.rootCmd, "")
-	slog.Info("MCP server created successfully")
+	b.registerCommands(b.commandFactory(), "")
 	return s
 }
 
@@ -54,19 +76,21 @@ func (b *CobraToMCPBridge) registerCommands(cmd *cobra.Command, parentPath strin
 		toolName = parentPath + "_" + cmd.Name()
 	}
 
+	// Register subcommands
+	for _, subCmd := range cmd.Commands() {
+		if subCmd.Hidden {
+			continue
+		}
+		subPath := toolName
+		if parentPath == "" && cmd.Name() != toolName {
+			subPath = cmd.Name()
+		}
+		b.logger.Debug("Registering subcommand", "name", subCmd.Name(), "path", subPath)
+		b.registerCommands(subCmd, subPath)
+	}
+
 	// Skip if the command has no runnable function
 	if cmd.Run == nil && cmd.RunE == nil {
-		// Still register subcommands
-		for _, subCmd := range cmd.Commands() {
-			if subCmd.Hidden {
-				continue
-			}
-			subPath := toolName
-			if parentPath == "" {
-				subPath = cmd.Name()
-			}
-			b.registerCommands(subCmd, subPath)
-		}
 		return
 	}
 
@@ -117,38 +141,34 @@ func (b *CobraToMCPBridge) registerCommands(cmd *cobra.Command, parentPath strin
 		// Try to provide more specific information about expected arguments
 		argsDescription += ". See command usage for argument requirements."
 	}
-	toolOptions = append(toolOptions, mcp.WithString("args",
+	toolOptions = append(toolOptions, mcp.WithString(PositionalArgsParam,
 		mcp.Description(argsDescription),
 	))
 
 	// Create the tool
 	tool := mcp.NewTool(toolName, toolOptions...)
-	slog.Debug("Registering MCP tool", "tool_name", toolName, "command", cmd.Name())
+	b.logger.Debug("Registering MCP tool", "tool_name", toolName, "command", cmd.Name())
 
 	// Add the tool handler
 	b.server.AddTool(tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		slog.Info("MCP tool request received", "tool_name", toolName, "arguments", request.Params.Arguments)
-		result, err := b.executeCommand(ctx, cmd, parentPath, request)
+		b.logger.Info("MCP tool request received", "tool_name", toolName, "arguments", request.Params.Arguments)
+
+		// TODO execute new command instance to avoid state pollution
+		freshCmd, err := b.findCommandInTree(b.commandFactory(), cmd, parentPath)
 		if err != nil {
-			slog.Error("MCP tool execution failed", "tool_name", toolName, "error", err)
+			b.logger.Error("Failed to create subcommand", "tool_name", toolName, "error", err)
+			return nil, fmt.Errorf("failed to create subcommand: %w", err)
+		}
+
+		result, err := b.executeCommand(ctx, freshCmd, parentPath, request)
+		if err != nil {
+			b.logger.Error("MCP tool execution failed", "tool_name", toolName, "error", err)
 		} else {
-			slog.Info("MCP tool executed successfully", "tool_name", toolName)
+			b.logger.Info("MCP tool executed successfully", "tool_name", toolName)
 		}
 		return result, err
 	})
 
-	// Register subcommands
-	for _, subCmd := range cmd.Commands() {
-		if subCmd.Hidden {
-			continue
-		}
-		subPath := toolName
-		if parentPath == "" && cmd.Name() != toolName {
-			subPath = cmd.Name()
-		}
-		slog.Debug("Registering subcommand", "name", subCmd.Name(), "path", subPath)
-		b.registerCommands(subCmd, subPath)
-	}
 }
 
 // getCommandDescription creates a description for the MCP tool from the Cobra command
@@ -174,197 +194,153 @@ func (b *CobraToMCPBridge) getCommandDescription(cmd *cobra.Command, parentPath 
 		desc += fmt.Sprintf("\n\n%s", cmd.Long)
 	}
 
-	slog.Debug("Command description", "name", cmd.Name(), "description", desc)
+	b.logger.Debug("Command description", "name", cmd.Name(), "description", desc)
 	return desc
 }
 
 // createParameterFromFlag converts a Cobra flag to MCP tool parameters
 func (b *CobraToMCPBridge) createParameterFromFlag(flag *pflag.Flag) []mcp.ToolOption {
-	var options []mcp.ToolOption
 	flagName := strings.ReplaceAll(flag.Name, "-", "_")
-
 	description := flag.Usage
 	if description == "" {
 		description = fmt.Sprintf("Flag: %s", flag.Name)
 	}
 
-	// Determine parameter type based on flag type
-	switch flag.Value.Type() {
-	case "bool":
-		options = append(options, mcp.WithBoolean(flagName,
-			mcp.Description(description),
-		))
-	case "int", "int8", "int16", "int32", "int64":
-		options = append(options, mcp.WithNumber(flagName,
-			mcp.Description(description),
-		))
-	case "uint", "uint8", "uint16", "uint32", "uint64":
-		options = append(options, mcp.WithNumber(flagName,
-			mcp.Description(description),
-		))
-	case "float32", "float64":
-		options = append(options, mcp.WithNumber(flagName,
-			mcp.Description(description),
-		))
-	case "string":
-		options = append(options, mcp.WithString(flagName,
-			mcp.Description(description),
-		))
-	default:
-		// Default to string for unknown types
-		options = append(options, mcp.WithString(flagName,
-			mcp.Description(description),
-		))
-	}
-
-	return options
+	// Use helper function to determine the correct MCP parameter type
+	return b.createMCPParameter(flagName, description, flag.Value.Type())
 }
 
-// executeCommand executes the Cobra command directly by calling its Run function
-func (b *CobraToMCPBridge) executeCommand(ctx context.Context, cmd *cobra.Command, parentPath string, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	// Process arguments and set flags DIRECTLY on the original command
-	// We'll reset flags after execution to avoid state pollution
+// createMCPParameter creates an MCP parameter based on the type
+func (b *CobraToMCPBridge) createMCPParameter(name, description, flagType string) []mcp.ToolOption {
+	switch flagType {
+	case "bool":
+		return []mcp.ToolOption{mcp.WithBoolean(name, mcp.Description(description))}
+	case "int", "int8", "int16", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64", "float32", "float64":
+		return []mcp.ToolOption{mcp.WithNumber(name, mcp.Description(description))}
+	case "string":
+		return []mcp.ToolOption{mcp.WithString(name, mcp.Description(description))}
+	default:
+		// Default to string for unknown types
+		return []mcp.ToolOption{mcp.WithString(name, mcp.Description(description))}
+	}
+}
 
+// findCommandInTree finds the equivalent command in a fresh command tree
+func (b *CobraToMCPBridge) findCommandInTree(root *cobra.Command, target *cobra.Command, parentPath string) (*cobra.Command, error) {
+	if parentPath == "" {
+		return root, nil // If no parent path, return the root command
+	}
+
+	// Navigate to the parent path first
+	pathParts := strings.Split(parentPath, "_")
+	current := root
+
+	// Skip the first part if it matches the root command name
+	if len(pathParts) > 0 && pathParts[0] == root.Name() {
+		pathParts = pathParts[1:]
+	}
+
+	for _, part := range pathParts {
+		found := false
+		for _, cmd := range current.Commands() {
+			if cmd.Name() == part {
+				current = cmd
+				found = true
+				break
+			}
+		}
+		if !found {
+			return nil, fmt.Errorf("parent path part %s not found in fresh tree", part)
+		}
+	}
+
+	// Now find the target command
+	for _, cmd := range current.Commands() {
+		if cmd.Name() == target.Name() {
+			return cmd, nil
+		}
+	}
+
+	return nil, fmt.Errorf("command %s not found under parent %s in fresh tree", target.Name(), parentPath)
+}
+
+// executeCommand executes the Cobra command using a fresh instance to avoid state pollution
+func (b *CobraToMCPBridge) executeCommand(ctx context.Context, cmd *cobra.Command, parentPath string, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	arguments := request.GetArguments()
 	var args []string
 
 	// Handle positional arguments from the "args" parameter
-	if argsValue, exists := arguments["args"]; exists {
+	if argsValue, exists := arguments[PositionalArgsParam]; exists {
 		if argsStr, ok := argsValue.(string); ok && argsStr != "" {
 			// Split the args string by spaces to get individual arguments
 			args = strings.Fields(argsStr)
-			slog.Debug("Parsed positional arguments", "args", args)
+			b.logger.Debug("Parsed positional arguments", "args", args)
 		}
 	}
 
-	// Store original flag values for restoration later
-	originalValues := make(map[string]string)
-
-	// Debug: log all available flags
-	slog.Debug("Available flags on command", "command", cmd.Name())
-	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
-		slog.Debug("Local flag", "name", flag.Name, "type", flag.Value.Type(), "value", flag.Value.String())
-	})
-	cmd.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
-		slog.Debug("Persistent flag", "name", flag.Name, "type", flag.Value.Type(), "value", flag.Value.String())
-	})
-
-	// Check parent commands for persistent flags
-	if cmd.Parent() != nil {
-		slog.Debug("Checking parent command flags", "parent", cmd.Parent().Name())
-		cmd.Parent().PersistentFlags().VisitAll(func(flag *pflag.Flag) {
-			slog.Debug("Parent persistent flag", "name", flag.Name, "type", flag.Value.Type(), "value", flag.Value.String())
-		})
-	}
-
-	// Helper function to set flag values directly on the correct command
-	setFlagValue := func(flag *pflag.Flag, targetCmd *cobra.Command) {
+	// Helper function to process flag values with improved error handling
+	processFlag := func(flag *pflag.Flag) {
 		if flag.Hidden {
 			return
 		}
 
-		flagName := strings.ReplaceAll(flag.Name, "-", "_")
 		// Skip the special "args" parameter as it's not a flag
-		if flagName == "args" {
+		if flag.Name == PositionalArgsParam {
 			return
 		}
-		value, exists := arguments[flagName]
+		value, exists := arguments[flag.Name]
 		if !exists {
 			return
 		}
 
-		// Store original value for restoration
-		originalValues[flag.Name] = flag.Value.String()
+		b.logger.Debug("Setting flag", "flag_name", flag.Name, "value", value)
 
-		slog.Debug("Setting flag", "flag_name", flag.Name, "mcp_name", flagName, "value", value, "original", originalValues[flag.Name], "target_cmd", targetCmd.Name())
-
-		// Set the flag value on the target command
-		var err error
-		switch flag.Value.Type() {
-		case "bool":
-			if boolVal, ok := value.(bool); ok {
-				err = targetCmd.Flags().Set(flag.Name, strconv.FormatBool(boolVal))
-				if err != nil {
-					slog.Error("Failed to set bool flag", "flag", flag.Name, "value", boolVal, "error", err)
-				} else {
-					slog.Debug("Successfully set bool flag", "flag", flag.Name, "value", boolVal)
-				}
-			}
-		case "string":
-			if strVal, ok := value.(string); ok {
-				err = targetCmd.Flags().Set(flag.Name, strVal)
-				if err != nil {
-					slog.Error("Failed to set string flag", "flag", flag.Name, "value", strVal, "error", err)
-				} else {
-					slog.Debug("Successfully set string flag", "flag", flag.Name, "value", strVal)
-				}
-			}
-		case "int", "int8", "int16", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64":
-			if numVal, ok := value.(float64); ok {
-				err = targetCmd.Flags().Set(flag.Name, strconv.FormatInt(int64(numVal), 10))
-				if err != nil {
-					slog.Error("Failed to set numeric flag", "flag", flag.Name, "value", numVal, "error", err)
-				}
-			}
-		case "float32", "float64":
-			if numVal, ok := value.(float64); ok {
-				err = targetCmd.Flags().Set(flag.Name, strconv.FormatFloat(numVal, 'f', -1, 64))
-				if err != nil {
-					slog.Error("Failed to set float flag", "flag", flag.Name, "value", numVal, "error", err)
-				}
-			}
-		case "stringArray", "stringSlice", "intArray", "intSlice", "uintArray", "uintSlice":
-			slog.Error(("stringArray type is not supported in MCP tools"))
-		default:
-			// Try to convert to string
-			if strVal := fmt.Sprintf("%v", value); strVal != "" && strVal != "<nil>" {
-				err = targetCmd.Flags().Set(flag.Name, strVal)
-				if err != nil {
-					slog.Error("Failed to set default flag", "flag", flag.Name, "value", strVal, "error", err)
-				}
-			}
+		err := flag.Value.Set(fmt.Sprintf("%v", value)) // Use fmt.Sprintf to handle different types
+		if err != nil {
+			b.logger.Error("Invalid flag value", "flag_name", flag.Name, "error", err)
 		}
 	}
 
 	// Process flags from MCP arguments and set them directly on the original command
 	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
-		setFlagValue(flag, cmd)
+		processFlag(flag)
 	})
 
 	// Process persistent flags
 	cmd.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
-		setFlagValue(flag, cmd)
+		processFlag(flag)
 	})
 
-	// Capture output by redirecting the command's output
+	// Create isolated output capture to avoid interfering with MCP protocol
 	var output strings.Builder
 	cmd.SetOut(&output)
 	cmd.SetErr(&output)
 
-	// Execute the command's Run function directly
+	// Execute the command's Run function with proper error recovery
 	var err error
-	if cmd.RunE != nil {
-		err = cmd.RunE(cmd, args)
-	} else if cmd.Run != nil {
-		cmd.Run(cmd, args)
-	} else {
-		return mcp.NewToolResultError("Command has no Run or RunE function"), nil
-	}
+	func() {
+		// Recover from any panics that might occur during command execution
+		defer func() {
+			if r := recover(); r != nil {
+				b.logger.Error("Command execution panicked", "command", cmd.Name(), "panic", r)
+				err = fmt.Errorf("command panicked: %v", r)
+			}
+		}()
+
+		err = cmd.Execute()
+	}()
 
 	if err != nil {
-		slog.Error("Failed to execute command function", "command", cmd.Name(), "error", err, "output", output.String())
+		b.logger.Error("Failed to execute command function", "command", cmd.Name(), "error", err, "output", output.String())
 		return mcp.NewToolResultError(fmt.Sprintf("Command failed: %v\nOutput: %s", err, output.String())), nil
 	}
 
 	result := output.String()
-	slog.Debug("Command executed successfully", "command", cmd.Name(), "output", result)
+	b.logger.Debug("Command executed successfully", "command", cmd.Name(), "output", result)
 	return mcp.NewToolResultText(result), nil
 }
 
 // StartServer starts the MCP server using stdio transport
 func (b *CobraToMCPBridge) StartServer() error {
-	if b.server == nil {
-		b.CreateMCPServer()
-	}
 	return server.ServeStdio(b.server)
 }

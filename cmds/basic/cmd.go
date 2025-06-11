@@ -30,8 +30,6 @@ func NewRootCmd() *cobra.Command {
 	}
 
 	rootCmd.PersistentFlags().String("greeting", "Hello", "The greeting to use")
-	// Also add the greeting flag directly to the hello command for testing
-	helloCmd.Flags().String("greeting", "Hello", "The greeting to use")
 	rootCmd.AddCommand(helloCmd)
 
 	return rootCmd
