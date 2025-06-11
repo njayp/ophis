@@ -46,30 +46,24 @@ func NewCobraToMCPBridge(cmdFactory func() *cobra.Command, appName, version stri
 		logger = slog.Default()
 	}
 
-	return &CobraToMCPBridge{
+	b := &CobraToMCPBridge{
 		commandFactory: cmdFactory,
 		appName:        appName,
 		version:        version,
-		server:         server.NewMCPServer(appName, version),
 		logger:         logger,
+		server: server.NewMCPServer(
+			appName,
+			version,
+		),
 	}
-}
-
-// CreateMCPServer creates and configures the MCP server with tools for each Cobra command
-func (b *CobraToMCPBridge) CreateMCPServer() *server.MCPServer {
-	b.logger.Info("Creating MCP server", "app_name", b.appName, "version", b.version)
-
-	s := server.NewMCPServer(
-		b.appName,
-		b.version,
-	)
 
 	b.registerCommands(b.commandFactory(), "")
-	return s
+	return b
 }
 
 // registerCommands recursively registers all Cobra commands as MCP tools
 func (b *CobraToMCPBridge) registerCommands(cmd *cobra.Command, parentPath string) {
+
 	// Create the tool name
 	toolName := cmd.Name()
 	if parentPath != "" {
@@ -85,7 +79,6 @@ func (b *CobraToMCPBridge) registerCommands(cmd *cobra.Command, parentPath strin
 		if parentPath == "" && cmd.Name() != toolName {
 			subPath = cmd.Name()
 		}
-		b.logger.Debug("Registering subcommand", "name", subCmd.Name(), "path", subPath)
 		b.registerCommands(subCmd, subPath)
 	}
 
@@ -94,6 +87,7 @@ func (b *CobraToMCPBridge) registerCommands(cmd *cobra.Command, parentPath strin
 		return
 	}
 
+	b.logger.Debug("Registering command", "name", cmd.Name(), "path", parentPath)
 	// Create MCP tool options
 	toolOptions := []mcp.ToolOption{
 		mcp.WithDescription(b.getCommandDescription(cmd, parentPath)),
@@ -118,19 +112,6 @@ func (b *CobraToMCPBridge) registerCommands(cmd *cobra.Command, parentPath strin
 		}
 	})
 
-	// Add inherited persistent flags from parent commands
-	for parent := cmd.Parent(); parent != nil; parent = parent.Parent() {
-		parent.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
-			if flag.Hidden {
-				return
-			}
-			// Check if this flag was already added to avoid duplicates
-			if cmd.Flags().Lookup(flag.Name) == nil && cmd.PersistentFlags().Lookup(flag.Name) == nil {
-				toolOptions = append(toolOptions, b.createParameterFromFlag(flag)...)
-			}
-		})
-	}
-
 	// Add an "args" parameter for positional arguments
 	// This allows MCP clients to pass positional arguments that aren't flags
 	argsDescription := "Space-separated positional arguments for the command"
@@ -153,14 +134,14 @@ func (b *CobraToMCPBridge) registerCommands(cmd *cobra.Command, parentPath strin
 	b.server.AddTool(tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		b.logger.Info("MCP tool request received", "tool_name", toolName, "arguments", request.Params.Arguments)
 
-		// TODO execute new command instance to avoid state pollution
+		// execute new command instance to avoid state pollution
 		freshCmd, err := b.findCommandInTree(b.commandFactory(), cmd, parentPath)
 		if err != nil {
 			b.logger.Error("Failed to create subcommand", "tool_name", toolName, "error", err)
 			return nil, fmt.Errorf("failed to create subcommand: %w", err)
 		}
 
-		result, err := b.executeCommand(ctx, freshCmd, parentPath, request)
+		result, err := b.executeCommand(ctx, freshCmd, request)
 		if err != nil {
 			b.logger.Error("MCP tool execution failed", "tool_name", toolName, "error", err)
 		} else {
@@ -265,7 +246,7 @@ func (b *CobraToMCPBridge) findCommandInTree(root *cobra.Command, target *cobra.
 }
 
 // executeCommand executes the Cobra command using a fresh instance to avoid state pollution
-func (b *CobraToMCPBridge) executeCommand(ctx context.Context, cmd *cobra.Command, parentPath string, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (b *CobraToMCPBridge) executeCommand(ctx context.Context, cmd *cobra.Command, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	arguments := request.GetArguments()
 	var args []string
 
@@ -327,7 +308,7 @@ func (b *CobraToMCPBridge) executeCommand(ctx context.Context, cmd *cobra.Comman
 			}
 		}()
 
-		err = cmd.Execute()
+		err = cmd.ExecuteContext(ctx)
 	}()
 
 	if err != nil {

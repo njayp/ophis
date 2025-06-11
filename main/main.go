@@ -12,7 +12,7 @@ import (
 // Configuration constants
 const (
 	AppName    = "ophis"
-	AppVersion = "0.0.1"
+	AppVersion = "0.0.2"
 	LogFile    = "/Users/nickpowell/claude/ophis/app.log"
 )
 
@@ -38,25 +38,8 @@ func start() error {
 	os.Setenv("MCP_SERVER_RUNNING", "true")
 
 	// Use info level for production to reduce noise
-	logger := slogToFile(slog.LevelInfo)
+	logger := slogToFile(slog.LevelDebug)
 	logger.Info("Starting MCP bridge server", "app", AppName, "version", AppVersion)
-
-	// Create a factory function that generates fresh command trees for each execution
-	/*
-		commandFactory := func() *cobra.Command {
-			// Create a root command that includes multiple tool sets
-			rootCmd := &cobra.Command{
-				Use:   AppName,
-				Short: "Ophis MCP Server - Multiple CLI Tools Bridge",
-				Long:  "Ophis converts multiple CLI tools into MCP (Model Context Protocol) servers, making them accessible to AI assistants.",
-			}
-
-			// Add all available tool commands
-			rootCmd.AddCommand(basic.NewRootCmd())
-
-			return rootCmd
-		}
-	*/
 
 	bridge := ophis.NewCobraToMCPBridge(basic.NewRootCmd, AppName, AppVersion, logger)
 

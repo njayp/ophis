@@ -14,11 +14,11 @@ func NewRootCmd() *cobra.Command {
 				name = args[0]
 			}
 			// Try to get from parent's persistent flags
-			greeting, _ := cmd.Parent().PersistentFlags().GetString("greeting")
+			greeting := cmd.Flag("greeting").Value.String()
 			if greeting == "" {
 				greeting = "Hello"
 			}
-			// Debug output
+			// Response
 			cmd.Printf("%s, %s!\n", greeting, name)
 		},
 	}
