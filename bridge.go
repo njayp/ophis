@@ -98,19 +98,24 @@ func (b *CobraToMCPBridge) registerCommands(cmd *cobra.Command, parentPath strin
 		if flag.Hidden {
 			return
 		}
+		b.logger.Debug("Registering Tool Parameter", slog.String("cmd", cmd.Name()), slog.String("name", flag.Name))
 		toolOptions = append(toolOptions, b.createParameterFromFlag(flag)...)
 	})
 
-	// Add parameters for persistent flags from parent commands
-	cmd.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
-		if flag.Hidden {
-			return
-		}
-		// Check if this flag was already added from local flags to avoid duplicates
-		if cmd.Flags().Lookup(flag.Name) == nil {
-			toolOptions = append(toolOptions, b.createParameterFromFlag(flag)...)
-		}
-	})
+	// Add all persistent flags recursively
+	for t := cmd; t != nil; t = t.Parent() {
+		// Add parameters for persistent flags from parent commands
+		t.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
+			if flag.Hidden {
+				return
+			}
+			// Check if this flag was already added from local flags to avoid duplicates
+			if cmd.Flags().Lookup(flag.Name) == nil {
+				b.logger.Debug("Registering Tool Parameter", slog.String("cmd", cmd.Name()), slog.String("name", flag.Name))
+				toolOptions = append(toolOptions, b.createParameterFromFlag(flag)...)
+			}
+		})
+	}
 
 	// Add an "args" parameter for positional arguments
 	// This allows MCP clients to pass positional arguments that aren't flags
@@ -133,15 +138,7 @@ func (b *CobraToMCPBridge) registerCommands(cmd *cobra.Command, parentPath strin
 	// Add the tool handler
 	b.server.AddTool(tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		b.logger.Info("MCP tool request received", "tool_name", toolName, "arguments", request.Params.Arguments)
-
-		// execute new command instance to avoid state pollution
-		freshCmd, err := b.findCommandInTree(b.commandFactory(), cmd, parentPath)
-		if err != nil {
-			b.logger.Error("Failed to create subcommand", "tool_name", toolName, "error", err)
-			return nil, fmt.Errorf("failed to create subcommand: %w", err)
-		}
-
-		result, err := b.executeCommand(ctx, freshCmd, request)
+		result, err := b.executeCommand(ctx, cmd, request)
 		if err != nil {
 			b.logger.Error("MCP tool execution failed", "tool_name", toolName, "error", err)
 		} else {
@@ -181,14 +178,13 @@ func (b *CobraToMCPBridge) getCommandDescription(cmd *cobra.Command, parentPath 
 
 // createParameterFromFlag converts a Cobra flag to MCP tool parameters
 func (b *CobraToMCPBridge) createParameterFromFlag(flag *pflag.Flag) []mcp.ToolOption {
-	flagName := strings.ReplaceAll(flag.Name, "-", "_")
 	description := flag.Usage
 	if description == "" {
 		description = fmt.Sprintf("Flag: %s", flag.Name)
 	}
 
 	// Use helper function to determine the correct MCP parameter type
-	return b.createMCPParameter(flagName, description, flag.Value.Type())
+	return b.createMCPParameter(flag.Name, description, flag.Value.Type())
 }
 
 // createMCPParameter creates an MCP parameter based on the type
@@ -206,58 +202,28 @@ func (b *CobraToMCPBridge) createMCPParameter(name, description, flagType string
 	}
 }
 
-// findCommandInTree finds the equivalent command in a fresh command tree
-func (b *CobraToMCPBridge) findCommandInTree(root *cobra.Command, target *cobra.Command, parentPath string) (*cobra.Command, error) {
-	if parentPath == "" {
-		return root, nil // If no parent path, return the root command
-	}
-
-	// Navigate to the parent path first
-	pathParts := strings.Split(parentPath, "_")
-	current := root
-
-	// Skip the first part if it matches the root command name
-	if len(pathParts) > 0 && pathParts[0] == root.Name() {
-		pathParts = pathParts[1:]
-	}
-
-	for _, part := range pathParts {
-		found := false
-		for _, cmd := range current.Commands() {
-			if cmd.Name() == part {
-				current = cmd
-				found = true
-				break
-			}
-		}
-		if !found {
-			return nil, fmt.Errorf("parent path part %s not found in fresh tree", part)
-		}
-	}
-
-	// Now find the target command
-	for _, cmd := range current.Commands() {
-		if cmd.Name() == target.Name() {
-			return cmd, nil
-		}
-	}
-
-	return nil, fmt.Errorf("command %s not found under parent %s in fresh tree", target.Name(), parentPath)
-}
-
 // executeCommand executes the Cobra command using a fresh instance to avoid state pollution
 func (b *CobraToMCPBridge) executeCommand(ctx context.Context, cmd *cobra.Command, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	arguments := request.GetArguments()
 	var args []string
 
+	// Add command path args
+	if cmd.Parent() != nil {
+		args = append(args, strings.Fields(cmd.CommandPath())[1:]...)
+	}
+
 	// Handle positional arguments from the "args" parameter
 	if argsValue, exists := arguments[PositionalArgsParam]; exists {
 		if argsStr, ok := argsValue.(string); ok && argsStr != "" {
 			// Split the args string by spaces to get individual arguments
-			args = strings.Fields(argsStr)
+			args = append(args, strings.Fields(argsStr)...)
 			b.logger.Debug("Parsed positional arguments", "args", args)
 		}
 	}
+
+	cmd = b.commandFactory()
+	cmd.SetArgs(args)
+	b.logger.Debug("Set command arguments", "args", args)
 
 	// Helper function to process flag values with improved error handling
 	processFlag := func(flag *pflag.Flag) {

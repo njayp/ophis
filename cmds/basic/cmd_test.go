@@ -1,10 +1,12 @@
 package basic
 
 import (
+	"log/slog"
 	"testing"
 )
 
 func TestNewRootCmd(t *testing.T) {
+	slog.SetLogLoggerLevel(slog.LevelDebug)
 	rootCmd := NewRootCmd()
 
 	// Test the hello command
