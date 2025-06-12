@@ -12,7 +12,7 @@ import (
 // Configuration constants
 const (
 	AppName    = "ophis"
-	AppVersion = "0.0.2"
+	AppVersion = "0.0.0"
 	LogFile    = "/Users/nickpowell/claude/ophis/app.log"
 )
 

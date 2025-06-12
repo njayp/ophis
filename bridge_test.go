@@ -21,10 +21,7 @@ func TestExecCommand(t *testing.T) {
 	cmd := cf().Commands()[0]
 
 	// Execute a command in the temporary directory
-	result, err := bridge.executeCommand(context.Background(), cmd, mcp.CallToolRequest{})
-	if err != nil {
-		t.Error(err.Error())
-	}
+	result := bridge.executeCommand(context.Background(), cmd, mcp.CallToolRequest{})
 
 	content, ok := result.Content[0].(mcp.TextContent)
 	if !ok {
@@ -35,14 +32,4 @@ func TestExecCommand(t *testing.T) {
 	if content.Text != expected {
 		t.Error(fmt.Sprintf("wanted %s, got %s", expected, content.Text))
 	}
-}
-
-func TestFlagDesc(t *testing.T) {
-	slog.SetLogLoggerLevel(slog.LevelDebug)
-	// Create a temporary directory for the test
-	cf := basic.NewRootCmd
-
-	// Create a new CobraToMCPBridge instance
-	bridge := NewCobraToMCPBridge(cf, "ophis", "0.0.0-test", nil)
-	t.Error(bridge)
 }
