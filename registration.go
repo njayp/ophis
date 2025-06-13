@@ -13,7 +13,6 @@ import (
 
 // registerCommands recursively registers all Cobra commands as MCP tools
 func (b *CobraToMCPBridge) registerCommands(cmd *cobra.Command, parentPath string) {
-
 	// Create the tool name
 	toolName := cmd.Name()
 	if parentPath != "" {
@@ -40,6 +39,46 @@ func (b *CobraToMCPBridge) registerCommands(cmd *cobra.Command, parentPath strin
 		mcp.WithDescription(b.getCommandDescription(cmd, parentPath)),
 	}
 
+	// add flags to tool
+	flagMap := b.flagMapFromCmd(cmd)
+	toolOptions = append(toolOptions, mcp.WithObject(FlagsParam,
+		mcp.Description("flag options"),
+		mcp.Properties(flagMap),
+	))
+
+	// Add an "args" parameter for positional arguments
+	argsDescription := b.argsDescFromCmd(cmd)
+	toolOptions = append(toolOptions, mcp.WithString(PositionalArgsParam,
+		mcp.Description(argsDescription),
+	))
+
+	// Create the tool
+	tool := mcp.NewTool(toolName, toolOptions...)
+	b.logger.Debug("Registering MCP tool", "tool_name", toolName, "command", cmd.Name())
+
+	// Add the tool handler
+	b.server.AddTool(tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		b.logger.Info("MCP tool request received", "tool_name", toolName, "arguments", request.Params.Arguments)
+		result := b.executeCommand(ctx, cmd.CommandPath(), request)
+		// TODO figure out what err is used for
+		return result, nil
+	})
+
+}
+
+func (b *CobraToMCPBridge) argsDescFromCmd(cmd *cobra.Command) string {
+	argsDescription := "Space-separated positional arguments for the command"
+	if cmd.Use != "" {
+		argsDescription += fmt.Sprintf(". Usage: %s", cmd.Use)
+	}
+	if cmd.Args != nil {
+		// Try to provide more specific information about expected arguments
+		argsDescription += ". See command usage for argument requirements."
+	}
+	return argsDescription
+}
+
+func (b *CobraToMCPBridge) flagMapFromCmd(cmd *cobra.Command) map[string]any {
 	// map for tool object
 	flagMap := map[string]any{}
 	// add local flags to flag map
@@ -61,37 +100,7 @@ func (b *CobraToMCPBridge) registerCommands(cmd *cobra.Command, parentPath strin
 			flagMap[flag.Name] = flagToolOption(flag)
 		}
 	})
-	// add flags to tool
-	toolOptions = append(toolOptions, mcp.WithObject(FlagsParam,
-		mcp.Description("flag options"),
-		mcp.Properties(flagMap),
-	))
-
-	// Add an "args" parameter for positional arguments
-	argsDescription := "Space-separated positional arguments for the command"
-	if cmd.Use != "" {
-		argsDescription += fmt.Sprintf(". Usage: %s", cmd.Use)
-	}
-	if cmd.Args != nil {
-		// Try to provide more specific information about expected arguments
-		argsDescription += ". See command usage for argument requirements."
-	}
-	toolOptions = append(toolOptions, mcp.WithString(PositionalArgsParam,
-		mcp.Description(argsDescription),
-	))
-
-	// Create the tool
-	tool := mcp.NewTool(toolName, toolOptions...)
-	b.logger.Debug("Registering MCP tool", "tool_name", toolName, "command", cmd.Name())
-
-	// Add the tool handler
-	b.server.AddTool(tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		b.logger.Info("MCP tool request received", "tool_name", toolName, "arguments", request.Params.Arguments)
-		result := b.executeCommand(ctx, cmd.CommandPath(), request)
-		// TODO figure out what err is used for
-		return result, nil
-	})
-
+	return flagMap
 }
 
 // getCommandDescription creates a description for the MCP tool from the Cobra command

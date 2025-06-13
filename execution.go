@@ -58,19 +58,21 @@ func (b *CobraToMCPBridge) executeCommand(ctx context.Context, cmdPath string, r
 func (b *CobraToMCPBridge) loadArgs(cmd *cobra.Command, cmdPath string, message map[string]any) {
 	fields := strings.Fields(cmdPath)
 	var args []string
+
+	// Add command path to args
 	if len(fields) > 1 {
-		// Add command path to args
 		args = append(args, fields[1:]...)
-		b.logger.Debug("Set command arguments", "args", args)
 	}
+
 	// Handle positional arguments from the "args" parameter
 	if argsValue, ok := message[PositionalArgsParam]; ok {
 		if argsStr, ok := argsValue.(string); ok && argsStr != "" {
 			// Split the args string by spaces to get individual arguments
 			args = append(args, strings.Fields(argsStr)...)
-			b.logger.Debug("Parsed positional arguments", "args", args)
 		}
 	}
+
+	b.logger.Debug("Set command arguments", "args", args)
 	cmd.SetArgs(args)
 }
 
@@ -90,4 +92,28 @@ func (b *CobraToMCPBridge) loadFlagsFromMap(cmd *cobra.Command, flagMap map[stri
 	}
 
 	return nil
+}
+
+func descendCmdTree(cmd *cobra.Command, cmdPath string) (*cobra.Command, error) {
+	fields := strings.Fields(cmdPath)
+
+	// flags must be set on relevant command
+	if len(fields) > 1 {
+		// move to subCommand
+		for _, field := range fields {
+			for _, subCmd := range cmd.Commands() {
+				if field == subCmd.Name() {
+					cmd = subCmd
+					break
+				}
+			}
+		}
+	}
+
+	// verify cmd is set
+	newPath := cmd.CommandPath()
+	if newPath != cmdPath {
+		return nil, fmt.Errorf("command path not recognized: %s", cmdPath)
+	}
+	return cmd, nil
 }
