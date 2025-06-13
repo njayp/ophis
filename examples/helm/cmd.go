@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/ophis"
 	"github.com/spf13/cobra"
 	helmcmd "helm.sh/helm/v4/pkg/cmd"
 )
@@ -22,7 +23,7 @@ func (f *HelmCommandFactory) CreateRegistrationCommand() *cobra.Command {
 	return cmd
 }
 
-func (f *HelmCommandFactory) CreateCommand() (*cobra.Command, func(ctx context.Context) *mcp.CallToolResult) {
+func (f *HelmCommandFactory) CreateCommand() (*cobra.Command, ophis.CommandExecFunc) {
 	var output strings.Builder
 
 	cmd, err := helmcmd.NewRootCmd(&output, nil)

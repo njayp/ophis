@@ -387,7 +387,7 @@ func (f *PanicCommandFactory) CreateRegistrationCommand() *cobra.Command {
 	}
 }
 
-func (f *PanicCommandFactory) CreateCommand() (*cobra.Command, func(context.Context) *mcp.CallToolResult) {
+func (f *PanicCommandFactory) CreateCommand() (*cobra.Command, CommandExecFunc) {
 	cmd := &cobra.Command{
 		Use: "panic",
 		Run: func(cmd *cobra.Command, args []string) {

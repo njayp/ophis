@@ -56,7 +56,7 @@ func (f *TestCommandFactory) CreateRegistrationCommand() *cobra.Command {
 	return rootCmd
 }
 
-func (f *TestCommandFactory) CreateCommand() (*cobra.Command, func(context.Context) *mcp.CallToolResult) {
+func (f *TestCommandFactory) CreateCommand() (*cobra.Command, CommandExecFunc) {
 	f.output.Reset() // Clear output for fresh execution
 	cmd := f.CreateRegistrationCommand()
 
@@ -192,7 +192,7 @@ func (m *MockCommandFactory) CreateRegistrationCommand() *cobra.Command {
 	return &cobra.Command{Use: "mock"}
 }
 
-func (m *MockCommandFactory) CreateCommand() (*cobra.Command, func(context.Context) *mcp.CallToolResult) {
+func (m *MockCommandFactory) CreateCommand() (*cobra.Command, CommandExecFunc) {
 	if m.executionPanic {
 		panic("execution panic")
 	}

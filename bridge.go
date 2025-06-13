@@ -16,9 +16,11 @@ const (
 	FlagsParam          = "flags"
 )
 
+type CommandExecFunc func(ctx context.Context) *mcp.CallToolResult
+
 type CommandFactory interface {
 	CreateRegistrationCommand() *cobra.Command
-	CreateCommand() (*cobra.Command, func(context.Context) *mcp.CallToolResult)
+	CreateCommand() (*cobra.Command, CommandExecFunc)
 }
 
 // CobraToMCPBridge converts a Cobra CLI application to an MCP server
