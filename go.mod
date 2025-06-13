@@ -8,7 +8,7 @@ require (
 	github.com/mark3labs/mcp-go v0.32.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
-	helm.sh/helm/v4 v4.0.0-20250610195754-0a8194c9a3cd
+	helm.sh/helm/v4 v4.0.0-20250612203709-4f018e4f421f
 )
 
 require (

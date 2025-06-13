@@ -34,7 +34,6 @@ func (b *CobraToMCPBridge) registerCommands(cmd *cobra.Command, parentPath strin
 	}
 
 	b.logger.Debug("Registering command", "name", cmd.Name(), "path", parentPath)
-	// Create MCP tool options
 	toolOptions := []mcp.ToolOption{
 		mcp.WithDescription(b.getCommandDescription(cmd, parentPath)),
 	}
@@ -86,6 +85,7 @@ func (b *CobraToMCPBridge) flagMapFromCmd(cmd *cobra.Command) map[string]any {
 		if flag.Hidden {
 			return
 		}
+
 		b.logger.Debug("Registering Tool Parameter", slog.String("cmd", cmd.Name()), slog.String("name", flag.Name))
 		flagMap[flag.Name] = flagToolOption(flag)
 	})
@@ -94,8 +94,9 @@ func (b *CobraToMCPBridge) flagMapFromCmd(cmd *cobra.Command) map[string]any {
 		if flag.Hidden {
 			return
 		}
+
 		// Check if this flag was already added from local flags to avoid duplicates
-		if cmd.Flags().Lookup(flag.Name) == nil {
+		if _, ok := flagMap[flag.Name]; !ok {
 			b.logger.Debug("Registering Tool Parameter", slog.String("cmd", cmd.Name()), slog.String("name", flag.Name))
 			flagMap[flag.Name] = flagToolOption(flag)
 		}
