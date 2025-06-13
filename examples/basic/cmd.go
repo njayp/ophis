@@ -30,6 +30,7 @@ func NewRootCmd() *cobra.Command {
 	}
 
 	rootCmd.PersistentFlags().String("greeting", "Hello", "The greeting to use")
+	helloCmd.Flags().String("punct", "!", "punct to use")
 	rootCmd.AddCommand(helloCmd)
 
 	return rootCmd

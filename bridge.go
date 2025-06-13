@@ -3,6 +3,7 @@ package ophis
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"strings"
 
@@ -22,9 +23,11 @@ const (
 	ErrArrayUnsupported = "Array types are not supported in MCP tools"
 )
 
+type CommandFactory func(output io.Writer) *cobra.Command
+
 // CobraToMCPBridge converts a Cobra CLI application to an MCP server
 type CobraToMCPBridge struct {
-	commandFactory func() *cobra.Command // Factory function to create fresh command instances
+	commandFactory CommandFactory // Factory function to create fresh command instances
 	appName        string
 	version        string
 	server         *server.MCPServer // The MCP server instance
@@ -32,7 +35,7 @@ type CobraToMCPBridge struct {
 }
 
 // NewCobraToMCPBridge creates a new bridge instance with validation
-func NewCobraToMCPBridge(cmdFactory func() *cobra.Command, appName, version string, logger *slog.Logger) *CobraToMCPBridge {
+func NewCobraToMCPBridge(cmdFactory CommandFactory, appName, version string, logger *slog.Logger) *CobraToMCPBridge {
 	if cmdFactory == nil {
 		panic("cmdFactory cannot be nil")
 	}
@@ -57,7 +60,7 @@ func NewCobraToMCPBridge(cmdFactory func() *cobra.Command, appName, version stri
 		),
 	}
 
-	b.registerCommands(b.commandFactory(), "")
+	b.registerCommands(b.commandFactory(nil), "")
 	return b
 }
 
@@ -75,11 +78,8 @@ func (b *CobraToMCPBridge) registerCommands(cmd *cobra.Command, parentPath strin
 		if subCmd.Hidden {
 			continue
 		}
-		subPath := toolName
-		if parentPath == "" && cmd.Name() != toolName {
-			subPath = cmd.Name()
-		}
-		b.registerCommands(subCmd, subPath)
+
+		b.registerCommands(subCmd, toolName)
 	}
 
 	// Skip if the command has no runnable function
@@ -93,29 +93,37 @@ func (b *CobraToMCPBridge) registerCommands(cmd *cobra.Command, parentPath strin
 		mcp.WithDescription(b.getCommandDescription(cmd, parentPath)),
 	}
 
-	// Add parameters for flags (both local and persistent)
-	cmd.Flags().VisitAll(func(flag *pflag.Flag) {
+	// map for tool object
+	flagMap := map[string]any{}
+
+	// add local flags to flag map
+	cmd.LocalFlags().VisitAll(func(flag *pflag.Flag) {
 		if flag.Hidden {
 			return
 		}
 		b.logger.Debug("Registering Tool Parameter", slog.String("cmd", cmd.Name()), slog.String("name", flag.Name))
-		toolOptions = append(toolOptions, b.createParameterFromFlag(flag)...)
+		// toolOptions = append(toolOptions, b.createParameterFromFlag(flag)...)
+		flagMap[flag.Name] = flagToolOption(flag)
 	})
 
-	// Add all persistent flags recursively
-	for t := cmd; t != nil; t = t.Parent() {
-		// Add parameters for persistent flags from parent commands
-		t.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
-			if flag.Hidden {
-				return
-			}
-			// Check if this flag was already added from local flags to avoid duplicates
-			if cmd.Flags().Lookup(flag.Name) == nil {
-				b.logger.Debug("Registering Tool Parameter", slog.String("cmd", cmd.Name()), slog.String("name", flag.Name))
-				toolOptions = append(toolOptions, b.createParameterFromFlag(flag)...)
-			}
-		})
-	}
+	// add inherited flags to flag map
+	cmd.InheritedFlags().VisitAll(func(flag *pflag.Flag) {
+		if flag.Hidden {
+			return
+		}
+		// Check if this flag was already added from local flags to avoid duplicates
+		if cmd.Flags().Lookup(flag.Name) == nil {
+			b.logger.Debug("Registering Tool Parameter", slog.String("cmd", cmd.Name()), slog.String("name", flag.Name))
+			//toolOptions = append(toolOptions, b.createParameterFromFlag(flag)...)
+			flagMap[flag.Name] = flagToolOption(flag)
+		}
+	})
+
+	// add flags to tool
+	toolOptions = append(toolOptions, mcp.WithObject("flags",
+		mcp.Description("flag options"),
+		mcp.Properties(flagMap),
+	))
 
 	// Add an "args" parameter for positional arguments
 	// This allows MCP clients to pass positional arguments that aren't flags
@@ -138,7 +146,7 @@ func (b *CobraToMCPBridge) registerCommands(cmd *cobra.Command, parentPath strin
 	// Add the tool handler
 	b.server.AddTool(tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		b.logger.Info("MCP tool request received", "tool_name", toolName, "arguments", request.Params.Arguments)
-		result := b.executeCommand(ctx, cmd, request)
+		result := b.executeCommand(ctx, cmd.CommandPath(), request)
 		// TODO figure out what err is used for
 		return result, nil
 	})
@@ -172,42 +180,22 @@ func (b *CobraToMCPBridge) getCommandDescription(cmd *cobra.Command, parentPath 
 	return desc
 }
 
-// createParameterFromFlag converts a Cobra flag to MCP tool parameters
-func (b *CobraToMCPBridge) createParameterFromFlag(flag *pflag.Flag) []mcp.ToolOption {
-	description := flag.Usage
-	if description == "" {
-		description = fmt.Sprintf("Flag: %s", flag.Name)
-	}
-
-	// Use helper function to determine the correct MCP parameter type
-	return b.createMCPParameter(flag.Name, description, flag.Value.Type())
-}
-
-// createMCPParameter creates an MCP parameter based on the type
-func (b *CobraToMCPBridge) createMCPParameter(name, description, flagType string) []mcp.ToolOption {
-	switch flagType {
-	case "bool":
-		return []mcp.ToolOption{mcp.WithBoolean(name, mcp.Description(description))}
-	case "int", "int8", "int16", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64", "float32", "float64":
-		return []mcp.ToolOption{mcp.WithNumber(name, mcp.Description(description))}
-	case "string":
-		return []mcp.ToolOption{mcp.WithString(name, mcp.Description(description))}
-	default:
-		// Default to string for unknown types
-		return []mcp.ToolOption{mcp.WithString(name, mcp.Description(description))}
-	}
-}
-
 // executeCommand executes the Cobra command using a fresh instance to avoid state pollution
-func (b *CobraToMCPBridge) executeCommand(ctx context.Context, cmd *cobra.Command, request mcp.CallToolRequest) *mcp.CallToolResult {
+func (b *CobraToMCPBridge) executeCommand(ctx context.Context, path string, request mcp.CallToolRequest) *mcp.CallToolResult {
 	arguments := request.GetArguments()
+	fields := strings.Fields(path)
+
+	// get a new instance of the same cmd
+	var output strings.Builder
+	cmd := b.commandFactory(&output)
+
+	// args must be added to root cmd
 	var args []string
-
-	// Add command path args
-	if cmd.Parent() != nil {
-		args = append(args, strings.Fields(cmd.CommandPath())[1:]...)
+	if len(fields) > 1 {
+		// Add command path to args
+		args = append(args, fields[1:]...)
+		b.logger.Debug("Set command arguments", "args", args)
 	}
-
 	// Handle positional arguments from the "args" parameter
 	if argsValue, exists := arguments[PositionalArgsParam]; exists {
 		if argsStr, ok := argsValue.(string); ok && argsStr != "" {
@@ -216,64 +204,69 @@ func (b *CobraToMCPBridge) executeCommand(ctx context.Context, cmd *cobra.Comman
 			b.logger.Debug("Parsed positional arguments", "args", args)
 		}
 	}
-
-	// get a fresh command struct for each execution
-	cmd = b.commandFactory()
 	cmd.SetArgs(args)
-	b.logger.Debug("Set command arguments", "args", args)
 
-	for k, v := range arguments {
-		if k == PositionalArgsParam {
-			continue
+	// flags must be set on relevant command
+	if len(fields) > 1 {
+		// move to subCommand
+		for _, field := range fields {
+			for _, subCmd := range cmd.Commands() {
+				if field == subCmd.Name() {
+					cmd = subCmd
+					break
+				}
+			}
 		}
-
-		b.logger.Debug("setting flag", slog.String("cmd", cmd.Name()), slog.String("flag", k))
-		flag := cmd.Flag(k)
-		if flag == nil {
-			// TODO maybe return err
-			continue
-		}
-
-		// TODO verify that v is the right type
-		str, ok := v.(string)
-		if !ok {
-			b.logger.Error("Failed to load flag", slog.String("cmd", cmd.Name()), slog.String("key", k), slog.Any("value", v))
-			return mcp.NewToolResultError(fmt.Sprintf("%s: failed to load flag %s", cmd.Name(), k))
-		}
-		err := flag.Value.Set(str)
-		if err != nil {
-			b.logger.Error("Failed to load flag", slog.String("cmd", cmd.Name()), slog.String("key", k), slog.Any("value", v))
-			return mcp.NewToolResultErrorFromErr(fmt.Sprintf("%s: failed to load flag %s", cmd.Name(), k), err)
+		// verify cmd is set
+		cmdPath := cmd.CommandPath()
+		if cmdPath != path {
+			b.logger.Error("command paths mismatch", slog.String("path", path), slog.String("cmdPath", cmdPath))
 		}
 	}
 
-	// Create isolated output capture to avoid interfering with MCP protocol
-	var output strings.Builder
-	cmd.SetOut(&output)
-	cmd.SetErr(&output)
+	// load flag map into cmd
+	flags := arguments["flags"]
+	b.logger.Debug("flags", "map", flags)
+	flagMap, ok := flags.(map[string]any)
+	if ok {
+		for k, v := range flagMap {
+			b.logger.Debug("setting flag", slog.String("cmd", cmd.Name()), slog.String("flag", k))
+			flag := cmd.Flag(k)
+			if flag == nil {
+				b.logger.Error("flag not found", slog.String("cmd", cmd.Name()), slog.String("name", k))
+				continue
+			}
+			err := flag.Value.Set(fmt.Sprintf("%v", v))
+			if err != nil {
+				b.logger.Error("Failed to load flag", slog.String("cmd", cmd.Name()), slog.String("key", k), slog.Any("value", v))
+				return mcp.NewToolResultErrorFromErr(fmt.Sprintf("%s: failed to load flag %s", cmd.Name(), k), err)
+			}
+		}
+	}
 
 	// Execute the command's Run function with proper error recovery
-	var err error
+	var result *mcp.CallToolResult
 	func() {
 		// Recover from any panics that might occur during command execution
 		defer func() {
 			if r := recover(); r != nil {
 				b.logger.Error("Command execution panicked", "command", cmd.Name(), "panic", r)
-				err = fmt.Errorf("command panicked: %v", r)
+				result = mcp.NewToolResultError("unexpected panic")
 			}
 		}()
 
-		err = cmd.ExecuteContext(ctx)
+		err := cmd.ExecuteContext(ctx)
+		if err != nil {
+			b.logger.Error("Command failed", "command", cmd.Name(), "error", err.Error())
+			result = mcp.NewToolResultError(err.Error())
+		} else {
+			data := output.String()
+			b.logger.Debug("Command succeeded", "command", cmd.Name(), "output", data)
+			result = mcp.NewToolResultText(data)
+		}
 	}()
 
-	if err != nil {
-		b.logger.Error("Failed to execute command function", "command", cmd.Name(), "error", err, "output", output.String())
-		return mcp.NewToolResultError(fmt.Sprintf("Command failed: %v\nOutput: %s", err, output.String()))
-	}
-
-	result := output.String()
-	b.logger.Debug("Command executed successfully", "command", cmd.Name(), "output", result)
-	return mcp.NewToolResultText(result)
+	return result
 }
 
 // StartServer starts the MCP server using stdio transport

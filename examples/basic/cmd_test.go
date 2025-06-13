@@ -14,4 +14,8 @@ func TestNewRootCmd(t *testing.T) {
 	if cmd.Flag("greeting").Value.String() != "Hello" {
 		t.Errorf("Expected default greeting to be 'Hello', got '%s'", cmd.Flag("greeting").Value.String())
 	}
+
+	cmd.SetArgs([]string{"hello"})
+	err := cmd.Execute()
+	t.Error(err)
 }
