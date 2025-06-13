@@ -4,9 +4,10 @@
 
 Ophis is a Go library that automatically converts Cobra-based command-line applications into MCP servers, allowing AI assistants and other MCP clients to interact with your CLI tools through structured protocols.
 
-## Use Case
+## Motivation
 
 - Transform your cobra CLI to an MCP server with **one command**.
+- Expose CLIs without exposing shell.
 
 ## Features
 
@@ -24,32 +25,7 @@ go get github.com/ophis
 
 ## Helm Example
 
-Ophis includes an example that exposes the entire Helm CLI as an MCP server:
-
-```go
-func createHelmCommand(output io.Writer) *cobra.Command {
-    cmd, err := helmcmd.NewRootCmd(output, nil)
-    if err != nil {
-        panic(err)
-    }
-    return cmd
-}
-
-func main() {
-    logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
-    
-    bridge := ophis.NewCobraToMCPBridge(
-        createHelmCommand,
-        "helm-mcp",
-        "1.0.0",
-        logger,
-    )
-    
-    bridge.StartServer()
-}
-```
-
-With this setup, an AI assistant can execute commands like `helm list`, `helm install myapp ./chart`, or `helm upgrade myapp ./chart --set key=value`.
+Ophis includes an example that exposes the entire Helm CLI as an MCP server. With this setup, an AI assistant can execute commands like `helm list`, `helm install myapp ./chart`, or `helm upgrade myapp ./chart --set key=value`.
 
 ## How It Works
 
