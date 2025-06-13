@@ -32,17 +32,7 @@ func slogToFile(level slog.Level, logFile string) *slog.Logger {
 	return logger
 }
 
-func start(logFile string) error {
-	var logger *slog.Logger
-
-	if logFile == "" {
-		// Use info level for production to reduce noise
-		logger := slogToFile(slog.LevelDebug, logFile)
-		logger.Info("Starting MCP bridge server", "app", AppName, "version", AppVersion)
-	} else {
-		logger = slog.Default()
-	}
-
+func start(logger *slog.Logger) error {
 	bridge := ophis.NewCobraToMCPBridge(&HelmCommandFactory{}, AppName, AppVersion, logger)
 
 	logger.Info("Bridge created with command factory, starting server...")
@@ -55,10 +45,16 @@ func start(logFile string) error {
 
 func main() {
 	// Parse command line flags
-	logFile := flag.String("logfile", "", "Path to the log file")
+	p := flag.String("logfile", "", "Path to the log file")
 	flag.Parse()
+	logFile := *p
+	if logFile == "" {
+		logFile = os.TempDir() + "helm.log"
+	}
 
-	if err := start(*logFile); err != nil {
+	logger := slogToFile(slog.LevelDebug, logFile)
+
+	if err := start(logger); err != nil {
 		fmt.Fprintf(os.Stderr, "Error starting server: %v\n", err)
 		os.Exit(1)
 	}

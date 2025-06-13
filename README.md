@@ -37,7 +37,7 @@ Ophis includes an example that exposes the entire Helm CLI as an MCP server. Wit
 
 ## Command Factory Pattern
 
-Provide ophis with a command factory for flexible cmd creation and execution:
+Provide ophis with a command factory for flexible command creation and execution:
 
 ```go
 type CommandFactory interface {
