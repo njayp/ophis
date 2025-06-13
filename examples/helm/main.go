@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log/slog"
 	"os"
@@ -12,33 +13,35 @@ import (
 const (
 	AppName    = "ophis"
 	AppVersion = "0.0.0"
-	LogFile    = "/Users/nickpowell/claude/ophis/app.log"
 )
 
-func slogToFile(level slog.Level) *slog.Logger {
+func slogToFile(level slog.Level, logFile string) *slog.Logger {
 	// Try to create log file, fallback to stderr if it fails
-	logFile, err := os.OpenFile(LogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to open log file %s: %v", LogFile, err))
+		panic(fmt.Sprintf("Failed to open log file %s: %v", logFile, err))
 	}
 
 	// Create handler with proper level setting
 	handlerOptions := &slog.HandlerOptions{
 		Level: level,
 	}
-	handler := slog.NewTextHandler(logFile, handlerOptions)
+	handler := slog.NewTextHandler(file, handlerOptions)
 	logger := slog.New(handler)
-	logger.Info("Logging initialized", "level", level.String(), "target", logFile.Name())
+	logger.Info("Logging initialized", "level", level.String(), "target", file.Name())
 	return logger
 }
 
-func start() error {
-	// Set environment variable to indicate MCP server is running
-	os.Setenv("MCP_SERVER_RUNNING", "true")
+func start(logFile string) error {
+	var logger *slog.Logger
 
-	// Use info level for production to reduce noise
-	logger := slogToFile(slog.LevelDebug)
-	logger.Info("Starting MCP bridge server", "app", AppName, "version", AppVersion)
+	if logFile == "" {
+		// Use info level for production to reduce noise
+		logger := slogToFile(slog.LevelDebug, logFile)
+		logger.Info("Starting MCP bridge server", "app", AppName, "version", AppVersion)
+	} else {
+		logger = slog.Default()
+	}
 
 	bridge := ophis.NewCobraToMCPBridge(&HelmCommandFactory{}, AppName, AppVersion, logger)
 
@@ -51,7 +54,11 @@ func start() error {
 }
 
 func main() {
-	if err := start(); err != nil {
+	// Parse command line flags
+	logFile := flag.String("logfile", "", "Path to the log file")
+	flag.Parse()
+
+	if err := start(*logFile); err != nil {
 		fmt.Fprintf(os.Stderr, "Error starting server: %v\n", err)
 		os.Exit(1)
 	}
