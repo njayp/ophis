@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/ophis"
-	"github.com/ophis/examples/helm"
 )
 
 // Configuration constants
@@ -41,7 +40,7 @@ func start() error {
 	logger := slogToFile(slog.LevelDebug)
 	logger.Info("Starting MCP bridge server", "app", AppName, "version", AppVersion)
 
-	bridge := ophis.NewCobraToMCPBridge(helm.NewHelmCommand, AppName, AppVersion, logger)
+	bridge := ophis.NewCobraToMCPBridge(&HelmCommandFactory{}, AppName, AppVersion, logger)
 
 	logger.Info("Bridge created with command factory, starting server...")
 	err := bridge.StartServer()

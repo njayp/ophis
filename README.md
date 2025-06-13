@@ -4,9 +4,9 @@
 
 Ophis is a Go library that automatically converts Cobra-based command-line applications into MCP servers, allowing AI assistants and other MCP clients to interact with your CLI tools through structured protocols.
 
-## What is MCP?
+## Use Case
 
-The [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) is an open standard that enables secure connections between AI systems and external data sources and tools. By converting your CLI application to an MCP server, you make it accessible to AI assistants like Claude.
+- Transform your cobra CLI to an MCP server with **one command**.
 
 ## Features
 
