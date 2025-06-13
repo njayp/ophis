@@ -11,8 +11,8 @@ import (
 
 // Configuration constants
 const (
-	AppName    = "ophis"
-	AppVersion = "0.0.0"
+	AppName    = "helm"
+	AppVersion = "0.0.1"
 )
 
 func slogToFile(level slog.Level, logFile string) *slog.Logger {
