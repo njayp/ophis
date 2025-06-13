@@ -37,10 +37,13 @@ Ophis includes an example that exposes the entire Helm CLI as an MCP server. Wit
 
 ## Command Factory Pattern
 
-Ophis uses a command factory to ensure clean state management:
+Provide ophis with a command factory for flexible cmd creation and execution:
 
 ```go
-type CommandFactory func(output io.Writer) *cobra.Command
+type CommandFactory interface {
+	CreateRegistrationCommand() *cobra.Command
+	CreateCommand() (*cobra.Command, func(context.Context) *mcp.CallToolResult)
+}
 ```
 
 The factory creates a fresh command instance for each execution, preventing state pollution between tool calls.
