@@ -10,12 +10,7 @@ import (
 func MCPCommand(factory bridge.CommandFactory, config *bridge.MCPCommandConfig) *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:   bridge.MCPCommandName,
-		Short: "Start MCP (Model Context Protocol) server",
-		Long: `Start an MCP server that exposes this application's commands to MCP clients.
-
-The MCP server will expose all available commands as tools that can be called
-by AI assistants and other MCP-compatible clients.`,
+		Use: bridge.MCPCommandName,
 	}
 
 	// Add subcommands

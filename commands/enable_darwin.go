@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
@@ -16,11 +14,8 @@ func EnableCommand() *cobra.Command {
 	enableFlags := &EnableCommandFlags{}
 	cmd := &cobra.Command{
 		Use:   "start",
-		Short: "Start MCP (Model Context Protocol) server",
-		Long: fmt.Sprintf(`Start an MCP server that exposes this application's commands to MCP clients.
-
-The MCP server will expose all available commands as tools that can be called
-by AI assistants and other MCP-compatible clients.`),
+		Short: "Enable the MCP server",
+		Long:  `Enable the MCP server by adding it to claude's MCP config file`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// TODO add self to config files
 			return nil
@@ -38,11 +33,8 @@ by AI assistants and other MCP-compatible clients.`),
 func DisableCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "start",
-		Short: "Start MCP (Model Context Protocol) server",
-		Long: fmt.Sprintf(`Start an MCP server that exposes this application's commands to MCP clients.
-
-The MCP server will expose all available commands as tools that can be called
-by AI assistants and other MCP-compatible clients.`),
+		Short: "Disable the MCP server",
+		Long:  `Disable the MCP server by removing it to claude's MCP config file`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// TODO
 			return nil
