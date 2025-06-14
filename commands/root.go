@@ -14,6 +14,6 @@ func MCPCommand(factory bridge.CommandFactory, config *bridge.MCPCommandConfig) 
 	}
 
 	// Add subcommands
-	cmd.AddCommand(StartCommand(factory, config), EnableCommand(), DisableCommand())
+	cmd.AddCommand(StartCommand(factory, config), EnableCommand(), DisableCommand(), ListCommand())
 	return cmd
 }
