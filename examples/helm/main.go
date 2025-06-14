@@ -33,7 +33,11 @@ func slogToFile(level slog.Level, logFile string) *slog.Logger {
 }
 
 func start(logger *slog.Logger) error {
-	bridge := ophis.NewCobraToMCPBridge(&HelmCommandFactory{}, AppName, AppVersion, logger)
+	bridge := ophis.NewCobraToMCPBridge(&HelmCommandFactory{}, &ophis.MCPCommandConfig{
+		AppName:    AppName,
+		AppVersion: AppVersion,
+		Logger:     logger,
+	})
 
 	logger.Info("Bridge created with command factory, starting server...")
 	err := bridge.StartServer()

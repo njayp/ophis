@@ -23,6 +23,13 @@ type CommandFactory interface {
 	CreateCommand() (*cobra.Command, CommandExecFunc)
 }
 
+// MCPCommandConfig holds configuration for the MCP command
+type MCPCommandConfig struct {
+	AppName    string
+	AppVersion string
+	Logger     *slog.Logger
+}
+
 // CobraToMCPBridge converts a Cobra CLI application to an MCP server
 type CobraToMCPBridge struct {
 	commandFactory CommandFactory    // Factory function to create fresh command instances
@@ -31,26 +38,26 @@ type CobraToMCPBridge struct {
 }
 
 // NewCobraToMCPBridge creates a new bridge instance with validation
-func NewCobraToMCPBridge(cmdFactory CommandFactory, appName, version string, logger *slog.Logger) *CobraToMCPBridge {
+func NewCobraToMCPBridge(cmdFactory CommandFactory, config *MCPCommandConfig) *CobraToMCPBridge {
 	if cmdFactory == nil {
 		panic("cmdFactory cannot be nil")
 	}
-	if appName == "" {
+	if config.AppName == "" {
 		panic("appName cannot be empty")
 	}
-	if version == "" {
-		version = "unknown"
+	if config.AppVersion == "" {
+		config.AppVersion = "unknown"
 	}
-	if logger == nil {
-		logger = slog.Default()
+	if config.Logger == nil {
+		config.Logger = slog.Default()
 	}
 
 	b := &CobraToMCPBridge{
 		commandFactory: cmdFactory,
-		logger:         logger,
+		logger:         config.Logger,
 		server: server.NewMCPServer(
-			appName,
-			version,
+			config.AppName,
+			config.AppVersion,
 		),
 	}
 

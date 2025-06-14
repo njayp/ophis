@@ -139,7 +139,11 @@ func TestNewCobraToMCPBridge(t *testing.T) {
 				}()
 			}
 
-			bridge := NewCobraToMCPBridge(tt.factory, tt.appName, tt.version, tt.logger)
+			bridge := NewCobraToMCPBridge(tt.factory, &MCPCommandConfig{
+				AppName:    tt.appName,
+				AppVersion: tt.version,
+				Logger:     tt.logger,
+			})
 
 			if !tt.shouldPanic {
 				if bridge == nil {
@@ -163,7 +167,11 @@ func TestBridgeIntegration(t *testing.T) {
 	factory := NewTestCommandFactory()
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelError}))
 
-	bridge := NewCobraToMCPBridge(factory, "test-app", "1.0.0", logger)
+	bridge := NewCobraToMCPBridge(factory, &MCPCommandConfig{
+		AppName:    "test",
+		AppVersion: "test",
+		Logger:     logger,
+	})
 
 	if bridge == nil {
 		t.Fatal("Failed to create bridge")
@@ -214,7 +222,11 @@ func TestBridgeWithMockFactory(t *testing.T) {
 		}()
 
 		factory := &MockCommandFactory{registrationPanic: true}
-		NewCobraToMCPBridge(factory, "test", "1.0.0", logger)
+		NewCobraToMCPBridge(factory, &MCPCommandConfig{
+			AppName:    "test",
+			AppVersion: "test",
+			Logger:     logger,
+		})
 	})
 
 	t.Run("nil command from factory", func(t *testing.T) {
@@ -227,7 +239,11 @@ func TestBridgeWithMockFactory(t *testing.T) {
 			recover() // Ignore panics for this test
 		}()
 
-		bridge := NewCobraToMCPBridge(factory, "test", "1.0.0", logger)
+		bridge := NewCobraToMCPBridge(factory, &MCPCommandConfig{
+			AppName:    "test",
+			AppVersion: "test",
+			Logger:     logger,
+		})
 		if bridge != nil {
 			t.Log("Bridge created despite nil command from factory")
 		}
