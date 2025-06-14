@@ -3,17 +3,11 @@ package ophis
 import (
 	"context"
 	"log/slog"
+	"os"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/spf13/cobra"
-)
-
-// Constants for MCP parameter names and error messages
-const (
-	// PositionalArgsParam is the parameter name for positional arguments
-	PositionalArgsParam = "args"
-	FlagsParam          = "flags"
 )
 
 type CommandExecFunc func(ctx context.Context) *mcp.CallToolResult
@@ -21,13 +15,6 @@ type CommandExecFunc func(ctx context.Context) *mcp.CallToolResult
 type CommandFactory interface {
 	CreateRegistrationCommand() *cobra.Command
 	CreateCommand() (*cobra.Command, CommandExecFunc)
-}
-
-// MCPCommandConfig holds configuration for the MCP command
-type MCPCommandConfig struct {
-	AppName    string
-	AppVersion string
-	Logger     *slog.Logger
 }
 
 // CobraToMCPBridge converts a Cobra CLI application to an MCP server
@@ -38,8 +25,8 @@ type CobraToMCPBridge struct {
 }
 
 // NewCobraToMCPBridge creates a new bridge instance with validation
-func NewCobraToMCPBridge(cmdFactory CommandFactory, config *MCPCommandConfig) *CobraToMCPBridge {
-	if cmdFactory == nil {
+func NewCobraToMCPBridge(factory CommandFactory, config *MCPCommandConfig) *CobraToMCPBridge {
+	if factory == nil {
 		panic("cmdFactory cannot be nil")
 	}
 	if config.AppName == "" {
@@ -48,13 +35,19 @@ func NewCobraToMCPBridge(cmdFactory CommandFactory, config *MCPCommandConfig) *C
 	if config.AppVersion == "" {
 		config.AppVersion = "unknown"
 	}
-	if config.Logger == nil {
-		config.Logger = slog.Default()
+
+	if config.LogOut == nil {
+		config.LogOut = os.Stdout
 	}
 
+	// Create logger
+	logger := slog.New(slog.NewTextHandler(config.LogOut, &slog.HandlerOptions{
+		Level: ParseLogLevel(config.LogLevel),
+	}))
+
 	b := &CobraToMCPBridge{
-		commandFactory: cmdFactory,
-		logger:         config.Logger,
+		commandFactory: factory,
+		logger:         logger,
 		server: server.NewMCPServer(
 			config.AppName,
 			config.AppVersion,
