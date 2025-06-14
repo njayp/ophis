@@ -3,7 +3,6 @@ package ophis
 import (
 	"context"
 	"log/slog"
-	"os"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -36,14 +35,10 @@ func NewCobraToMCPBridge(factory CommandFactory, config *MCPCommandConfig) *Cobr
 		config.AppVersion = "unknown"
 	}
 
-	if config.LogOut == nil {
-		config.LogOut = os.Stdout
+	logger, err := config.NewSlogger()
+	if err != nil {
+		panic(err)
 	}
-
-	// Create logger
-	logger := slog.New(slog.NewTextHandler(config.LogOut, &slog.HandlerOptions{
-		Level: ParseLogLevel(config.LogLevel),
-	}))
 
 	b := &CobraToMCPBridge{
 		commandFactory: factory,

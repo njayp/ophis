@@ -1,8 +1,10 @@
 package ophis
 
 import (
-	"io"
+	"fmt"
 	"log/slog"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -17,8 +19,43 @@ const (
 type MCPCommandConfig struct {
 	AppName    string
 	AppVersion string
-	LogOut     io.Writer
+	LogFile    string
 	LogLevel   string
+}
+
+// NewSlogger makes a new slog.logger that writes to file
+func (c *MCPCommandConfig) NewSlogger() (*slog.Logger, error) {
+	// if logfile not set, use usercache
+	if c.LogFile == "" {
+		// Get the cache directory
+		cacheDir, err := os.UserCacheDir()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get user cache directory: %w", err)
+		}
+
+		// Create the log directory
+		logDir := filepath.Join(cacheDir, "mcp-servers", c.AppName, "logs")
+		if err := os.MkdirAll(logDir, 0700); err != nil {
+			return nil, fmt.Errorf("failed to create log directory: %w", err)
+		}
+
+		c.LogFile = filepath.Join(logDir, "server.log")
+	}
+
+	file, err := os.OpenFile(c.LogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open log file: %w", err)
+	}
+
+	// Create handler options
+	opts := &slog.HandlerOptions{
+		Level:     ParseLogLevel(c.LogLevel),
+		AddSource: true,
+	}
+
+	// Create handler based on format preference
+	handler := slog.NewTextHandler(file, opts)
+	return slog.New(handler), nil
 }
 
 func ParseLogLevel(level string) slog.Level {
