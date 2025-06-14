@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ophis"
+	"github.com/ophis/bridge"
 )
 
 // Configuration constants
@@ -20,7 +20,7 @@ func main() {
 	flag.Parse()
 	loglevel := *p
 
-	bridge := ophis.NewCobraToMCPBridge(&HelmCommandFactory{}, &ophis.MCPCommandConfig{
+	bridge := bridge.NewCobraToMCPBridge(&HelmCommandFactory{}, &bridge.MCPCommandConfig{
 		AppName:    AppName,
 		AppVersion: AppVersion,
 		LogLevel:   loglevel,

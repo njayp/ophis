@@ -1,4 +1,4 @@
-package ophis
+package bridge
 
 import (
 	"context"

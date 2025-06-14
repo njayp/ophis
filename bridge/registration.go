@@ -1,4 +1,4 @@
-package ophis
+package bridge
 
 import (
 	"context"
@@ -22,6 +22,11 @@ func (b *CobraToMCPBridge) registerCommands(cmd *cobra.Command, parentPath strin
 	// Register subcommands
 	for _, subCmd := range cmd.Commands() {
 		if subCmd.Hidden {
+			continue
+		}
+
+		// ignore mcp server commands
+		if subCmd.Name() == MCPCommandName {
 			continue
 		}
 

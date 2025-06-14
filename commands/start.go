@@ -1,22 +1,21 @@
-package ophis
+package commands
 
 import (
 	"fmt"
 
+	"github.com/ophis/bridge"
 	"github.com/spf13/cobra"
 )
 
-type MCPCommandFlags struct {
+type StartCommandFlags struct {
 	LogLevel string
 	LogFile  string
 }
 
-// MCPCommand creates a new Cobra command that starts an MCP server
-// This command can be added as a subcommand to any Cobra-based application
-func MCPCommand(factory CommandFactory, config *MCPCommandConfig) *cobra.Command {
-	mcpFlags := &MCPCommandFlags{}
+func StartCommand(factory bridge.CommandFactory, config *bridge.MCPCommandConfig) *cobra.Command {
+	mcpFlags := &StartCommandFlags{}
 	cmd := &cobra.Command{
-		Use:   "mcp",
+		Use:   "start",
 		Short: "Start MCP (Model Context Protocol) server",
 		Long: fmt.Sprintf(`Start an MCP server that exposes this application's commands to MCP clients.
 
@@ -32,7 +31,7 @@ by AI assistants and other MCP-compatible clients.`),
 			}
 
 			// Create and start the bridge
-			bridge := NewCobraToMCPBridge(factory, config)
+			bridge := bridge.NewCobraToMCPBridge(factory, config)
 			return bridge.StartServer()
 		},
 	}
