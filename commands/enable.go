@@ -1,3 +1,5 @@
+// Package commands provides Cobra command implementations for MCP server management.
+// It includes commands to enable, disable, and list MCP servers in Claude's configuration.
 package commands
 
 import (
@@ -9,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// EnableCommandFlags holds configuration flags for enable/disable/list commands.
 type EnableCommandFlags struct {
 	ConfigPath string
 	LogLevel   string
@@ -16,13 +19,14 @@ type EnableCommandFlags struct {
 	ServerName string
 }
 
+// EnableCommand creates a Cobra command for enabling the MCP server.
 func EnableCommand() *cobra.Command {
 	enableFlags := &EnableCommandFlags{}
 	cmd := &cobra.Command{
 		Use:   "enable",
 		Short: "Enable the MCP server",
 		Long:  `Enable the MCP server by adding it to Claude's MCP config file`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return enableMCPServer(enableFlags)
 		},
 	}
@@ -36,13 +40,14 @@ func EnableCommand() *cobra.Command {
 	return cmd
 }
 
+// DisableCommand creates a Cobra command for disabling the MCP server.
 func DisableCommand() *cobra.Command {
 	disableFlags := &EnableCommandFlags{} // Reuse flags struct
 	cmd := &cobra.Command{
 		Use:   "disable",
 		Short: "Disable the MCP server",
 		Long:  `Disable the MCP server by removing it from Claude's MCP config file`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return disableMCPServer(disableFlags)
 		},
 	}
@@ -54,13 +59,14 @@ func DisableCommand() *cobra.Command {
 	return cmd
 }
 
+// ListCommand creates a Cobra command for listing configured MCP servers.
 func ListCommand() *cobra.Command {
 	listFlags := &EnableCommandFlags{} // Reuse flags struct for config-path
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List configured MCP servers",
 		Long:  `List all MCP servers currently configured in Claude's MCP config file`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return listMCPServers(listFlags)
 		},
 	}

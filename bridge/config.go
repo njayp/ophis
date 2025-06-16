@@ -59,6 +59,9 @@ func (c *MCPCommandConfig) NewSlogger() (*slog.Logger, error) {
 	return slog.New(handler), nil
 }
 
+// ParseLogLevel converts a string log level to slog.Level.
+// Supported levels are: debug, info, warn, error (case-insensitive).
+// Defaults to info for unknown levels.
 func ParseLogLevel(level string) slog.Level {
 	// Parse log level
 	slogLevel := slog.LevelInfo

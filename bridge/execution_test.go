@@ -185,7 +185,7 @@ func TestLoadFlagsFromMap(t *testing.T) {
 				"nonexistent": "value",
 			},
 			expectError: false, // Currently logs error but doesn't return error
-			validate:    func(cmd *cobra.Command, t *testing.T) {},
+			validate:    func(_ *cobra.Command, _ *testing.T) {},
 		},
 		{
 			name: "invalid flag value",
@@ -381,7 +381,7 @@ type PanicCommandFactory struct{}
 func (f *PanicCommandFactory) CreateRegistrationCommand() *cobra.Command {
 	return &cobra.Command{
 		Use: "panic",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			panic("test panic")
 		},
 	}
@@ -390,7 +390,7 @@ func (f *PanicCommandFactory) CreateRegistrationCommand() *cobra.Command {
 func (f *PanicCommandFactory) CreateCommand() (*cobra.Command, CommandExecFunc) {
 	cmd := &cobra.Command{
 		Use: "panic",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			panic("test panic")
 		},
 	}

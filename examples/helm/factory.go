@@ -1,3 +1,5 @@
+// Package main provides an example MCP server that exposes Helm commands.
+// This demonstrates how to use ophis to convert the Helm CLI into an MCP server.
 package main
 
 import (
@@ -11,8 +13,10 @@ import (
 	helmcmd "helm.sh/helm/v4/pkg/cmd"
 )
 
+// HelmCommandFactory implements the bridge.CommandFactory interface for Helm commands.
 type HelmCommandFactory struct{}
 
+// CreateRegistrationCommand creates a Helm command tree for MCP tool registration.
 func (f *HelmCommandFactory) CreateRegistrationCommand() *cobra.Command {
 	cmd, err := helmcmd.NewRootCmd(nil, nil)
 	if err != nil {
@@ -22,6 +26,7 @@ func (f *HelmCommandFactory) CreateRegistrationCommand() *cobra.Command {
 	return cmd
 }
 
+// CreateCommand creates a fresh Helm command instance and its execution function.
 func (f *HelmCommandFactory) CreateCommand() (*cobra.Command, bridge.CommandExecFunc) {
 	var output strings.Builder
 

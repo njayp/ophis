@@ -33,7 +33,7 @@ func (f *TestCommandFactory) CreateRegistrationCommand() *cobra.Command {
 		Short: "Test command",
 		Long:  "A test command for unit testing",
 		Args:  cobra.ArbitraryArgs,
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			f.output.WriteString("root executed")
 		},
 	}
@@ -41,7 +41,7 @@ func (f *TestCommandFactory) CreateRegistrationCommand() *cobra.Command {
 	subCmd := &cobra.Command{
 		Use:   "sub",
 		Short: "Sub command",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			f.output.WriteString("sub executed")
 		},
 	}
@@ -202,7 +202,7 @@ func (m *MockCommandFactory) CreateCommand() (*cobra.Command, CommandExecFunc) {
 		panic("execution panic")
 	}
 	cmd := &cobra.Command{Use: "mock"}
-	exec := func(ctx context.Context) *mcp.CallToolResult {
+	exec := func(_ context.Context) *mcp.CallToolResult {
 		return mcp.NewToolResultText("mock output")
 	}
 	return cmd, exec

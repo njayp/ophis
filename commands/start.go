@@ -5,11 +5,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// StartCommandFlags holds configuration flags for the start command.
 type StartCommandFlags struct {
 	LogLevel string
 	LogFile  string
 }
 
+// StartCommand creates a Cobra command for starting the MCP server.
 func StartCommand(factory bridge.CommandFactory, config *bridge.MCPCommandConfig) *cobra.Command {
 	mcpFlags := &StartCommandFlags{}
 	cmd := &cobra.Command{
@@ -19,7 +21,7 @@ func StartCommand(factory bridge.CommandFactory, config *bridge.MCPCommandConfig
 
 The MCP server will expose all available commands as tools that can be called
 by AI assistants and other MCP-compatible clients.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			if mcpFlags.LogLevel != "" {
 				config.LogLevel = mcpFlags.LogLevel
 			}

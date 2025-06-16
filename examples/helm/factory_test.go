@@ -12,7 +12,7 @@ import (
 func TestHelmCommandFactoryImplementation(t *testing.T) {
 	factory := &HelmCommandFactory{}
 
-	t.Run("implements CommandFactory interface", func(t *testing.T) {
+	t.Run("implements CommandFactory interface", func(_ *testing.T) {
 		// This will fail to compile if HelmCommandFactory doesn't implement CommandFactory
 		var _ bridge.CommandFactory = factory
 	})

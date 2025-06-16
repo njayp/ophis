@@ -1,3 +1,5 @@
+// Package main provides an example MCP server that exposes make commands.
+// This demonstrates how to use ophis to convert a make-based build system into an MCP server.
 package main
 
 import (
@@ -11,12 +13,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// MakeCommandFactory implements the bridge.CommandFactory interface for make commands.
 type MakeCommandFactory struct{}
 
+// CreateRegistrationCommand creates a command tree for MCP tool registration.
 func (f *MakeCommandFactory) CreateRegistrationCommand() *cobra.Command {
 	return createMakeCommands()
 }
 
+// CreateCommand creates a fresh command instance and its execution function.
 func (f *MakeCommandFactory) CreateCommand() (*cobra.Command, bridge.CommandExecFunc) {
 	cmd := createMakeCommands()
 

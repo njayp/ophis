@@ -1,3 +1,5 @@
+// Package bridge provides functionality to convert Cobra CLI applications into MCP servers.
+// It handles the registration of Cobra commands as MCP tools and manages command execution.
 package bridge
 
 import (
@@ -9,8 +11,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// CommandExecFunc is a function type that executes a command and returns an MCP tool result.
 type CommandExecFunc func(ctx context.Context) *mcp.CallToolResult
 
+// CommandFactory is an interface for creating Cobra commands for registration and execution.
+// It provides a factory pattern to ensure fresh command instances for each execution.
 type CommandFactory interface {
 	CreateRegistrationCommand() *cobra.Command
 	CreateCommand() (*cobra.Command, CommandExecFunc)
