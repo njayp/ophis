@@ -11,8 +11,7 @@ import (
 	helmcmd "helm.sh/helm/v4/pkg/cmd"
 )
 
-type HelmCommandFactory struct {
-}
+type HelmCommandFactory struct{}
 
 func (f *HelmCommandFactory) CreateRegistrationCommand() *cobra.Command {
 	cmd, err := helmcmd.NewRootCmd(nil, nil)

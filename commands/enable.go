@@ -87,7 +87,7 @@ func enableMCPServer(flags *EnableCommandFlags) error {
 	// Validate that the executable exists and is executable
 	if stat, err := os.Stat(executablePath); err != nil {
 		return fmt.Errorf("executable not found: %w", err)
-	} else if stat.Mode()&0111 == 0 {
+	} else if stat.Mode()&0o111 == 0 {
 		return fmt.Errorf("file is not executable: %s", executablePath)
 	}
 

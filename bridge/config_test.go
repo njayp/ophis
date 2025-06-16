@@ -5,5 +5,4 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-
 }

@@ -69,7 +69,7 @@ func createMakeTargetCommand(target, short, long string) *cobra.Command {
 		Use:   target,
 		Short: short,
 		Long:  long,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			makeArgs := []string{}
 
 			// Add flags to make arguments
@@ -81,13 +81,8 @@ func createMakeTargetCommand(target, short, long string) *cobra.Command {
 			// Add any additional positional arguments
 			makeArgs = append(makeArgs, args...)
 
-			data, err := exec.CommandContext(cmd.Context(), "make", makeArgs...).CombinedOutput()
-			if err != nil {
-				return err
-			}
-
+			data, _ := exec.CommandContext(cmd.Context(), "make", makeArgs...).CombinedOutput()
 			cmd.Print(string(data))
-			return nil
 		},
 	}
 }

@@ -14,7 +14,6 @@ import (
 // TestCommandFactory implements CommandFactory for testing
 type TestCommandFactory struct {
 	registrationCmd *cobra.Command
-	executionCmd    *cobra.Command
 	output          *strings.Builder
 }
 
@@ -147,6 +146,7 @@ func TestNewCobraToMCPBridge(t *testing.T) {
 			if !tt.shouldPanic {
 				if bridge == nil {
 					t.Error("Expected bridge to be created")
+					return
 				}
 				if bridge.commandFactory == nil {
 					t.Error("Expected commandFactory to be set")
@@ -230,7 +230,7 @@ func TestBridgeWithMockFactory(t *testing.T) {
 		// This might panic or create an incomplete bridge
 		// The behavior depends on how the registration handles nil commands
 		defer func() {
-			recover() // Ignore panics for this test
+			_ = recover() // Ignore panics for this test
 		}()
 
 		bridge := NewCobraToMCPBridge(factory, &MCPCommandConfig{

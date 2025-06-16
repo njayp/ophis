@@ -13,7 +13,11 @@ func TestClaudeConfigManager(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Logf("Failed to remove temp dir: %v", err)
+		}
+	}()
 
 	configPath := filepath.Join(tempDir, "claude_desktop_config.json")
 	manager := NewClaudeConfigManager(configPath)

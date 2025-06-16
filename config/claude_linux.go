@@ -12,12 +12,12 @@ func getDefaultClaudeConfigPath() string {
 		// Fallback to a reasonable default
 		return filepath.Join("/home", os.Getenv("USER"), ".config", "Claude", "claude_desktop_config.json")
 	}
-	
+
 	// Check for XDG_CONFIG_HOME first
 	configDir := os.Getenv("XDG_CONFIG_HOME")
 	if configDir == "" {
 		configDir = filepath.Join(homeDir, ".config")
 	}
-	
+
 	return filepath.Join(configDir, "Claude", "claude_desktop_config.json")
 }

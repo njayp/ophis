@@ -67,7 +67,6 @@ func (b *CobraToMCPBridge) registerCommands(cmd *cobra.Command, parentPath strin
 		// TODO figure out what err is used for
 		return result, nil
 	})
-
 }
 
 func (b *CobraToMCPBridge) argsDescFromCmd(cmd *cobra.Command) string {

@@ -86,7 +86,9 @@ func TestFlagMapFromCmd(t *testing.T) {
 
 	// Add a hidden flag
 	hiddenFlag := cmd.Flags().String("hidden-flag", "", "A hidden flag")
-	cmd.Flags().MarkHidden("hidden-flag")
+	if err := cmd.Flags().MarkHidden("hidden-flag"); err != nil {
+		t.Errorf("Failed to mark flag as hidden: %v", err)
+	}
 	_ = hiddenFlag
 
 	// Add inherited flags
@@ -196,16 +198,4 @@ func TestFlagToolOption(t *testing.T) {
 // Helper function for case-insensitive string matching
 func containsIgnoreCase(s, substr string) bool {
 	return bytes.Contains([]byte(s), []byte(substr))
-}
-
-// Mock MCP server for testing
-type mockMCPServer struct {
-	addToolFunc func(toolName string)
-}
-
-func (m *mockMCPServer) AddTool(tool interface{}, handler interface{}) {
-	if m.addToolFunc != nil {
-		// Extract tool name if possible, otherwise use a default
-		m.addToolFunc("mock-tool")
-	}
 }

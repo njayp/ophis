@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"fmt"
-
 	"github.com/ophis/bridge"
 	"github.com/spf13/cobra"
 )
@@ -17,10 +15,10 @@ func StartCommand(factory bridge.CommandFactory, config *bridge.MCPCommandConfig
 	cmd := &cobra.Command{
 		Use:   "start",
 		Short: "Start MCP (Model Context Protocol) server",
-		Long: fmt.Sprintf(`Start an MCP server that exposes this application's commands to MCP clients.
+		Long: `Start an MCP server that exposes this application's commands to MCP clients.
 
 The MCP server will expose all available commands as tools that can be called
-by AI assistants and other MCP-compatible clients.`),
+by AI assistants and other MCP-compatible clients.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if mcpFlags.LogLevel != "" {
 				config.LogLevel = mcpFlags.LogLevel

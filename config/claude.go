@@ -65,7 +65,7 @@ func (cm *ClaudeConfigManager) LoadConfig() (*ClaudeConfig, error) {
 // SaveConfig saves the Claude configuration to file
 func (cm *ClaudeConfigManager) SaveConfig(config *ClaudeConfig) error {
 	// Ensure the directory exists
-	if err := os.MkdirAll(filepath.Dir(cm.configPath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(cm.configPath), 0o755); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
@@ -74,7 +74,7 @@ func (cm *ClaudeConfigManager) SaveConfig(config *ClaudeConfig) error {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
 
-	if err := os.WriteFile(cm.configPath, data, 0644); err != nil {
+	if err := os.WriteFile(cm.configPath, data, 0o644); err != nil {
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
 
@@ -132,7 +132,7 @@ func (cm *ClaudeConfigManager) BackupConfig() error {
 		return fmt.Errorf("failed to read config for backup: %w", err)
 	}
 
-	if err := os.WriteFile(backupPath, data, 0644); err != nil {
+	if err := os.WriteFile(backupPath, data, 0o644); err != nil {
 		return fmt.Errorf("failed to write backup: %w", err)
 	}
 

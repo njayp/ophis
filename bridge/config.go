@@ -36,14 +36,14 @@ func (c *MCPCommandConfig) NewSlogger() (*slog.Logger, error) {
 
 		// Create the log directory
 		logDir := filepath.Join(cacheDir, "mcp-servers", c.AppName, "logs")
-		if err := os.MkdirAll(logDir, 0700); err != nil {
+		if err := os.MkdirAll(logDir, 0o700); err != nil {
 			return nil, fmt.Errorf("failed to create log directory: %w", err)
 		}
 
 		c.LogFile = filepath.Join(logDir, "server.log")
 	}
 
-	file, err := os.OpenFile(c.LogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+	file, err := os.OpenFile(c.LogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open log file: %w", err)
 	}
