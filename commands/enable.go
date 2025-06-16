@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ophis/config"
+	"github.com/ophis/commands/config/claude"
 	"github.com/spf13/cobra"
 )
 
@@ -98,7 +98,7 @@ func enableMCPServer(flags *EnableCommandFlags) error {
 	}
 
 	// Create config manager
-	configManager := config.NewClaudeConfigManager(flags.ConfigPath)
+	configManager := claude.NewClaudeConfigManager(flags.ConfigPath)
 
 	// Determine server name
 	serverName := flags.ServerName
@@ -126,7 +126,7 @@ func enableMCPServer(flags *EnableCommandFlags) error {
 	}
 
 	// Build server configuration
-	server := config.MCPServer{
+	server := claude.MCPServer{
 		Command: executablePath,
 		Args:    []string{"mcp", "start"},
 	}
@@ -157,7 +157,7 @@ func enableMCPServer(flags *EnableCommandFlags) error {
 
 func disableMCPServer(flags *EnableCommandFlags) error {
 	// Create config manager
-	configManager := config.NewClaudeConfigManager(flags.ConfigPath)
+	configManager := claude.NewClaudeConfigManager(flags.ConfigPath)
 
 	// Determine server name
 	serverName := flags.ServerName
@@ -205,7 +205,7 @@ func disableMCPServer(flags *EnableCommandFlags) error {
 
 func listMCPServers(flags *EnableCommandFlags) error {
 	// Create config manager
-	configManager := config.NewClaudeConfigManager(flags.ConfigPath)
+	configManager := claude.NewClaudeConfigManager(flags.ConfigPath)
 
 	// Load config
 	claudeConfig, err := configManager.LoadConfig()
