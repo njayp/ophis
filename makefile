@@ -1,15 +1,23 @@
-.PHONY: gen
-gen:
+.PHONY: up
+up:
 	go get -u ./...
 	go mod tidy
-	go generate ./...
-	go vet ./...
-	go test ./...
 
-.PHONY: build
-build: gen
-	go build -o bin/ ./...
+.PHONY: gen
+gen:
+	go generate ./...
+
+.PHONY: lint
+lint: 
+	golangci-lint run
 
 .PHONY: test
 test:
-	go test -v ./...
+	go test ./...
+
+.PHONY: build
+build:
+	go build -o bin/ ./...
+
+.PHONY: all
+all: up gen lint test build
