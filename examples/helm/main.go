@@ -1,11 +1,11 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"os"
 
 	"github.com/ophis/bridge"
-	"github.com/ophis/commands"
-	"github.com/spf13/cobra"
 )
 
 // Configuration constants
@@ -15,22 +15,19 @@ const (
 )
 
 func main() {
-	// Create the root command
-	rootCmd := &cobra.Command{
-		Use:   "helm",
-		Short: "The Helm package manager for Kubernetes",
-		Long:  `The Helm package manager for Kubernetes with MCP support`,
-	}
+	// Parse command line flags
+	p := flag.String("loglevel", "", "slog log level")
+	flag.Parse()
+	loglevel := *p
 
-	// Add the MCP command as a subcommand
-	mcpConfig := &bridge.MCPCommandConfig{
+	bridge := bridge.NewCobraToMCPBridge(&HelmCommandFactory{}, &bridge.MCPCommandConfig{
 		AppName:    AppName,
 		AppVersion: AppVersion,
-	}
-	rootCmd.AddCommand(commands.MCPCommand(&HelmCommandFactory{}, mcpConfig))
+		LogLevel:   loglevel,
+	})
 
-	// Execute the root command
-	if err := rootCmd.Execute(); err != nil {
+	if err := bridge.StartServer(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error starting server: %v\n", err)
 		os.Exit(1)
 	}
 }
