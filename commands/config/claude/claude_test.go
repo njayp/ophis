@@ -117,7 +117,7 @@ func TestDefaultConfigPaths(t *testing.T) {
 
 func TestClaudeConfigJSON(t *testing.T) {
 	// Test JSON marshaling/unmarshaling
-	config := &ClaudeConfig{
+	config := &Config{
 		MCPServers: map[string]MCPServer{
 			"test": {
 				Command: "/usr/bin/test",
@@ -132,7 +132,7 @@ func TestClaudeConfigJSON(t *testing.T) {
 		t.Fatalf("Failed to marshal config: %v", err)
 	}
 
-	var unmarshaled ClaudeConfig
+	var unmarshaled Config
 	err = json.Unmarshal(data, &unmarshaled)
 	if err != nil {
 		t.Fatalf("Failed to unmarshal config: %v", err)

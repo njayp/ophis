@@ -1,4 +1,4 @@
-// Package config provides utilities for managing Claude Desktop MCP server configuration.
+// Package claude provides utilities for managing Claude Desktop MCP server configuration.
 // It handles reading, writing, and modifying the Claude configuration file that defines MCP servers.
 package claude
 
@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 )
 
-// ClaudeConfig represents the structure of Claude's desktop configuration
-type ClaudeConfig struct {
+// Config represents the structure of Claude's desktop configuration
+type Config struct {
 	MCPServers map[string]MCPServer `json:"mcpServers"`
 }
 
@@ -21,27 +21,27 @@ type MCPServer struct {
 	Env     map[string]string `json:"env,omitempty"`
 }
 
-// ClaudeConfigManager handles Claude MCP configuration file operations
-type ClaudeConfigManager struct {
+// ConfigManager handles Claude MCP configuration file operations
+type ConfigManager struct {
 	configPath string
 }
 
 // NewClaudeConfigManager creates a new config manager with the default or specified path
-func NewClaudeConfigManager(configPath string) *ClaudeConfigManager {
+func NewClaudeConfigManager(configPath string) *ConfigManager {
 	if configPath == "" {
 		configPath = getDefaultClaudeConfigPath()
 	}
-	return &ClaudeConfigManager{
+	return &ConfigManager{
 		configPath: configPath,
 	}
 }
 
 // LoadConfig loads the Claude configuration from file
-func (cm *ClaudeConfigManager) LoadConfig() (*ClaudeConfig, error) {
+func (cm *ConfigManager) LoadConfig() (*Config, error) {
 	// Check if config file exists
 	if _, err := os.Stat(cm.configPath); os.IsNotExist(err) {
 		// Return empty config if file doesn't exist
-		return &ClaudeConfig{
+		return &Config{
 			MCPServers: make(map[string]MCPServer),
 		}, nil
 	}
@@ -51,7 +51,7 @@ func (cm *ClaudeConfigManager) LoadConfig() (*ClaudeConfig, error) {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
 
-	var config ClaudeConfig
+	var config Config
 	if err := json.Unmarshal(data, &config); err != nil {
 		return nil, fmt.Errorf("failed to parse config file: %w", err)
 	}
@@ -65,7 +65,7 @@ func (cm *ClaudeConfigManager) LoadConfig() (*ClaudeConfig, error) {
 }
 
 // SaveConfig saves the Claude configuration to file
-func (cm *ClaudeConfigManager) SaveConfig(config *ClaudeConfig) error {
+func (cm *ConfigManager) SaveConfig(config *Config) error {
 	// Ensure the directory exists
 	if err := os.MkdirAll(filepath.Dir(cm.configPath), 0o755); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
@@ -84,7 +84,7 @@ func (cm *ClaudeConfigManager) SaveConfig(config *ClaudeConfig) error {
 }
 
 // AddServer adds or updates an MCP server configuration
-func (cm *ClaudeConfigManager) AddServer(name string, server MCPServer) error {
+func (cm *ConfigManager) AddServer(name string, server MCPServer) error {
 	config, err := cm.LoadConfig()
 	if err != nil {
 		return err
@@ -95,7 +95,7 @@ func (cm *ClaudeConfigManager) AddServer(name string, server MCPServer) error {
 }
 
 // RemoveServer removes an MCP server configuration
-func (cm *ClaudeConfigManager) RemoveServer(name string) error {
+func (cm *ConfigManager) RemoveServer(name string) error {
 	config, err := cm.LoadConfig()
 	if err != nil {
 		return err
@@ -106,7 +106,7 @@ func (cm *ClaudeConfigManager) RemoveServer(name string) error {
 }
 
 // HasServer checks if a server with the given name exists
-func (cm *ClaudeConfigManager) HasServer(name string) (bool, error) {
+func (cm *ConfigManager) HasServer(name string) (bool, error) {
 	config, err := cm.LoadConfig()
 	if err != nil {
 		return false, err
@@ -117,12 +117,12 @@ func (cm *ClaudeConfigManager) HasServer(name string) (bool, error) {
 }
 
 // GetConfigPath returns the path to the Claude configuration file being used
-func (cm *ClaudeConfigManager) GetConfigPath() string {
+func (cm *ConfigManager) GetConfigPath() string {
 	return cm.configPath
 }
 
 // BackupConfig creates a backup of the current configuration file
-func (cm *ClaudeConfigManager) BackupConfig() error {
+func (cm *ConfigManager) BackupConfig() error {
 	if _, err := os.Stat(cm.configPath); os.IsNotExist(err) {
 		// No config file to backup
 		return nil
