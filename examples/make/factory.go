@@ -70,10 +70,13 @@ func createMakeTargetCommand(target, short, long string) *cobra.Command {
 		Short: short,
 		Long:  long,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			makeArgs := []string{target}
+			makeArgs := []string{}
 
 			// Add flags to make arguments
 			makeArgs = appendMakeFlags(cmd, makeArgs)
+
+			// Add target
+			makeArgs = append(makeArgs, target)
 
 			// Add any additional positional arguments
 			makeArgs = append(makeArgs, args...)

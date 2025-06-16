@@ -16,7 +16,7 @@ const (
 
 func main() {
 	// Parse command line flags
-	p := flag.String("loglevel", "", "slog log level")
+	p := flag.String("log-level", "", "slog log level")
 	flag.Parse()
 	loglevel := *p
 
