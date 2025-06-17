@@ -2,6 +2,7 @@ package commands
 
 import (
 	"github.com/njayp/ophis/bridge"
+	"github.com/njayp/ophis/commands/claude"
 	"github.com/spf13/cobra"
 )
 
@@ -13,6 +14,6 @@ func MCPCommand(factory bridge.CommandFactory, config *bridge.MCPCommandConfig) 
 	}
 
 	// Add subcommands
-	cmd.AddCommand(StartCommand(factory, config), EnableCommand(), DisableCommand(), ListCommand())
+	cmd.AddCommand(StartCommand(factory, config), claude.ClaudeCommand())
 	return cmd
 }

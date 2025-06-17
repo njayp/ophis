@@ -1,13 +1,13 @@
 // Package commands provides Cobra command implementations for MCP server management.
 // It includes commands to enable, disable, and list MCP servers in Claude's configuration.
-package commands
+package claude
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
 
-	"github.com/njayp/ophis/commands/claude"
+	"github.com/njayp/ophis/commands/claude/config"
 	"github.com/spf13/cobra"
 )
 
@@ -98,7 +98,7 @@ func enableMCPServer(flags *EnableCommandFlags) error {
 	}
 
 	// Create config manager
-	configManager := claude.NewClaudeConfigManager(flags.ConfigPath)
+	configManager := config.NewClaudeConfigManager(flags.ConfigPath)
 
 	// Determine server name
 	serverName := flags.ServerName
@@ -126,7 +126,7 @@ func enableMCPServer(flags *EnableCommandFlags) error {
 	}
 
 	// Build server configuration
-	server := claude.MCPServer{
+	server := config.MCPServer{
 		Command: executablePath,
 		Args:    []string{"mcp", "start"},
 	}
@@ -157,7 +157,7 @@ func enableMCPServer(flags *EnableCommandFlags) error {
 
 func disableMCPServer(flags *EnableCommandFlags) error {
 	// Create config manager
-	configManager := claude.NewClaudeConfigManager(flags.ConfigPath)
+	configManager := config.NewClaudeConfigManager(flags.ConfigPath)
 
 	// Determine server name
 	serverName := flags.ServerName
@@ -205,7 +205,7 @@ func disableMCPServer(flags *EnableCommandFlags) error {
 
 func listMCPServers(flags *EnableCommandFlags) error {
 	// Create config manager
-	configManager := claude.NewClaudeConfigManager(flags.ConfigPath)
+	configManager := config.NewClaudeConfigManager(flags.ConfigPath)
 
 	// Load config
 	claudeConfig, err := configManager.LoadConfig()

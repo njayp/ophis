@@ -117,9 +117,9 @@ func (b *CobraToMCPBridge) flagMapFromCmd(cmd *cobra.Command) map[string]any {
 
 // getCommandDescription creates a description for the MCP tool from the Cobra command
 func (b *CobraToMCPBridge) getCommandDescription(cmd *cobra.Command, parentPath string) string {
-	desc := cmd.Short
+	desc := cmd.Long
 	if desc == "" {
-		desc = cmd.Long
+		desc = cmd.Short
 	}
 	if desc == "" {
 		cmdPath := cmd.Name()
@@ -132,10 +132,6 @@ func (b *CobraToMCPBridge) getCommandDescription(cmd *cobra.Command, parentPath 
 	// Add usage information
 	if cmd.Use != "" {
 		desc += fmt.Sprintf("\n\nUsage: %s", cmd.Use)
-	}
-
-	if cmd.Long != "" && cmd.Long != cmd.Short {
-		desc += fmt.Sprintf("\n\n%s", cmd.Long)
 	}
 
 	b.logger.Debug("Command description", "name", cmd.Name(), "description", desc)
