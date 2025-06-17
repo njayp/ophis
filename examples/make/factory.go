@@ -1,5 +1,5 @@
 // Package main provides an example MCP server that exposes make commands.
-// This demonstrates how to use ophis to convert a make-based build system into an MCP server.
+// This demonstrates how to use njayp/ophis to convert a make-based build system into an MCP server.
 package main
 
 import (
@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/ophis/bridge"
-	"github.com/ophis/commands"
+	"github.com/njayp/ophis/bridge"
+	"github.com/njayp/ophis/commands"
 	"github.com/spf13/cobra"
 )
 

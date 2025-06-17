@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ophis/bridge"
+	"github.com/njayp/ophis/bridge"
 )
 
 // Configuration constants

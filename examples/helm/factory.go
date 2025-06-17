@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/ophis/bridge"
+	"github.com/njayp/ophis/bridge"
 	"github.com/spf13/cobra"
 	helmcmd "helm.sh/helm/v4/pkg/cmd"
 )

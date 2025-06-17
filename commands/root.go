@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"github.com/ophis/bridge"
+	"github.com/njayp/ophis/bridge"
 	"github.com/spf13/cobra"
 )
 

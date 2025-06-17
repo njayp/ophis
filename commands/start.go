@@ -3,7 +3,7 @@ package commands
 import (
 	"fmt"
 
-	"github.com/ophis/bridge"
+	"github.com/njayp/ophis/bridge"
 	"github.com/spf13/cobra"
 )
 

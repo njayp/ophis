@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/ophis/bridge"
+	"github.com/njayp/ophis/bridge"
 )
 
 func TestHelmCommandFactoryImplementation(t *testing.T) {
