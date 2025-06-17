@@ -84,6 +84,7 @@ func (b *CobraToMCPBridge) argsDescFromCmd(cmd *cobra.Command) string {
 func (b *CobraToMCPBridge) flagMapFromCmd(cmd *cobra.Command) map[string]any {
 	// map for tool object
 	flagMap := map[string]any{}
+
 	// add local flags to flag map
 	cmd.LocalFlags().VisitAll(func(flag *pflag.Flag) {
 		if flag.Hidden {
@@ -93,6 +94,7 @@ func (b *CobraToMCPBridge) flagMapFromCmd(cmd *cobra.Command) map[string]any {
 		b.logger.Debug("Registering Tool Parameter", slog.String("cmd", cmd.Name()), slog.String("name", flag.Name))
 		flagMap[flag.Name] = flagToolOption(flag)
 	})
+
 	// add inherited flags to flag map
 	cmd.InheritedFlags().VisitAll(func(flag *pflag.Flag) {
 		if flag.Hidden {
@@ -105,6 +107,7 @@ func (b *CobraToMCPBridge) flagMapFromCmd(cmd *cobra.Command) map[string]any {
 			flagMap[flag.Name] = flagToolOption(flag)
 		}
 	})
+
 	return flagMap
 }
 

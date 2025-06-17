@@ -18,7 +18,7 @@ func TestHelmCommandFactoryImplementation(t *testing.T) {
 	})
 
 	t.Run("registration command has expected structure", func(t *testing.T) {
-		cmd := factory.CreateRegistrationCommand()
+		cmd := factory.RegistrationCommand()
 
 		// Check that it's a helm command
 		if !strings.Contains(cmd.Use, "helm") && cmd.Name() != "helm" {
@@ -45,8 +45,8 @@ func TestHelmCommandFactoryImplementation(t *testing.T) {
 	})
 
 	t.Run("execution command creates fresh instance", func(t *testing.T) {
-		cmd1, _ := factory.CreateCommand()
-		cmd2, _ := factory.CreateCommand()
+		cmd1, _ := factory.New()
+		cmd2, _ := factory.New()
 
 		// These should be different instances
 		if cmd1 == cmd2 {
@@ -55,7 +55,7 @@ func TestHelmCommandFactoryImplementation(t *testing.T) {
 	})
 
 	t.Run("execution function returns proper result", func(t *testing.T) {
-		_, exec := factory.CreateCommand()
+		_, exec := factory.New()
 
 		if exec == nil {
 			t.Fatal("Expected execution function")
@@ -82,7 +82,7 @@ func TestHelmCommandExecution(t *testing.T) {
 	factory := &HelmCommandFactory{}
 
 	t.Run("help command", func(t *testing.T) {
-		cmd, exec := factory.CreateCommand()
+		cmd, exec := factory.New()
 
 		// Set args for help
 		cmd.SetArgs([]string{"help"})
@@ -104,7 +104,7 @@ func TestHelmCommandExecution(t *testing.T) {
 	})
 
 	t.Run("version command", func(t *testing.T) {
-		cmd, exec := factory.CreateCommand()
+		cmd, exec := factory.New()
 
 		// Set args for version
 		cmd.SetArgs([]string{"version"})
@@ -132,8 +132,8 @@ func TestWithOutput(t *testing.T) {
 	factory := &HelmCommandFactory{}
 
 	// Test that multiple command creations produce independent output
-	cmd1, exec1 := factory.CreateCommand()
-	cmd2, exec2 := factory.CreateCommand()
+	cmd1, exec1 := factory.New()
+	cmd2, exec2 := factory.New()
 
 	cmd1.SetArgs([]string{"help"})
 	cmd2.SetArgs([]string{"version"})

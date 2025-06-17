@@ -15,7 +15,7 @@ func (b *CobraToMCPBridge) executeCommand(ctx context.Context, cmdPath string, r
 	message := request.GetArguments()
 
 	// get a new instance of the same cmd
-	cmd, exec := b.commandFactory.CreateCommand()
+	cmd, exec := b.commandFactory.New()
 
 	// args must be added to root cmd
 	b.loadArgs(cmd, cmdPath, message)

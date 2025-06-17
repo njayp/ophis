@@ -24,7 +24,8 @@ type MCPCommandConfig struct {
 	LogLevel   string
 }
 
-// NewSlogger makes a new slog.logger that writes to file
+// NewSlogger makes a new slog.logger that writes to file. Don't give the user
+// the option to write to stdout, because that causes errors.
 func (c *MCPCommandConfig) NewSlogger() (*slog.Logger, error) {
 	// if logfile not set, use usercache
 	if c.LogFile == "" {

@@ -378,7 +378,7 @@ func TestExecuteCommandContextCancellation(t *testing.T) {
 // PanicCommandFactory creates commands that panic during execution
 type PanicCommandFactory struct{}
 
-func (f *PanicCommandFactory) CreateRegistrationCommand() *cobra.Command {
+func (f *PanicCommandFactory) RegistrationCommand() *cobra.Command {
 	return &cobra.Command{
 		Use: "panic",
 		Run: func(_ *cobra.Command, _ []string) {
@@ -387,7 +387,7 @@ func (f *PanicCommandFactory) CreateRegistrationCommand() *cobra.Command {
 	}
 }
 
-func (f *PanicCommandFactory) CreateCommand() (*cobra.Command, CommandExecFunc) {
+func (f *PanicCommandFactory) New() (*cobra.Command, CommandExecFunc) {
 	cmd := &cobra.Command{
 		Use: "panic",
 		Run: func(_ *cobra.Command, _ []string) {

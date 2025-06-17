@@ -13,16 +13,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// MakeCommandFactory implements the bridge.CommandFactory interface for make commands.
-type MakeCommandFactory struct{}
-
-// CreateRegistrationCommand creates a command tree for MCP tool registration.
-func (f *MakeCommandFactory) CreateRegistrationCommand() *cobra.Command {
-	return createMakeCommands()
+// CommandFactory implements the bridge.CommandFactory interface for make commands.
+type CommandFactory struct {
+	registrationCmd *cobra.Command
 }
 
-// CreateCommand creates a fresh command instance and its execution function.
-func (f *MakeCommandFactory) CreateCommand() (*cobra.Command, bridge.CommandExecFunc) {
+// RegistrationCommand creates a command tree for MCP tool registration.
+func (f *CommandFactory) RegistrationCommand() *cobra.Command {
+	return f.registrationCmd
+}
+
+// New creates a fresh command instance and its execution function.
+func (f *CommandFactory) New() (*cobra.Command, bridge.CommandExecFunc) {
 	cmd := createMakeCommands()
 
 	execFunc := func(ctx context.Context) *mcp.CallToolResult {
@@ -47,7 +49,9 @@ func createMakeCommands() *cobra.Command {
 		Long:  `Execute make targets and build commands`,
 	}
 
-	mcpCmd := commands.MCPCommand(&MakeCommandFactory{}, &bridge.MCPCommandConfig{
+	mcpCmd := commands.MCPCommand(&CommandFactory{
+		registrationCmd: rootCmd,
+	}, &bridge.MCPCommandConfig{
 		AppName:    AppName,
 		AppVersion: AppVersion,
 	})

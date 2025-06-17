@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ophis/commands/config/claude"
+	"github.com/ophis/commands/claude"
 	"github.com/spf13/cobra"
 )
 

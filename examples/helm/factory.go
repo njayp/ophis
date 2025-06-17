@@ -16,8 +16,8 @@ import (
 // HelmCommandFactory implements the bridge.CommandFactory interface for Helm commands.
 type HelmCommandFactory struct{}
 
-// CreateRegistrationCommand creates a Helm command tree for MCP tool registration.
-func (f *HelmCommandFactory) CreateRegistrationCommand() *cobra.Command {
+// RegistrationCommand creates a Helm command tree for MCP tool registration.
+func (f *HelmCommandFactory) RegistrationCommand() *cobra.Command {
 	cmd, err := helmcmd.NewRootCmd(nil, nil)
 	if err != nil {
 		panic(err)
@@ -26,8 +26,8 @@ func (f *HelmCommandFactory) CreateRegistrationCommand() *cobra.Command {
 	return cmd
 }
 
-// CreateCommand creates a fresh Helm command instance and its execution function.
-func (f *HelmCommandFactory) CreateCommand() (*cobra.Command, bridge.CommandExecFunc) {
+// New creates a fresh Helm command instance and its execution function.
+func (f *HelmCommandFactory) New() (*cobra.Command, bridge.CommandExecFunc) {
 	var output strings.Builder
 
 	cmd, err := helmcmd.NewRootCmd(&output, nil)

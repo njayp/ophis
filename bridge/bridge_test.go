@@ -23,7 +23,7 @@ func NewTestCommandFactory() *TestCommandFactory {
 	}
 }
 
-func (f *TestCommandFactory) CreateRegistrationCommand() *cobra.Command {
+func (f *TestCommandFactory) RegistrationCommand() *cobra.Command {
 	if f.registrationCmd != nil {
 		return f.registrationCmd
 	}
@@ -55,9 +55,9 @@ func (f *TestCommandFactory) CreateRegistrationCommand() *cobra.Command {
 	return rootCmd
 }
 
-func (f *TestCommandFactory) CreateCommand() (*cobra.Command, CommandExecFunc) {
+func (f *TestCommandFactory) New() (*cobra.Command, CommandExecFunc) {
 	f.output.Reset() // Clear output for fresh execution
-	cmd := f.CreateRegistrationCommand()
+	cmd := f.RegistrationCommand()
 
 	exec := func(ctx context.Context) *mcp.CallToolResult {
 		if err := cmd.ExecuteContext(ctx); err != nil {
@@ -187,7 +187,7 @@ type MockCommandFactory struct {
 	returnNilCmd      bool
 }
 
-func (m *MockCommandFactory) CreateRegistrationCommand() *cobra.Command {
+func (m *MockCommandFactory) RegistrationCommand() *cobra.Command {
 	if m.registrationPanic {
 		panic("registration panic")
 	}
@@ -197,7 +197,7 @@ func (m *MockCommandFactory) CreateRegistrationCommand() *cobra.Command {
 	return &cobra.Command{Use: "mock"}
 }
 
-func (m *MockCommandFactory) CreateCommand() (*cobra.Command, CommandExecFunc) {
+func (m *MockCommandFactory) New() (*cobra.Command, CommandExecFunc) {
 	if m.executionPanic {
 		panic("execution panic")
 	}

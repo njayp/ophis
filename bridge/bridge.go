@@ -17,8 +17,8 @@ type CommandExecFunc func(ctx context.Context) *mcp.CallToolResult
 // CommandFactory is an interface for creating Cobra commands for registration and execution.
 // It provides a factory pattern to ensure fresh command instances for each execution.
 type CommandFactory interface {
-	CreateRegistrationCommand() *cobra.Command
-	CreateCommand() (*cobra.Command, CommandExecFunc)
+	RegistrationCommand() *cobra.Command
+	New() (*cobra.Command, CommandExecFunc)
 }
 
 // CobraToMCPBridge converts a Cobra CLI application to an MCP server
@@ -54,7 +54,7 @@ func NewCobraToMCPBridge(factory CommandFactory, config *MCPCommandConfig) *Cobr
 		),
 	}
 
-	b.registerCommands(b.commandFactory.CreateRegistrationCommand(), "")
+	b.registerCommands(b.commandFactory.RegistrationCommand(), "")
 	return b
 }
 
