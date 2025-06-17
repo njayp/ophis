@@ -13,6 +13,10 @@ import (
 
 // registerCommands recursively registers all Cobra commands as MCP tools
 func (b *CobraToMCPBridge) registerCommands(cmd *cobra.Command, parentPath string) {
+	if cmd == nil {
+		b.logger.Error("Cannot register nil command")
+		return
+	}
 	// Create the tool name
 	toolName := cmd.Name()
 	if parentPath != "" {
@@ -144,8 +148,38 @@ func flagToolOption(flag *pflag.Flag) map[string]string {
 		description = fmt.Sprintf("Flag: %s", flag.Name)
 	}
 
-	return map[string]string{
-		"type":        flag.Value.Type(),
-		"description": description,
+	// Improve type detection for better MCP tool parameter definitions
+	flagType := flag.Value.Type()
+	switch flagType {
+	case "stringSlice", "stringArray":
+		return map[string]string{
+			"type":        "stringArray",
+			"description": description,
+		}
+	case "intSlice":
+		return map[string]string{
+			"type":        "intArray",
+			"description": description,
+		}
+	case "bool":
+		return map[string]string{
+			"type":        "boolean",
+			"description": description,
+		}
+	case "int", "int8", "int16", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64":
+		return map[string]string{
+			"type":        "integer",
+			"description": description,
+		}
+	case "float32", "float64":
+		return map[string]string{
+			"type":        "number",
+			"description": description,
+		}
+	default:
+		return map[string]string{
+			"type":        "string",
+			"description": description,
+		}
 	}
 }

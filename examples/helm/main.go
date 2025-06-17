@@ -20,11 +20,15 @@ func main() {
 	flag.Parse()
 	loglevel := *p
 
-	bridge := bridge.NewCobraToMCPBridge(&HelmCommandFactory{}, &bridge.MCPCommandConfig{
+	bridge, err := bridge.NewCobraToMCPBridge(&HelmCommandFactory{}, &bridge.MCPCommandConfig{
 		AppName:    AppName,
 		AppVersion: AppVersion,
 		LogLevel:   loglevel,
 	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error creating bridge: %v\n", err)
+		os.Exit(1)
+	}
 
 	if err := bridge.StartServer(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error starting server: %v\n", err)

@@ -24,9 +24,24 @@ type MCPCommandConfig struct {
 	LogLevel   string
 }
 
+// Validate checks if the configuration is valid
+func (c *MCPCommandConfig) Validate() error {
+	if c == nil {
+		return fmt.Errorf("config cannot be nil")
+	}
+	if c.AppName == "" {
+		return fmt.Errorf("app name cannot be empty")
+	}
+	// LogLevel and LogFile are optional, so no validation needed
+	return nil
+}
+
 // NewSlogger makes a new slog.logger that writes to file. Don't give the user
 // the option to write to stdout, because that causes errors.
 func (c *MCPCommandConfig) NewSlogger() (*slog.Logger, error) {
+	if err := c.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid config: %w", err)
+	}
 	// if logfile not set, use usercache
 	if c.LogFile == "" {
 		// Get the cache directory

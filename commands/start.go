@@ -1,6 +1,8 @@
 package commands
 
 import (
+	"fmt"
+
 	"github.com/ophis/bridge"
 	"github.com/spf13/cobra"
 )
@@ -31,7 +33,10 @@ by AI assistants and other MCP-compatible clients.`,
 			}
 
 			// Create and start the bridge
-			bridge := bridge.NewCobraToMCPBridge(factory, config)
+			bridge, err := bridge.NewCobraToMCPBridge(factory, config)
+			if err != nil {
+				return fmt.Errorf("failed to create bridge: %w", err)
+			}
 			return bridge.StartServer()
 		},
 	}

@@ -38,6 +38,12 @@ func (b *CobraToMCPBridge) executeCommand(ctx context.Context, cmdPath string, r
 		}
 	}
 
+	// Check if context is already cancelled
+	if err := ctx.Err(); err != nil {
+		b.logger.Warn("Context cancelled before execution", "error", err)
+		return mcp.NewToolResultError("request cancelled")
+	}
+
 	// Execute the command's Run function with proper error recovery
 	var result *mcp.CallToolResult
 	func() {
@@ -45,7 +51,7 @@ func (b *CobraToMCPBridge) executeCommand(ctx context.Context, cmdPath string, r
 		defer func() {
 			if r := recover(); r != nil {
 				b.logger.Error("Command execution panicked", "command", cmd.Name(), "panic", r)
-				result = mcp.NewToolResultError("unexpected panic")
+				result = mcp.NewToolResultError("command execution failed due to unexpected error")
 			}
 		}()
 
@@ -77,6 +83,13 @@ func (b *CobraToMCPBridge) loadArgs(cmd *cobra.Command, cmdPath string, message 
 }
 
 func (b *CobraToMCPBridge) loadFlagsFromMap(cmd *cobra.Command, flagMap map[string]any) error {
+	if cmd == nil {
+		return fmt.Errorf("command cannot be nil")
+	}
+	if flagMap == nil {
+		return nil // No flags to set
+	}
+
 	for k, v := range flagMap {
 		b.logger.Debug("setting flag", slog.String("cmd", cmd.Name()), slog.String("flag", k))
 		flag := cmd.Flag(k)

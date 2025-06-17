@@ -126,37 +126,36 @@ func TestNewCobraToMCPBridge(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.shouldPanic {
-				defer func() {
-					if r := recover(); r != nil {
-						if !strings.Contains(r.(string), tt.panicMsg) {
-							t.Errorf("Expected panic message to contain '%s', got '%v'", tt.panicMsg, r)
-						}
-					} else {
-						t.Error("Expected panic but none occurred")
-					}
-				}()
-			}
-
-			bridge := NewCobraToMCPBridge(tt.factory, &MCPCommandConfig{
+			bridge, err := NewCobraToMCPBridge(tt.factory, &MCPCommandConfig{
 				AppName:    tt.appName,
 				AppVersion: tt.version,
 			})
 
-			if !tt.shouldPanic {
-				if bridge == nil {
-					t.Error("Expected bridge to be created")
-					return
+			if tt.shouldPanic {
+				if err == nil {
+					t.Error("Expected error but got none")
+				} else if !strings.Contains(err.Error(), tt.panicMsg) {
+					t.Errorf("Expected error message to contain '%s', got '%v'", tt.panicMsg, err)
 				}
-				if bridge.commandFactory == nil {
-					t.Error("Expected commandFactory to be set")
-				}
-				if bridge.server == nil {
-					t.Error("Expected server to be set")
-				}
-				if bridge.logger == nil {
-					t.Error("Expected logger to be set")
-				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("Unexpected error: %v", err)
+				return
+			}
+			if bridge == nil {
+				t.Error("Expected bridge to be created")
+				return
+			}
+			if bridge.commandFactory == nil {
+				t.Error("Expected commandFactory to be set")
+			}
+			if bridge.server == nil {
+				t.Error("Expected server to be set")
+			}
+			if bridge.logger == nil {
+				t.Error("Expected logger to be set")
 			}
 		})
 	}
@@ -165,13 +164,15 @@ func TestNewCobraToMCPBridge(t *testing.T) {
 func TestBridgeIntegration(t *testing.T) {
 	factory := NewTestCommandFactory()
 
-	bridge := NewCobraToMCPBridge(factory, &MCPCommandConfig{
+	bridge, err := NewCobraToMCPBridge(factory, &MCPCommandConfig{
 		AppName:    "test",
 		AppVersion: "test",
 	})
-
+	if err != nil {
+		t.Fatalf("Failed to create bridge: %v", err)
+	}
 	if bridge == nil {
-		t.Fatal("Failed to create bridge")
+		t.Fatal("Bridge should not be nil")
 	}
 
 	// Test that the bridge properly registers commands
@@ -210,35 +211,27 @@ func (m *MockCommandFactory) New() (*cobra.Command, CommandExecFunc) {
 
 func TestBridgeWithMockFactory(t *testing.T) {
 	t.Run("registration panic", func(t *testing.T) {
-		defer func() {
-			if r := recover(); r == nil {
-				t.Error("Expected panic during registration")
-			}
-		}()
-
 		factory := &MockCommandFactory{registrationPanic: true}
-		NewCobraToMCPBridge(factory, &MCPCommandConfig{
+		_, err := NewCobraToMCPBridge(factory, &MCPCommandConfig{
 			AppName:    "test",
 			AppVersion: "test",
 		})
+		// Should handle panic gracefully and return error
+		if err == nil {
+			t.Error("Expected error from panicking factory")
+		}
 	})
 
 	t.Run("nil command from factory", func(t *testing.T) {
-		// This might cause issues in registration - the bridge should handle this gracefully
+		// This should cause validation error now
 		factory := &MockCommandFactory{returnNilCmd: true}
 
-		// This might panic or create an incomplete bridge
-		// The behavior depends on how the registration handles nil commands
-		defer func() {
-			_ = recover() // Ignore panics for this test
-		}()
-
-		bridge := NewCobraToMCPBridge(factory, &MCPCommandConfig{
+		_, err := NewCobraToMCPBridge(factory, &MCPCommandConfig{
 			AppName:    "test",
 			AppVersion: "test",
 		})
-		if bridge != nil {
-			t.Log("Bridge created despite nil command from factory")
+		if err == nil {
+			t.Error("Expected error from nil command factory")
 		}
 	})
 }
