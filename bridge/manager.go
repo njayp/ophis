@@ -20,13 +20,18 @@ type CommandExecFunc func(ctx context.Context) *mcp.CallToolResult
 // It provides a factory pattern to ensure fresh command instances for each execution,
 // preventing state pollution between different MCP tool calls.
 //
-// The factory should implement two methods:
-// - New(): Returns a fresh command instance and execution function for each tool call
+// Implementation Requirements:
+// - Tools(): Must return a stable list of tools derived from your command tree
+// - New(): Must create completely fresh command instances on each call
 type CommandFactory interface {
+	// Tools returns all available MCP tools from your command tree.
+	// This should return a consistent list based on your application's command structure.
 	Tools() []tools.Tool
 
 	// New creates a fresh command instance and returns both the command and
 	// an execution function. This ensures clean state for each tool call.
+	// The returned command should be a completely new instance to prevent
+	// state pollution between concurrent executions.
 	New() (*cobra.Command, CommandExecFunc)
 }
 

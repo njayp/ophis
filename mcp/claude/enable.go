@@ -55,9 +55,12 @@ func enableMCPServer(flags *EnableCommandFlags) error {
 
 	// Validate that the executable exists and is executable
 	if stat, err := os.Stat(executablePath); err != nil {
-		return fmt.Errorf("executable not found: %w", err)
+		if os.IsNotExist(err) {
+			return fmt.Errorf("executable not found at path '%s': ensure the binary is built and accessible", executablePath)
+		}
+		return fmt.Errorf("failed to access executable at '%s': %w", executablePath, err)
 	} else if stat.Mode()&0o111 == 0 {
-		return fmt.Errorf("file is not executable: %s", executablePath)
+		return fmt.Errorf("file at '%s' is not executable: check file permissions", executablePath)
 	}
 
 	// Create config manager

@@ -11,7 +11,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// executeCommand executes the Cobra command using a fresh instance to avoid state pollution
+// executeCommand executes the Cobra command using a fresh instance to avoid state pollution.
+// This method is safe for concurrent execution as it creates a new command instance
+// for each request through the CommandFactory.New() method.
 func (b *Manager) executeCommand(ctx context.Context, tool tools.Tool, request mcp.CallToolRequest) *mcp.CallToolResult {
 	message := request.GetArguments()
 	cmdPath := strings.Split(tool.Tool.Name, "_")
@@ -66,7 +68,7 @@ func (b *Manager) executeCommand(ctx context.Context, tool tools.Tool, request m
 func (b *Manager) loadArgs(cmd *cobra.Command, cmdPath []string, message map[string]any) {
 	var args []string
 
-	// Add command path to args
+	// Add command path to args (skip the root command name)
 	if len(cmdPath) > 1 {
 		args = append(args, cmdPath[1:]...)
 	}
@@ -74,13 +76,28 @@ func (b *Manager) loadArgs(cmd *cobra.Command, cmdPath []string, message map[str
 	// Handle positional arguments from the "args" parameter
 	if argsValue, ok := message[tools.PositionalArgsParam]; ok {
 		if argsStr, ok := argsValue.(string); ok && argsStr != "" {
-			// Split the args string by spaces to get individual arguments
-			args = append(args, strings.Fields(argsStr)...)
+			// Use more sophisticated argument parsing to handle quoted strings
+			// For now, split by spaces (could be enhanced with shell-like parsing)
+			parsedArgs := parseArgumentString(argsStr)
+			args = append(args, parsedArgs...)
 		}
 	}
 
-	b.logger.Debug("Set command arguments", "args", args)
+	b.logger.Debug("Set command arguments", "args", args, "cmdPath", cmdPath)
 	cmd.SetArgs(args)
+}
+
+// parseArgumentString provides basic argument parsing.
+// TODO: Consider using a proper shell-like parser for complex quoting scenarios.
+func parseArgumentString(argsStr string) []string {
+	// Trim whitespace and handle empty string
+	argsStr = strings.TrimSpace(argsStr)
+	if argsStr == "" {
+		return nil
+	}
+
+	// Simple splitting for now - could be enhanced to handle quotes properly
+	return strings.Fields(argsStr)
 }
 
 func (b *Manager) loadFlagsFromMap(cmd *cobra.Command, flagMap map[string]any) error {
@@ -92,16 +109,31 @@ func (b *Manager) loadFlagsFromMap(cmd *cobra.Command, flagMap map[string]any) e
 	}
 
 	for k, v := range flagMap {
+		// Validate flag name
+		if k == "" {
+			b.logger.Warn("Empty flag name provided")
+			continue
+		}
+
 		b.logger.Debug("setting flag", slog.String("cmd", cmd.Name()), slog.String("flag", k))
 		flag := cmd.Flag(k)
 		if flag == nil {
 			b.logger.Error("flag not found", slog.String("cmd", cmd.Name()), slog.String("name", k))
 			continue
 		}
-		err := flag.Value.Set(fmt.Sprintf("%v", v))
+
+		// Convert value to string with better handling
+		var valueStr string
+		if v == nil {
+			valueStr = ""
+		} else {
+			valueStr = fmt.Sprintf("%v", v)
+		}
+
+		err := flag.Value.Set(valueStr)
 		if err != nil {
-			b.logger.Error("Failed to set flag", slog.String("cmd", cmd.Name()), slog.String("key", k), slog.Any("value", v))
-			return fmt.Errorf("%s: failed to set flag %s", cmd.Name(), k)
+			b.logger.Error("Failed to set flag", slog.String("cmd", cmd.Name()), slog.String("key", k), slog.Any("value", v), slog.String("error", err.Error()))
+			return fmt.Errorf("%s: failed to set flag %s to value %v: %w", cmd.Name(), k, v, err)
 		}
 	}
 
