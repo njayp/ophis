@@ -40,7 +40,7 @@ type Manager struct {
 }
 
 // New creates a new bridge instance with validation
-func New(factory CommandFactory, config *MCPCommandConfig) (*Manager, error) {
+func New(factory CommandFactory, config *Config) (*Manager, error) {
 	if factory == nil {
 		return nil, fmt.Errorf("cmdFactory cannot be nil")
 	}
@@ -54,7 +54,7 @@ func New(factory CommandFactory, config *MCPCommandConfig) (*Manager, error) {
 		config.AppVersion = "unknown"
 	}
 
-	logger, err := config.NewSlogger()
+	logger, err := config.newSlogger()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create logger: %w", err)
 	}
@@ -82,7 +82,7 @@ func New(factory CommandFactory, config *MCPCommandConfig) (*Manager, error) {
 		return nil, fmt.Errorf("failed to get registration command: %w", err)
 	}
 
-	b.RegisterTools(tools)
+	b.registerTools(tools)
 	return b, nil
 }
 

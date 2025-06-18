@@ -9,13 +9,13 @@ import (
 func TestMCPCommandConfig_Validate(t *testing.T) {
 	tests := []struct {
 		name        string
-		config      *MCPCommandConfig
+		config      *Config
 		expectError bool
 		errorMsg    string
 	}{
 		{
 			name: "valid config",
-			config: &MCPCommandConfig{
+			config: &Config{
 				AppName:    "test",
 				AppVersion: "1.0.0",
 				LogLevel:   "info",
@@ -30,7 +30,7 @@ func TestMCPCommandConfig_Validate(t *testing.T) {
 		},
 		{
 			name: "empty app name",
-			config: &MCPCommandConfig{
+			config: &Config{
 				AppName:    "",
 				AppVersion: "1.0.0",
 			},
@@ -39,7 +39,7 @@ func TestMCPCommandConfig_Validate(t *testing.T) {
 		},
 		{
 			name: "minimal valid config",
-			config: &MCPCommandConfig{
+			config: &Config{
 				AppName: "test",
 			},
 			expectError: false,
@@ -83,7 +83,7 @@ func TestParseLogLevel(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
-			result := ParseLogLevel(tt.input)
+			result := parseLogLevel(tt.input)
 			if result != tt.expected {
 				t.Errorf("Expected %v, got %v", tt.expected, result)
 			}

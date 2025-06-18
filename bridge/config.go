@@ -8,8 +8,8 @@ import (
 	"strings"
 )
 
-// MCPCommandConfig holds configuration for the MCP command
-type MCPCommandConfig struct {
+// Config holds configuration for the MCP command
+type Config struct {
 	AppName    string
 	AppVersion string
 	LogFile    string
@@ -17,7 +17,7 @@ type MCPCommandConfig struct {
 }
 
 // Validate checks if the configuration is valid
-func (c *MCPCommandConfig) Validate() error {
+func (c *Config) Validate() error {
 	if c == nil {
 		return fmt.Errorf("config cannot be nil")
 	}
@@ -28,9 +28,9 @@ func (c *MCPCommandConfig) Validate() error {
 	return nil
 }
 
-// NewSlogger makes a new slog.logger that writes to file. Don't give the user
+// newSlogger makes a new slog.logger that writes to file. Don't give the user
 // the option to write to stdout, because that causes errors.
-func (c *MCPCommandConfig) NewSlogger() (*slog.Logger, error) {
+func (c *Config) newSlogger() (*slog.Logger, error) {
 	if err := c.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
 	}
@@ -58,7 +58,7 @@ func (c *MCPCommandConfig) NewSlogger() (*slog.Logger, error) {
 
 	// Create handler options
 	opts := &slog.HandlerOptions{
-		Level:     ParseLogLevel(c.LogLevel),
+		Level:     parseLogLevel(c.LogLevel),
 		AddSource: true,
 	}
 
@@ -67,10 +67,10 @@ func (c *MCPCommandConfig) NewSlogger() (*slog.Logger, error) {
 	return slog.New(handler), nil
 }
 
-// ParseLogLevel converts a string log level to slog.Level.
+// parseLogLevel converts a string log level to slog.Level.
 // Supported levels are: debug, info, warn, error (case-insensitive).
 // Defaults to info for unknown levels.
-func ParseLogLevel(level string) slog.Level {
+func parseLogLevel(level string) slog.Level {
 	// Parse log level
 	slogLevel := slog.LevelInfo
 	switch strings.ToLower(level) {

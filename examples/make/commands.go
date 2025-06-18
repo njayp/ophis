@@ -18,7 +18,7 @@ func createMakeCommands() *cobra.Command {
 
 	mcpCmd := commands.MCPCommand(&CommandFactory{
 		rootCmd: rootCmd,
-	}, &bridge.MCPCommandConfig{
+	}, &bridge.Config{
 		AppName:    AppName,
 		AppVersion: AppVersion,
 	})

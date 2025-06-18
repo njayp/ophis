@@ -7,8 +7,8 @@ import (
 	"github.com/njayp/ophis/bridge/tools"
 )
 
-// RegisterTools recursively registers all Cobra commands as MCP tools
-func (b *Manager) RegisterTools(tools []tools.Tool) {
+// registerTools recursively registers all Cobra commands as MCP tools
+func (b *Manager) registerTools(tools []tools.Tool) {
 	for _, tool := range tools {
 		b.registerTool(tool)
 	}

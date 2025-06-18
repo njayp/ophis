@@ -14,7 +14,7 @@ type StartCommandFlags struct {
 }
 
 // StartCommand creates a Cobra command for starting the MCP server.
-func StartCommand(factory bridge.CommandFactory, config *bridge.MCPCommandConfig) *cobra.Command {
+func StartCommand(factory bridge.CommandFactory, config *bridge.Config) *cobra.Command {
 	mcpFlags := &StartCommandFlags{}
 	cmd := &cobra.Command{
 		Use:   "start",
