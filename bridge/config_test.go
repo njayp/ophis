@@ -16,7 +16,7 @@ func TestMCPCommandConfig_Validate(t *testing.T) {
 		{
 			name: "valid config",
 			config: &MCPCommandConfig{
-				AppName:    "test-app",
+				AppName:    "test",
 				AppVersion: "1.0.0",
 				LogLevel:   "info",
 			},

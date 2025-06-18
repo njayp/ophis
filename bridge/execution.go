@@ -7,12 +7,14 @@ import (
 	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/njayp/ophis/bridge/tools"
 	"github.com/spf13/cobra"
 )
 
 // executeCommand executes the Cobra command using a fresh instance to avoid state pollution
-func (b *CobraToMCPBridge) executeCommand(ctx context.Context, cmdPath string, request mcp.CallToolRequest) *mcp.CallToolResult {
+func (b *Manager) executeCommand(ctx context.Context, tool tools.Tool, request mcp.CallToolRequest) *mcp.CallToolResult {
 	message := request.GetArguments()
+	cmdPath := strings.Split(tool.Tool.Name, "_")
 
 	// get a new instance of the same cmd
 	cmd, exec := b.commandFactory.New()
@@ -28,7 +30,7 @@ func (b *CobraToMCPBridge) executeCommand(ctx context.Context, cmdPath string, r
 	}
 
 	// load flag map into cmd
-	flags := message[FlagsParam]
+	flags := message[tools.FlagsParam]
 	b.logger.Debug("flags", "map", flags)
 	flagMap, ok := flags.(map[string]any)
 	if ok {
@@ -61,17 +63,16 @@ func (b *CobraToMCPBridge) executeCommand(ctx context.Context, cmdPath string, r
 	return result
 }
 
-func (b *CobraToMCPBridge) loadArgs(cmd *cobra.Command, cmdPath string, message map[string]any) {
-	fields := strings.Fields(cmdPath)
+func (b *Manager) loadArgs(cmd *cobra.Command, cmdPath []string, message map[string]any) {
 	var args []string
 
 	// Add command path to args
-	if len(fields) > 1 {
-		args = append(args, fields[1:]...)
+	if len(cmdPath) > 1 {
+		args = append(args, cmdPath[1:]...)
 	}
 
 	// Handle positional arguments from the "args" parameter
-	if argsValue, ok := message[PositionalArgsParam]; ok {
+	if argsValue, ok := message[tools.PositionalArgsParam]; ok {
 		if argsStr, ok := argsValue.(string); ok && argsStr != "" {
 			// Split the args string by spaces to get individual arguments
 			args = append(args, strings.Fields(argsStr)...)
@@ -82,7 +83,7 @@ func (b *CobraToMCPBridge) loadArgs(cmd *cobra.Command, cmdPath string, message 
 	cmd.SetArgs(args)
 }
 
-func (b *CobraToMCPBridge) loadFlagsFromMap(cmd *cobra.Command, flagMap map[string]any) error {
+func (b *Manager) loadFlagsFromMap(cmd *cobra.Command, flagMap map[string]any) error {
 	if cmd == nil {
 		return fmt.Errorf("command cannot be nil")
 	}
@@ -107,13 +108,11 @@ func (b *CobraToMCPBridge) loadFlagsFromMap(cmd *cobra.Command, flagMap map[stri
 	return nil
 }
 
-func descendCmdTree(cmd *cobra.Command, cmdPath string) (*cobra.Command, error) {
-	fields := strings.Fields(cmdPath)
-
+func descendCmdTree(cmd *cobra.Command, cmdPath []string) (*cobra.Command, error) {
 	// flags must be set on relevant command
-	if len(fields) > 1 {
+	if len(cmdPath) > 1 {
 		// move to subCommand
-		for _, field := range fields {
+		for _, field := range cmdPath {
 			for _, subCmd := range cmd.Commands() {
 				if field == subCmd.Name() {
 					cmd = subCmd
@@ -125,7 +124,7 @@ func descendCmdTree(cmd *cobra.Command, cmdPath string) (*cobra.Command, error) 
 
 	// verify cmd is set
 	newPath := cmd.CommandPath()
-	if newPath != cmdPath {
+	if newPath != strings.Join(cmdPath, " ") {
 		return nil, fmt.Errorf("command path not recognized: %s", cmdPath)
 	}
 	return cmd, nil

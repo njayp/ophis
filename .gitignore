@@ -36,3 +36,4 @@ bin/
 
 # log files
 *.log
+*.txt

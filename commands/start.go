@@ -33,7 +33,7 @@ by AI assistants and other MCP-compatible clients.`,
 			}
 
 			// Create and start the bridge
-			bridge, err := bridge.NewCobraToMCPBridge(factory, config)
+			bridge, err := bridge.New(factory, config)
 			if err != nil {
 				return fmt.Errorf("failed to create bridge: %w", err)
 			}

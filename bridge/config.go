@@ -8,14 +8,6 @@ import (
 	"strings"
 )
 
-// Constants for MCP parameter names and error messages
-const (
-	MCPCommandName = "mcp"
-	// PositionalArgsParam is the parameter name for positional arguments
-	PositionalArgsParam = "args"
-	FlagsParam          = "flags"
-)
-
 // MCPCommandConfig holds configuration for the MCP command
 type MCPCommandConfig struct {
 	AppName    string

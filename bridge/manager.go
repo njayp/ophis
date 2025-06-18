@@ -9,6 +9,7 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/njayp/ophis/bridge/tools"
 	"github.com/spf13/cobra"
 )
 
@@ -20,30 +21,26 @@ type CommandExecFunc func(ctx context.Context) *mcp.CallToolResult
 // preventing state pollution between different MCP tool calls.
 //
 // The factory should implement two methods:
-// - RegistrationCommand(): Returns a command tree used for MCP tool registration only
 // - New(): Returns a fresh command instance and execution function for each tool call
 type CommandFactory interface {
-	// RegistrationCommand returns a Cobra command tree for MCP tool registration.
-	// This command is used to discover the available commands and their flags.
-	// It should not be executed directly.
-	RegistrationCommand() *cobra.Command
+	Tools() []tools.Tool
 
 	// New creates a fresh command instance and returns both the command and
 	// an execution function. This ensures clean state for each tool call.
 	New() (*cobra.Command, CommandExecFunc)
 }
 
-// CobraToMCPBridge converts a Cobra CLI application to an MCP server.
+// Manager converts a Cobra CLI application to an MCP server.
 // The bridge is thread-safe for concurrent MCP tool calls as it creates
 // fresh command instances for each execution via the CommandFactory.
-type CobraToMCPBridge struct {
+type Manager struct {
 	commandFactory CommandFactory    // Factory function to create fresh command instances
 	server         *server.MCPServer // The MCP server instance
 	logger         *slog.Logger
 }
 
-// NewCobraToMCPBridge creates a new bridge instance with validation
-func NewCobraToMCPBridge(factory CommandFactory, config *MCPCommandConfig) (*CobraToMCPBridge, error) {
+// New creates a new bridge instance with validation
+func New(factory CommandFactory, config *MCPCommandConfig) (*Manager, error) {
 	if factory == nil {
 		return nil, fmt.Errorf("cmdFactory cannot be nil")
 	}
@@ -62,7 +59,7 @@ func NewCobraToMCPBridge(factory CommandFactory, config *MCPCommandConfig) (*Cob
 		return nil, fmt.Errorf("failed to create logger: %w", err)
 	}
 
-	b := &CobraToMCPBridge{
+	b := &Manager{
 		commandFactory: factory,
 		logger:         logger,
 		server: server.NewMCPServer(
@@ -71,28 +68,25 @@ func NewCobraToMCPBridge(factory CommandFactory, config *MCPCommandConfig) (*Cob
 		),
 	}
 
-	registrationCmd, err := func() (cmd *cobra.Command, err error) {
+	tools, err := func() (tools []tools.Tool, err error) {
 		defer func() {
 			if r := recover(); r != nil {
 				err = fmt.Errorf("registration command panicked: %v", r)
-				cmd = nil
+				tools = nil
 			}
 		}()
-		cmd = b.commandFactory.RegistrationCommand()
-		return cmd, err
+		tools = b.commandFactory.Tools()
+		return tools, err
 	}()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get registration command: %w", err)
 	}
-	if registrationCmd == nil {
-		return nil, fmt.Errorf("registration command cannot be nil")
-	}
 
-	b.registerCommands(registrationCmd, "")
+	b.RegisterTools(tools)
 	return b, nil
 }
 
 // StartServer starts the MCP server using stdio transport
-func (b *CobraToMCPBridge) StartServer() error {
+func (b *Manager) StartServer() error {
 	return server.ServeStdio(b.server)
 }
