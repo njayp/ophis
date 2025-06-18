@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// ToolCommand creates a command that outputs available tools to a file
 func ToolCommand(factory bridge.CommandFactory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "tools",

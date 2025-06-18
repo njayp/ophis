@@ -1,4 +1,4 @@
-// Package claude provides utilities for managing Claude Desktop MCP server configuration.
+// Package config provides utilities for managing Claude Desktop MCP server configuration.
 // It handles reading, writing, and modifying the Claude configuration file that defines MCP servers.
 package config
 
@@ -21,23 +21,23 @@ type MCPServer struct {
 	Env     map[string]string `json:"env,omitempty"`
 }
 
-// ConfigManager handles Claude MCP configuration file operations
-type ConfigManager struct {
+// Manager handles Claude MCP configuration file operations
+type Manager struct {
 	configPath string
 }
 
 // NewClaudeConfigManager creates a new config manager with the default or specified path
-func NewClaudeConfigManager(configPath string) *ConfigManager {
+func NewClaudeConfigManager(configPath string) *Manager {
 	if configPath == "" {
 		configPath = getDefaultClaudeConfigPath()
 	}
-	return &ConfigManager{
+	return &Manager{
 		configPath: configPath,
 	}
 }
 
 // LoadConfig loads the Claude configuration from file
-func (cm *ConfigManager) LoadConfig() (*Config, error) {
+func (cm *Manager) LoadConfig() (*Config, error) {
 	// Check if config file exists
 	if _, err := os.Stat(cm.configPath); os.IsNotExist(err) {
 		// Return empty config if file doesn't exist
@@ -65,7 +65,7 @@ func (cm *ConfigManager) LoadConfig() (*Config, error) {
 }
 
 // SaveConfig saves the Claude configuration to file
-func (cm *ConfigManager) SaveConfig(config *Config) error {
+func (cm *Manager) SaveConfig(config *Config) error {
 	// Ensure the directory exists
 	if err := os.MkdirAll(filepath.Dir(cm.configPath), 0o755); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
@@ -84,7 +84,7 @@ func (cm *ConfigManager) SaveConfig(config *Config) error {
 }
 
 // AddServer adds or updates an MCP server configuration
-func (cm *ConfigManager) AddServer(name string, server MCPServer) error {
+func (cm *Manager) AddServer(name string, server MCPServer) error {
 	config, err := cm.LoadConfig()
 	if err != nil {
 		return err
@@ -95,7 +95,7 @@ func (cm *ConfigManager) AddServer(name string, server MCPServer) error {
 }
 
 // RemoveServer removes an MCP server configuration
-func (cm *ConfigManager) RemoveServer(name string) error {
+func (cm *Manager) RemoveServer(name string) error {
 	config, err := cm.LoadConfig()
 	if err != nil {
 		return err
@@ -106,7 +106,7 @@ func (cm *ConfigManager) RemoveServer(name string) error {
 }
 
 // HasServer checks if a server with the given name exists
-func (cm *ConfigManager) HasServer(name string) (bool, error) {
+func (cm *Manager) HasServer(name string) (bool, error) {
 	config, err := cm.LoadConfig()
 	if err != nil {
 		return false, err
@@ -117,12 +117,12 @@ func (cm *ConfigManager) HasServer(name string) (bool, error) {
 }
 
 // GetConfigPath returns the path to the Claude configuration file being used
-func (cm *ConfigManager) GetConfigPath() string {
+func (cm *Manager) GetConfigPath() string {
 	return cm.configPath
 }
 
 // BackupConfig creates a backup of the current configuration file
-func (cm *ConfigManager) BackupConfig() error {
+func (cm *Manager) BackupConfig() error {
 	if _, err := os.Stat(cm.configPath); os.IsNotExist(err) {
 		// No config file to backup
 		return nil

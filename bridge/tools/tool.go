@@ -12,6 +12,7 @@ const (
 	FlagsParam          = "flags"
 )
 
+// Tool represents an MCP tool with its associated metadata
 type Tool struct {
 	Tool mcp.Tool
 	// more fields will likely be necessary in the future

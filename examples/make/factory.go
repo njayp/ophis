@@ -17,7 +17,7 @@ type CommandFactory struct {
 	rootCmd *cobra.Command
 }
 
-// RegistrationCommand creates a command tree for MCP tool registration.
+// Tools returns the list of MCP tools from the command tree.
 func (f *CommandFactory) Tools() []tools.Tool {
 	return tools.FromRootCmd(f.rootCmd)
 }

@@ -4,9 +4,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// ClaudeCommand creates a new Cobra command that starts an MCP server
+// Command creates a new Cobra command that manages Claude MCP configuration
 // This command can be added as a subcommand to any Cobra-based application
-func ClaudeCommand() *cobra.Command {
+func Command() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "claude",
 	}

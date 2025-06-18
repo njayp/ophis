@@ -1,3 +1,5 @@
+// Package tools provides functionality for converting Cobra commands into MCP tools.
+// It handles the registration and metadata generation for command-to-tool conversion.
 package tools
 
 import (
@@ -8,6 +10,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
+// FromRootCmd recursively converts a Cobra command tree into MCP tools
 func FromRootCmd(cmd *cobra.Command) []Tool {
 	return fromCmd(cmd, "", []Tool{})
 }

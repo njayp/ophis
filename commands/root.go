@@ -1,3 +1,5 @@
+// Package commands provides the main MCP command implementations for ophis.
+// It includes commands to start MCP servers and manage tools.
 package commands
 
 import (
@@ -15,6 +17,6 @@ func MCPCommand(factory bridge1.CommandFactory, config *bridge1.MCPCommandConfig
 	}
 
 	// Add subcommands
-	cmd.AddCommand(StartCommand(factory, config), ToolCommand(factory), claude.ClaudeCommand())
+	cmd.AddCommand(StartCommand(factory, config), ToolCommand(factory), claude.Command())
 	return cmd
 }
