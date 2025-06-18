@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
-	bridge1 "github.com/njayp/ophis/bridge"
+	"github.com/njayp/ophis/bridge"
 	"github.com/njayp/ophis/bridge/tools"
 	"github.com/spf13/cobra"
 )
@@ -23,7 +23,7 @@ func (f *CommandFactory) Tools() []tools.Tool {
 }
 
 // New creates a fresh command instance and its execution function.
-func (f *CommandFactory) New() (*cobra.Command, bridge1.CommandExecFunc) {
+func (f *CommandFactory) New() (*cobra.Command, bridge.CommandExecFunc) {
 	cmd := createMakeCommands()
 
 	execFunc := func(ctx context.Context) *mcp.CallToolResult {

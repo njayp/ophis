@@ -1,4 +1,4 @@
-package commands
+package mcp
 
 import (
 	"fmt"
@@ -13,8 +13,8 @@ type StartCommandFlags struct {
 	LogFile  string
 }
 
-// StartCommand creates a Cobra command for starting the MCP server.
-func StartCommand(factory bridge.CommandFactory, config *bridge.Config) *cobra.Command {
+// startCommand creates a Cobra command for starting the MCP server.
+func startCommand(factory bridge.CommandFactory, config *bridge.Config) *cobra.Command {
 	mcpFlags := &StartCommandFlags{}
 	cmd := &cobra.Command{
 		Use:   "start",

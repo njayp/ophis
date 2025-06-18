@@ -4,7 +4,7 @@ import (
 	"os/exec"
 
 	"github.com/njayp/ophis/bridge"
-	"github.com/njayp/ophis/commands"
+	"github.com/njayp/ophis/mcp"
 	"github.com/spf13/cobra"
 )
 
@@ -16,7 +16,7 @@ func createMakeCommands() *cobra.Command {
 		Long:  `Execute make targets and build commands`,
 	}
 
-	mcpCmd := commands.MCPCommand(&CommandFactory{
+	mcpCmd := mcp.Command(&CommandFactory{
 		rootCmd: rootCmd,
 	}, &bridge.Config{
 		AppName:    AppName,

@@ -1,4 +1,4 @@
-package commands
+package mcp
 
 import (
 	"encoding/json"
@@ -8,12 +8,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// ToolCommand creates a command that outputs available tools to a file
-func ToolCommand(factory bridge.CommandFactory) *cobra.Command {
+// toolCommand creates a command that outputs available tools to a file
+func toolCommand(factory bridge.CommandFactory) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "tools",
 		RunE: func(*cobra.Command, []string) error {
-			file, err := os.Create("mcp-tools.txt")
+			file, err := os.Create("mcp-tools.json")
 			if err != nil {
 				return err
 			}

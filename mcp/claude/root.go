@@ -12,6 +12,6 @@ func Command() *cobra.Command {
 	}
 
 	// Add subcommands
-	cmd.AddCommand(EnableCommand(), DisableCommand(), ListCommand())
+	cmd.AddCommand(enableCommand(), disableCommand(), listCommand())
 	return cmd
 }
