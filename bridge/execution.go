@@ -27,8 +27,10 @@ func (b *Manager) executeCommand(ctx context.Context, tool tools.Tool, request m
 	// descendCmdTree to called command for flag access
 	cmd, err := descendCmdTree(cmd, cmdPath)
 	if err != nil {
-		b.logger.Error(err.Error())
-		return mcp.NewToolResultError(err.Error())
+		b.logger.Error("Failed to find command in command tree",
+			"error", err.Error(),
+			"cmdPath", cmdPath)
+		return mcp.NewToolResultError(fmt.Sprintf("Command not found: %s", err.Error()))
 	}
 
 	// load flag map into cmd
