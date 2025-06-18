@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/njayp/ophis/bridge/tools"
+	"github.com/njayp/ophis/tools"
 	"github.com/spf13/cobra"
 )
 

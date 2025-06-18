@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/njayp/ophis/bridge/tools"
+	"github.com/njayp/ophis/tools"
 )
 
 // registerTools recursively registers all Cobra commands as MCP tools
