@@ -27,11 +27,11 @@ func (m *mockCommandFactory) New() (*cobra.Command, bridge.CommandExecFunc) {
 
 func TestCommand(t *testing.T) {
 	tests := []struct {
-		name              string
-		factory           bridge.CommandFactory
-		config            *bridge.Config
-		expectedCommands  []string
-		expectedUse       string
+		name             string
+		factory          bridge.CommandFactory
+		config           *bridge.Config
+		expectedCommands []string
+		expectedUse      string
 	}{
 		{
 			name: "creates mcp command with all subcommands",
