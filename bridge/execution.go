@@ -44,12 +44,6 @@ func (b *Manager) executeCommand(ctx context.Context, tool tools.Tool, request m
 		}
 	}
 
-	// Check if context is already cancelled
-	if err := ctx.Err(); err != nil {
-		b.logger.Warn("Context cancelled before execution", "error", err)
-		return mcp.NewToolResultError("request cancelled")
-	}
-
 	// Execute the command's Run function with proper error recovery
 	var result *mcp.CallToolResult
 	func() {
