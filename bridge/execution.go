@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/kballard/go-shellquote"
+	sq "github.com/kballard/go-shellquote"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/njayp/ophis/tools"
 	"github.com/spf13/cobra"
@@ -114,7 +114,7 @@ func parseArgumentString(argsStr string) []string {
 	}
 
 	// Use shellquote to properly parse the arguments
-	args, err := shellquote.Split(argsStr)
+	args, err := sq.Split(argsStr)
 	if err != nil {
 		// If parsing fails, fall back to simple splitting
 		// This ensures we don't completely fail on malformed input
