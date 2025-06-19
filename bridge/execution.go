@@ -157,7 +157,8 @@ func (b *Manager) loadFlagsFromMap(cmd *cobra.Command, flagMap map[string]any) e
 		err := flag.Value.Set(valueStr)
 		if err != nil {
 			b.logger.Error("Failed to set flag", slog.String("cmd", cmd.Name()), slog.String("key", k), slog.Any("value", v), slog.String("error", err.Error()))
-			return fmt.Errorf("%s: failed to set flag %s to value %v: %w", cmd.Name(), k, v, err)
+			return fmt.Errorf("command %q: failed to set flag %q (type: %s) to value %v: %w", cmd.Name(), k, flag.Value.Type(), v, err)
+
 		}
 	}
 
