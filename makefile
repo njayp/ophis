@@ -9,8 +9,8 @@ gen:
 
 .PHONY: lint
 lint: 
-	golangci-lint fmt
-	golangci-lint run
+	golangci-lint fmt  ./...
+	golangci-lint run  ./...
 
 .PHONY: test
 test:
