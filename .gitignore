@@ -36,5 +36,4 @@ bin/
 
 # log files
 *.log
-*.txt
 *.json
