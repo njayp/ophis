@@ -9,6 +9,4 @@ Closes #123
 ## Checklist
 
 - [ ] Tests added or updated
-- [ ] Tests run successfully
-- [ ] Lint run successfully
 - [ ] Ready for review
