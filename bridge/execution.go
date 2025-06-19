@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/kballard/go-shellquote"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/njayp/ophis/tools"
 	"github.com/spf13/cobra"
@@ -72,10 +73,17 @@ func (b *Manager) loadArgs(cmd *cobra.Command, cmdPath []string, message map[str
 	// Handle positional arguments from the "args" parameter
 	if argsValue, ok := message[tools.PositionalArgsParam]; ok {
 		if argsStr, ok := argsValue.(string); ok && argsStr != "" {
-			// Use more sophisticated argument parsing to handle quoted strings
-			// For now, split by spaces (could be enhanced with shell-like parsing)
+			// Use shell-like argument parsing to handle quoted strings properly
 			parsedArgs := parseArgumentString(argsStr)
 			args = append(args, parsedArgs...)
+
+			// Log parsing details for debugging
+			if len(parsedArgs) > 0 {
+				b.logger.Debug("Parsed positional arguments",
+					"raw", argsStr,
+					"parsed", parsedArgs,
+					"count", len(parsedArgs))
+			}
 		}
 	}
 
@@ -83,8 +91,21 @@ func (b *Manager) loadArgs(cmd *cobra.Command, cmdPath []string, message map[str
 	cmd.SetArgs(args)
 }
 
-// parseArgumentString provides basic argument parsing.
-// TODO: Consider using a proper shell-like parser for complex quoting scenarios.
+// parseArgumentString provides shell-like argument parsing with proper quote handling.
+// It supports single quotes, double quotes, and backslash escaping.
+//
+// The parsing is done using the github.com/kballard/go-shellquote library which
+// follows /bin/sh word-splitting rules. This allows MCP clients to pass complex
+// arguments containing spaces, quotes, and special characters.
+//
+// Examples:
+//   - `foo bar baz` -> ["foo", "bar", "baz"]
+//   - `foo "bar baz"` -> ["foo", "bar baz"]
+//   - `foo 'bar baz'` -> ["foo", "bar baz"]
+//   - `foo bar\ baz` -> ["foo", "bar baz"]
+//
+// If parsing fails due to malformed input (e.g., unterminated quotes), the function
+// falls back to simple space-based splitting to ensure robustness.
 func parseArgumentString(argsStr string) []string {
 	// Trim whitespace and handle empty string
 	argsStr = strings.TrimSpace(argsStr)
@@ -92,8 +113,15 @@ func parseArgumentString(argsStr string) []string {
 		return nil
 	}
 
-	// Simple splitting for now - could be enhanced to handle quotes properly
-	return strings.Fields(argsStr)
+	// Use shellquote to properly parse the arguments
+	args, err := shellquote.Split(argsStr)
+	if err != nil {
+		// If parsing fails, fall back to simple splitting
+		// This ensures we don't completely fail on malformed input
+		return strings.Fields(argsStr)
+	}
+
+	return args
 }
 
 func (b *Manager) loadFlagsFromMap(cmd *cobra.Command, flagMap map[string]any) error {

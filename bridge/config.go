@@ -44,7 +44,7 @@ func (c *Config) newSlogger() (*slog.Logger, error) {
 	// Create handler options
 	opts := &slog.HandlerOptions{
 		Level: parseLogLevel(c.LogLevel),
-		//AddSource: true,
+		// AddSource: true,
 	}
 
 	// Create handler based on format preference

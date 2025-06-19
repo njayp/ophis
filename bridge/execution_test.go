@@ -52,6 +52,26 @@ func TestExecuteCommand(t *testing.T) {
 			expectedOutput: "test executed with args: arg1 arg2",
 			expectedError:  false,
 		},
+		{
+			name:     "command with quoted positional args",
+			toolName: "test",
+			arguments: map[string]any{
+				tools.FlagsParam:          map[string]any{},
+				tools.PositionalArgsParam: `"hello world" 'single quoted' unquoted`,
+			},
+			expectedOutput: "test executed with args: hello world single quoted unquoted",
+			expectedError:  false,
+		},
+		{
+			name:     "command with malformed quotes",
+			toolName: "test",
+			arguments: map[string]any{
+				tools.FlagsParam:          map[string]any{},
+				tools.PositionalArgsParam: `arg1 "unterminated quote`,
+			},
+			expectedOutput: "test executed with args: arg1 \"unterminated quote",
+			expectedError:  false,
+		},
 	}
 
 	for _, tt := range tests {
