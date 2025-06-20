@@ -11,17 +11,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// EnableCommandFlags holds configuration flags for enable/disable/list commands.
-type EnableCommandFlags struct {
-	ConfigPath string
-	LogLevel   string
-	LogFile    string
-	ServerName string
+type enableCommandFlags struct {
+	configPath string
+	logLevel   string
+	logFile    string
+	serverName string
 }
 
 // enableCommand creates a Cobra command for enabling the MCP server.
 func enableCommand() *cobra.Command {
-	enableFlags := &EnableCommandFlags{}
+	enableFlags := &enableCommandFlags{}
 	cmd := &cobra.Command{
 		Use:   "enable",
 		Short: "Enable the MCP server",
@@ -33,14 +32,14 @@ func enableCommand() *cobra.Command {
 
 	// Add flags
 	flags := cmd.Flags()
-	flags.StringVar(&enableFlags.LogLevel, "log-level", "info", "Log level (debug, info, warn, error)")
-	flags.StringVar(&enableFlags.LogFile, "log-file", "", "Path to log file (default: user cache)")
-	flags.StringVar(&enableFlags.ConfigPath, "config-path", "", "Path to Claude config file")
-	flags.StringVar(&enableFlags.ServerName, "server-name", "", "Name for the MCP server (default: derived from executable name)")
+	flags.StringVar(&enableFlags.logLevel, "log-level", "info", "Log level (debug, info, warn, error)")
+	flags.StringVar(&enableFlags.logFile, "log-file", "", "Path to log file (default: user cache)")
+	flags.StringVar(&enableFlags.configPath, "config-path", "", "Path to Claude config file")
+	flags.StringVar(&enableFlags.serverName, "server-name", "", "Name for the MCP server (default: derived from executable name)")
 	return cmd
 }
 
-func enableMCPServer(flags *EnableCommandFlags) error {
+func enableMCPServer(flags *enableCommandFlags) error {
 	// Get the current executable path
 	executablePath, err := os.Executable()
 	if err != nil {
@@ -64,10 +63,10 @@ func enableMCPServer(flags *EnableCommandFlags) error {
 	}
 
 	// Create config manager
-	configManager := config.NewClaudeConfigManager(flags.ConfigPath)
+	configManager := config.NewClaudeConfigManager(flags.configPath)
 
 	// Determine server name
-	serverName := flags.ServerName
+	serverName := flags.serverName
 	if serverName == "" {
 		serverName = filepath.Base(executablePath)
 		// Remove extension if present
@@ -98,11 +97,11 @@ func enableMCPServer(flags *EnableCommandFlags) error {
 	}
 
 	// Add log level and log file to args if specified
-	if flags.LogLevel != "" {
-		server.Args = append(server.Args, "--log-level", flags.LogLevel)
+	if flags.logLevel != "" {
+		server.Args = append(server.Args, "--log-level", flags.logLevel)
 	}
-	if flags.LogFile != "" {
-		server.Args = append(server.Args, "--log-file", flags.LogFile)
+	if flags.logFile != "" {
+		server.Args = append(server.Args, "--log-file", flags.logFile)
 	}
 
 	// Add server to config (with backup)

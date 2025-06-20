@@ -9,9 +9,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type disableCommandFlags struct {
+	configPath string
+	serverName string
+}
+
 // disableCommand creates a Cobra command for disabling the MCP server.
 func disableCommand() *cobra.Command {
-	disableFlags := &EnableCommandFlags{} // Reuse flags struct
+	disableFlags := &disableCommandFlags{} // Reuse flags struct
 	cmd := &cobra.Command{
 		Use:   "disable",
 		Short: "Disable the MCP server",
@@ -23,17 +28,17 @@ func disableCommand() *cobra.Command {
 
 	// Add flags
 	flags := cmd.Flags()
-	flags.StringVar(&disableFlags.ConfigPath, "config-path", "", "Path to Claude config file")
-	flags.StringVar(&disableFlags.ServerName, "server-name", "", "Name of the MCP server to remove (default: derived from executable name)")
+	flags.StringVar(&disableFlags.configPath, "config-path", "", "Path to Claude config file")
+	flags.StringVar(&disableFlags.serverName, "server-name", "", "Name of the MCP server to remove (default: derived from executable name)")
 	return cmd
 }
 
-func disableMCPServer(flags *EnableCommandFlags) error {
+func disableMCPServer(flags *disableCommandFlags) error {
 	// Create config manager
-	configManager := config.NewClaudeConfigManager(flags.ConfigPath)
+	configManager := config.NewClaudeConfigManager(flags.configPath)
 
 	// Determine server name
-	serverName := flags.ServerName
+	serverName := flags.serverName
 	if serverName == "" {
 		// Get the current executable path for default name
 		executablePath, err := os.Executable()

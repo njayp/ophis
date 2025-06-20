@@ -8,9 +8,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type listCommandFlags struct {
+	configPath string
+}
+
 // listCommand creates a Cobra command for listing configured MCP servers.
 func listCommand() *cobra.Command {
-	listFlags := &EnableCommandFlags{} // Reuse flags struct for config-path
+	listFlags := &listCommandFlags{} // Reuse flags struct for config-path
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List configured MCP servers",
@@ -22,13 +26,13 @@ func listCommand() *cobra.Command {
 
 	// Add flags
 	flags := cmd.Flags()
-	flags.StringVar(&listFlags.ConfigPath, "config-path", "", "Path to Claude config file")
+	flags.StringVar(&listFlags.configPath, "config-path", "", "Path to Claude config file")
 	return cmd
 }
 
-func listMCPServers(flags *EnableCommandFlags) error {
+func listMCPServers(flags *listCommandFlags) error {
 	// Create config manager
-	configManager := config.NewClaudeConfigManager(flags.ConfigPath)
+	configManager := config.NewClaudeConfigManager(flags.configPath)
 
 	// Load config
 	claudeConfig, err := configManager.LoadConfig()
