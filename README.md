@@ -29,7 +29,21 @@ go get github.com/njayp/ophis
 
 ## Quick Start
 
-### 1. Basic Integration
+### 1. Implement Command Factory.
+
+The `CommandFactory` interface provides flexibility for command creation and execution:
+
+```go
+type CommandFactory interface {
+    // Tools returns the list of available MCP tools
+    Tools() []tools.Tool
+    
+    // New creates a fresh command instance and execution function
+    New() (*cobra.Command, CommandExecFunc)
+}
+```
+
+### 2. Basic Integration
 
 Add MCP server capability to your existing Cobra application:
 
@@ -46,9 +60,9 @@ func main() {
     rootCmd := createYourExistingCommand()
     
     // Create a command factory
-    factory := &MyCommandFactory{rootCmd: rootCmd}
+    factory := &MyCommandFactory{}
     
-    // Add MCP server commands
+    // Create MCP server config
     config := &bridge.Config{
         AppName:    "my-cli-server",
         AppVersion: "1.0.0",
@@ -60,39 +74,6 @@ func main() {
     if err := rootCmd.Execute(); err != nil {
         os.Exit(1)
     }
-}
-```
-
-### 2. Implement Command Factory
-
-```go
-type MyCommandFactory struct {
-    rootCmd *cobra.Command
-}
-
-// Tools returns all available MCP tools from your command tree
-func (f *MyCommandFactory) Tools() []tools.Tool {
-    return tools.FromRootCmd(f.rootCmd)
-}
-
-// New creates a fresh command instance for execution
-func (f *MyCommandFactory) New() (*cobra.Command, bridge.CommandExecFunc) {
-    cmd := createYourExistingCommand() // Create fresh instance
-    
-    execFunc := func(ctx context.Context) *mcp.CallToolResult {
-        var output strings.Builder
-        cmd.SetOut(&output)
-        cmd.SetErr(&output)
-        
-        err := cmd.ExecuteContext(ctx)
-        if err != nil {
-            return mcp.NewToolResultErrorFromErr("Command execution failed", err)
-        }
-        
-        return mcp.NewToolResultText(output.String())
-    }
-    
-    return cmd, execFunc
 }
 ```
 
@@ -111,37 +92,6 @@ Once your application is built, enable it as an MCP server:
 ./your-cli mcp claude disable
 ```
 
-## Examples
-
-### Make Build System
-
-Ophis includes a complete example that exposes `make` commands as an MCP server. You can find it in `examples/make/`:
-
-```go
-// See examples/make/ for a complete implementation
-func main() {
-    factory := &CommandFactory{
-        rootCmd: createMakeCommands(),
-    }
-    
-    config := &bridge.Config{
-        AppName:    "make-server",
-        AppVersion: "1.0.0",
-        LogLevel:   "info",
-    }
-    
-    rootCmd := &cobra.Command{Use: "make"}
-    rootCmd.AddCommand(mcp.Command(factory, config))
-    rootCmd.Execute()
-}
-```
-
-This allows AI assistants to run commands like:
-- `make build`
-- `make test`
-- `make clean`
-- `make help`
-
 ## How It Works
 
 1. **Command Discovery**: The `tools.FromRootCmd()` function recursively walks through your Cobra command tree
@@ -149,20 +99,6 @@ This allows AI assistants to run commands like:
 3. **Parameter Mapping**: Command flags are intelligently mapped to MCP tool parameters with proper type detection
 4. **Execution**: For each tool call, creates a fresh command instance, sets flags/arguments, and executes
 5. **Response**: Captures stdout/stderr and returns the output to the MCP client
-
-## Command Factory Interface
-
-The `CommandFactory` interface provides flexibility for command creation and execution:
-
-```go
-type CommandFactory interface {
-    // Tools returns the list of available MCP tools
-    Tools() []tools.Tool
-    
-    // New creates a fresh command instance and execution function
-    New() (*cobra.Command, CommandExecFunc)
-}
-```
 
 Key benefits of this pattern:
 - **Isolation**: Each execution gets a fresh command instance
@@ -228,34 +164,6 @@ ophis/
 - **Controlled Exposure**: Only explicitly registered commands are available
 - **Parameter Validation**: All parameters go through Cobra's validation
 
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Run `make lint` and `make test`
-6. Submit a pull request
-
-## Development
-
-```bash
-# Install dependencies
-make up
-
-# Run tests
-make test
-
-# Run linter
-make lint
-
-# Build all binaries
-make build
-
-# Run all checks
-make all
-```
-
 ## License
 
 Licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
@@ -263,5 +171,6 @@ Licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for detai
 ## Related Projects
 
 - [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) - The protocol specification
+- [MCP-Go Server](github.com/mark3labs/mcp-go) - The MCP golang package
 - [Cobra](https://github.com/spf13/cobra) - CLI framework for Go
 - [Claude Desktop](https://claude.ai/download) - AI assistant with MCP support
