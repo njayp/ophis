@@ -32,7 +32,7 @@ func (f *CommandFactory) New() (*cobra.Command, bridge.CommandExecFunc) {
 		cmd.SetErr(&output)
 		err := cmd.ExecuteContext(ctx)
 		if err != nil {
-			return mcp.NewToolResultErrorFromErr("Unexpected error", err)
+			return mcp.NewToolResultErrorFromErr("Failed to execute make command", err)
 		}
 		return mcp.NewToolResultText(output.String())
 	}

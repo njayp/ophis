@@ -44,20 +44,23 @@ func enableMCPServer(flags *EnableCommandFlags) error {
 	// Get the current executable path
 	executablePath, err := os.Executable()
 	if err != nil {
-		return fmt.Errorf("failed to get executable path: %w", err)
+		return fmt.Errorf("failed to get executable path for MCP server registration: %w", err)
 	}
 
 	// Resolve any symlinks to get the actual path
 	executablePath, err = filepath.EvalSymlinks(executablePath)
 	if err != nil {
-		return fmt.Errorf("failed to resolve executable path: %w", err)
+		return fmt.Errorf("failed to resolve executable symlinks at '%s': %w", executablePath, err)
 	}
 
 	// Validate that the executable exists and is executable
 	if stat, err := os.Stat(executablePath); err != nil {
-		return fmt.Errorf("executable not found: %w", err)
+		if os.IsNotExist(err) {
+			return fmt.Errorf("executable not found at path '%s': ensure the binary is built and accessible", executablePath)
+		}
+		return fmt.Errorf("failed to access executable at '%s': %w", executablePath, err)
 	} else if stat.Mode()&0o111 == 0 {
-		return fmt.Errorf("file is not executable: %s", executablePath)
+		return fmt.Errorf("file at '%s' is not executable: check file permissions", executablePath)
 	}
 
 	// Create config manager
@@ -75,13 +78,13 @@ func enableMCPServer(flags *EnableCommandFlags) error {
 
 	// Validate server name
 	if serverName == "" {
-		return fmt.Errorf("server name cannot be empty")
+		return fmt.Errorf("MCP server name cannot be empty: unable to derive name from executable path '%s'", executablePath)
 	}
 
 	// Check if server already exists
 	exists, err := configManager.HasServer(serverName)
 	if err != nil {
-		return fmt.Errorf("failed to check if server exists: %w", err)
+		return fmt.Errorf("failed to check if MCP server '%s' exists in Claude configuration: %w", serverName, err)
 	}
 	if exists {
 		fmt.Printf("MCP server '%s' is already enabled\n", serverName)
@@ -108,7 +111,7 @@ func enableMCPServer(flags *EnableCommandFlags) error {
 	}
 
 	if err := configManager.AddServer(serverName, server); err != nil {
-		return fmt.Errorf("failed to add server to config: %w", err)
+		return fmt.Errorf("failed to add MCP server '%s' to Claude configuration: %w", serverName, err)
 	}
 
 	fmt.Printf("Successfully enabled MCP server '%s'\n", serverName)

@@ -1,3 +1,6 @@
+.PHONY: all
+all: up gen lint test build
+
 .PHONY: up
 up:
 	go get -u ./...
@@ -9,8 +12,8 @@ gen:
 
 .PHONY: lint
 lint: 
-	golangci-lint fmt
-	golangci-lint run
+	golangci-lint fmt  ./...
+	golangci-lint run  ./...
 
 .PHONY: test
 test:
@@ -20,5 +23,3 @@ test:
 build:
 	go build -o bin/ ./...
 
-.PHONY: all
-all: up gen lint test build

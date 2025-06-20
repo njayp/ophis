@@ -48,12 +48,12 @@ func (cm *Manager) LoadConfig() (*Config, error) {
 
 	data, err := os.ReadFile(cm.configPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read config file: %w", err)
+		return nil, fmt.Errorf("failed to read Claude configuration file at '%s': %w", cm.configPath, err)
 	}
 
 	var config Config
 	if err := json.Unmarshal(data, &config); err != nil {
-		return nil, fmt.Errorf("failed to parse config file: %w", err)
+		return nil, fmt.Errorf("failed to parse Claude configuration file at '%s': invalid JSON format: %w", cm.configPath, err)
 	}
 
 	// Initialize MCPServers map if it's nil
@@ -68,16 +68,16 @@ func (cm *Manager) LoadConfig() (*Config, error) {
 func (cm *Manager) SaveConfig(config *Config) error {
 	// Ensure the directory exists
 	if err := os.MkdirAll(filepath.Dir(cm.configPath), 0o755); err != nil {
-		return fmt.Errorf("failed to create config directory: %w", err)
+		return fmt.Errorf("failed to create Claude configuration directory at '%s': %w", filepath.Dir(cm.configPath), err)
 	}
 
 	data, err := json.MarshalIndent(config, "", "  ")
 	if err != nil {
-		return fmt.Errorf("failed to marshal config: %w", err)
+		return fmt.Errorf("failed to marshal Claude configuration to JSON: %w", err)
 	}
 
 	if err := os.WriteFile(cm.configPath, data, 0o644); err != nil {
-		return fmt.Errorf("failed to write config file: %w", err)
+		return fmt.Errorf("failed to write Claude configuration file at '%s': %w", cm.configPath, err)
 	}
 
 	return nil
@@ -131,11 +131,11 @@ func (cm *Manager) BackupConfig() error {
 	backupPath := cm.configPath + ".backup"
 	data, err := os.ReadFile(cm.configPath)
 	if err != nil {
-		return fmt.Errorf("failed to read config for backup: %w", err)
+		return fmt.Errorf("failed to read Claude configuration file for backup at '%s': %w", cm.configPath, err)
 	}
 
 	if err := os.WriteFile(backupPath, data, 0o644); err != nil {
-		return fmt.Errorf("failed to write backup: %w", err)
+		return fmt.Errorf("failed to write backup configuration file at '%s': %w", backupPath, err)
 	}
 
 	return nil

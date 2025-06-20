@@ -12,10 +12,10 @@ import (
 
 // FromRootCmd recursively converts a Cobra command tree into MCP tools
 func FromRootCmd(cmd *cobra.Command) []Tool {
-	return fromCmdTree(cmd, "", []Tool{})
+	return fromCmd(cmd, "", []Tool{})
 }
 
-func fromCmdTree(cmd *cobra.Command, parentPath string, tools []Tool) []Tool {
+func fromCmd(cmd *cobra.Command, parentPath string, tools []Tool) []Tool {
 	// Create the tool name
 	toolName := cmd.Name()
 	if parentPath != "" {
@@ -29,10 +29,10 @@ func fromCmdTree(cmd *cobra.Command, parentPath string, tools []Tool) []Tool {
 		}
 
 		// ignore mcp server commands
-		if subCmd.Name() == MCPCommandName {
+		if subCmd.Name() == MCPCommandName || subCmd.Name() == "help" {
 			continue
 		}
-		tools = fromCmdTree(subCmd, toolName, tools)
+		tools = fromCmd(subCmd, toolName, tools)
 	}
 
 	// Skip if the command has no runnable function

@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 )
 
 // Config holds configuration for the MCP command
@@ -16,36 +18,21 @@ type Config struct {
 	LogLevel   string
 }
 
-// Validate checks if the configuration is valid
-func (c *Config) Validate() error {
-	if c == nil {
-		return fmt.Errorf("config cannot be nil")
-	}
-	if c.AppName == "" {
-		return fmt.Errorf("app name cannot be empty")
-	}
-	// LogLevel and LogFile are optional, so no validation needed
-	return nil
-}
-
 // newSlogger makes a new slog.logger that writes to file. Don't give the user
 // the option to write to stdout, because that causes errors.
 func (c *Config) newSlogger() (*slog.Logger, error) {
-	if err := c.Validate(); err != nil {
-		return nil, fmt.Errorf("invalid config: %w", err)
-	}
 	// if logfile not set, use usercache
 	if c.LogFile == "" {
 		// Get the cache directory
 		cacheDir, err := os.UserCacheDir()
 		if err != nil {
-			return nil, fmt.Errorf("failed to get user cache directory: %w", err)
+			return nil, fmt.Errorf("failed to get user cache directory for log file storage: %w", err)
 		}
 
 		// Create the log directory
 		logDir := filepath.Join(cacheDir, "mcp-servers", c.AppName, "logs")
 		if err := os.MkdirAll(logDir, 0o700); err != nil {
-			return nil, fmt.Errorf("failed to create log directory: %w", err)
+			return nil, fmt.Errorf("failed to create log directory at '%s': %w", logDir, err)
 		}
 
 		c.LogFile = filepath.Join(logDir, "server.log")
@@ -53,18 +40,33 @@ func (c *Config) newSlogger() (*slog.Logger, error) {
 
 	file, err := os.OpenFile(c.LogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open log file: %w", err)
+		return nil, fmt.Errorf("failed to open log file at '%s': %w", c.LogFile, err)
 	}
 
 	// Create handler options
 	opts := &slog.HandlerOptions{
-		Level:     parseLogLevel(c.LogLevel),
-		AddSource: true,
+		Level: parseLogLevel(c.LogLevel),
+		// AddSource: true,
 	}
 
 	// Create handler based on format preference
 	handler := slog.NewTextHandler(file, opts)
-	return slog.New(handler), nil
+	logger := slog.New(handler)
+
+	// Signal handling
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	// Close logger gracefully
+	go func() {
+		<-quit
+		logger.Info("Closing logger")
+		if err := file.Close(); err != nil {
+			logger.Error("Error closing log file:", "error", err)
+		}
+	}()
+
+	return logger, nil
 }
 
 // parseLogLevel converts a string log level to slog.Level.

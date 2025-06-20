@@ -38,7 +38,7 @@ func disableMCPServer(flags *EnableCommandFlags) error {
 		// Get the current executable path for default name
 		executablePath, err := os.Executable()
 		if err != nil {
-			return fmt.Errorf("failed to get executable path: %w", err)
+			return fmt.Errorf("failed to get executable path for determining default server name: %w", err)
 		}
 		serverName = filepath.Base(executablePath)
 		// Remove extension if present
@@ -49,13 +49,13 @@ func disableMCPServer(flags *EnableCommandFlags) error {
 
 	// Validate server name
 	if serverName == "" {
-		return fmt.Errorf("server name cannot be empty")
+		return fmt.Errorf("MCP server name cannot be empty: unable to derive name from executable path")
 	}
 
 	// Check if server exists
 	exists, err := configManager.HasServer(serverName)
 	if err != nil {
-		return fmt.Errorf("failed to check if server exists: %w", err)
+		return fmt.Errorf("failed to check if MCP server '%s' exists in Claude configuration: %w", serverName, err)
 	}
 	if !exists {
 		fmt.Printf("MCP server '%s' is not currently enabled\n", serverName)
@@ -68,7 +68,7 @@ func disableMCPServer(flags *EnableCommandFlags) error {
 	}
 
 	if err := configManager.RemoveServer(serverName); err != nil {
-		return fmt.Errorf("failed to remove server from config: %w", err)
+		return fmt.Errorf("failed to remove MCP server '%s' from Claude configuration: %w", serverName, err)
 	}
 
 	fmt.Printf("Successfully disabled MCP server '%s'\n", serverName)

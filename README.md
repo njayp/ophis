@@ -38,7 +38,7 @@ package main
 
 import (
     "github.com/njayp/ophis/bridge"
-    "github.com/njayp/ophis/commands"
+    "github.com/njayp/ophis/mcp"
     "github.com/spf13/cobra"
 )
 
@@ -49,12 +49,13 @@ func main() {
     factory := &MyCommandFactory{rootCmd: rootCmd}
     
     // Add MCP server commands
-    config := &bridge.MCPCommandConfig{
-        ServerName: "my-cli-server",
+    config := &bridge.Config{
+        AppName:    "my-cli-server",
+        AppVersion: "1.0.0",
         LogLevel:   "info",
     }
     
-    rootCmd.AddCommand(commands.MCPCommand(factory, config))
+    rootCmd.AddCommand(mcp.Command(factory, config))
     
     if err := rootCmd.Execute(); err != nil {
         os.Exit(1)
@@ -123,13 +124,14 @@ func main() {
         rootCmd: createMakeCommands(),
     }
     
-    config := &bridge.MCPCommandConfig{
-        ServerName: "make-server",
+    config := &bridge.Config{
+        AppName:    "make-server",
+        AppVersion: "1.0.0",
         LogLevel:   "info",
     }
     
     rootCmd := &cobra.Command{Use: "make"}
-    rootCmd.AddCommand(commands.MCPCommand(factory, config))
+    rootCmd.AddCommand(mcp.Command(factory, config))
     rootCmd.Execute()
 }
 ```
@@ -202,12 +204,14 @@ Ophis automatically maps Cobra flag types to MCP parameter types:
 ```
 ophis/
 ├── bridge/           # Core MCP server bridge logic
-│   ├── tools/        # Command-to-tool conversion
 │   ├── config.go     # Server configuration
 │   ├── execution.go  # Command execution logic
 │   ├── manager.go    # MCP server manager
 │   └── registration.go # Tool registration
-├── commands/         # Built-in commands
+├── tools/            # Command-to-tool conversion
+│   ├── command.go    # Cobra command to MCP tool conversion
+│   └── tool.go       # MCP tool definitions
+├── mcp/              # Built-in MCP commands
 │   ├── claude/       # Claude Desktop integration
 │   │   └── config/   # Config file management
 │   ├── root.go       # Main MCP command

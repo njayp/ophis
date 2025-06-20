@@ -33,7 +33,7 @@ func listMCPServers(flags *EnableCommandFlags) error {
 	// Load config
 	claudeConfig, err := configManager.LoadConfig()
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		return fmt.Errorf("failed to load Claude configuration: %w", err)
 	}
 
 	fmt.Printf("Claude MCP Configuration File: %s\n\n", configManager.GetConfigPath())
