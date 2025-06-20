@@ -1,4 +1,4 @@
-# Ophis
+![Project Logo](./logo.png)
 
 **Transform any Cobra CLI application into an MCP (Model Context Protocol) server**
 

@@ -1,4 +1,4 @@
-## Thank you for contributing to Ophis! Your efforts help make this project better for everyone.
+### Thank you for contributing to Ophis! Your efforts help make this project better for everyone.
 
 ## Getting Started
 
