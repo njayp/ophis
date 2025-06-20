@@ -14,7 +14,7 @@ import (
 )
 
 // CommandExecFunc is a function type that executes a command and returns an MCP tool result.
-type CommandExecFunc func(ctx context.Context) *mcp.CallToolResult
+type CommandExecFunc func(context.Context, *cobra.Command) *mcp.CallToolResult
 
 // CommandFactory is an interface for creating Cobra commands for registration and execution.
 // It provides a factory pattern to ensure fresh command instances for each execution,

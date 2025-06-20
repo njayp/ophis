@@ -123,9 +123,9 @@ func (f *testCommandFactory) Tools() []tools.Tool {
 }
 
 func (f *testCommandFactory) New() (*cobra.Command, CommandExecFunc) {
-	cmd := f.createTestCommand()
+	rcmd := f.createTestCommand()
 
-	execFunc := func(ctx context.Context) *mcp.CallToolResult {
+	execFunc := func(ctx context.Context, cmd *cobra.Command) *mcp.CallToolResult {
 		var output strings.Builder
 		cmd.SetOut(&output)
 		cmd.SetErr(&output)
@@ -138,7 +138,7 @@ func (f *testCommandFactory) New() (*cobra.Command, CommandExecFunc) {
 		return mcp.NewToolResultText(output.String())
 	}
 
-	return cmd, execFunc
+	return rcmd, execFunc
 }
 
 func (f *testCommandFactory) createTestCommand() *cobra.Command {

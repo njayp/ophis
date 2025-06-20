@@ -24,18 +24,18 @@ func (f *CommandFactory) Tools() []tools.Tool {
 
 // New creates a fresh command instance and its execution function.
 func (f *CommandFactory) New() (*cobra.Command, bridge.CommandExecFunc) {
-	cmd := createMakeCommands()
+	var output strings.Builder
+	rootCmd := createMakeCommands()
+	rootCmd.SetOut(&output)
+	rootCmd.SetErr(&output)
 
-	execFunc := func(ctx context.Context) *mcp.CallToolResult {
-		var output strings.Builder
-		cmd.SetOut(&output)
-		cmd.SetErr(&output)
+	execFunc := func(ctx context.Context, cmd *cobra.Command) *mcp.CallToolResult {
 		err := cmd.ExecuteContext(ctx)
 		if err != nil {
-			return mcp.NewToolResultErrorFromErr("Failed to execute make command", err)
+			return mcp.NewToolResultErrorFromErr("Failed to execute command", err)
 		}
 		return mcp.NewToolResultText(output.String())
 	}
 
-	return cmd, execFunc
+	return rootCmd, execFunc
 }

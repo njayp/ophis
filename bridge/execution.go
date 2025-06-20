@@ -56,7 +56,7 @@ func (b *Manager) executeCommand(ctx context.Context, tool tools.Tool, request m
 			}
 		}()
 
-		result = exec(ctx)
+		result = exec(ctx, cmd)
 	}()
 
 	return result
