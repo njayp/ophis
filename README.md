@@ -2,7 +2,7 @@
 
 **Transform any Cobra CLI application into an MCP (Model Context Protocol) server**
 
-For full documentation, read the [AI Docs](README.ai.md)
+For full documentation, read the [ai-generated-readme](README.ai.md)
 
 ## Quick Start
 
