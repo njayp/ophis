@@ -4,6 +4,13 @@
 
 For full documentation, read the [ai-generated-readme](README.ai.md)
 
+## How it Works
+
+- **Command Tree Traversal**: The `tools.FromRootCmd()` function recursively walks through your `cobra.Command` tree
+- **Metadata Extraction**: For each command, command descriptions, flags, and usage information are captured and converted to an `mcp.Tool`
+- **Bridge Server**: An mcp server converts tool calls back into `cobra.Commands`, and runs them
+- **Prebuilt Commands**: Prebuilt commands install the server into Claude and start the server
+
 ## Quick Start
 
 ### 1. Implement Command Factory.
@@ -35,7 +42,8 @@ import (
     "github.com/spf13/cobra"
 )
 
-// CommandFactory implements the bridge.CommandFactory interface. It stores a root cmd on creation so it is available later for Tool generation.
+// CommandFactory implements the bridge.CommandFactory interface.
+// It stores a root cmd on creation so it is available later for Tool generation.
 type CommandFactory struct {
     rootCmd *cobra.Command
 }
@@ -45,7 +53,8 @@ func (f *CommandFactory) Tools() []tools.Tool {
     return tools.FromRootCmd(f.rootCmd)
 }
 
-// New generates a new instance of the root cmd, and uses a strings.Builder to gather the output of the cmd. 
+// New generates a new instance of the root cmd, and uses a strings.
+// Builder to gather the output of the cmd. 
 func (f *CommandFactory) New() (*cobra.Command, bridge.CommandExecFunc) {
     var output strings.Builder
     // your func that generates a new root cmd

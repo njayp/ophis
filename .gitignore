@@ -33,7 +33,10 @@ go.work.sum
 
 # build output
 bin/
+output/
 
 # log files
 *.log
 *.json
+
+.DS_Store
