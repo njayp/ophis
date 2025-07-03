@@ -53,8 +53,8 @@ func (f *CommandFactory) Tools() []tools.Tool {
     return tools.FromRootCmd(f.rootCmd)
 }
 
-// New generates a new instance of the root cmd, and uses a strings.
-// Builder to gather the output of the cmd. 
+// New generates a new instance of the root cmd, and uses a strings.Builder
+// to gather the output of the cmd. 
 func (f *CommandFactory) New() (*cobra.Command, bridge.CommandExecFunc) {
     var output strings.Builder
     // your func that generates a new root cmd
