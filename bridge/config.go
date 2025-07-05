@@ -8,14 +8,17 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+
+	"github.com/mark3labs/mcp-go/server"
 )
 
 // Config holds configuration for the MCP command
 type Config struct {
-	AppName    string
-	AppVersion string
-	LogFile    string
-	LogLevel   string
+	AppName       string
+	AppVersion    string
+	LogFile       string
+	LogLevel      string
+	ServerOptions []server.ServerOption
 }
 
 // newSlogger makes a new slog.logger that writes to file. Don't give the user
@@ -87,4 +90,13 @@ func parseLogLevel(level string) slog.Level {
 	}
 
 	return slogLevel
+}
+
+// GetServerOptions returns the configured server options.
+// Returns an empty slice if ServerOptions is nil or empty.
+func (c *Config) GetServerOptions() []server.ServerOption {
+	if c.ServerOptions == nil {
+		return []server.ServerOption{}
+	}
+	return c.ServerOptions
 }
