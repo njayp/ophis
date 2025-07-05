@@ -10,40 +10,6 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// FromRootCmd recursively converts a Cobra command tree into MCP tools
-func FromRootCmd(cmd *cobra.Command) []Tool {
-	return fromCmd(cmd, "", []Tool{})
-}
-
-func fromCmd(cmd *cobra.Command, parentPath string, tools []Tool) []Tool {
-	// Create the tool name
-	toolName := cmd.Name()
-	if parentPath != "" {
-		toolName = parentPath + "_" + cmd.Name()
-	}
-
-	// Register subcommands
-	for _, subCmd := range cmd.Commands() {
-		if subCmd.Hidden {
-			continue
-		}
-
-		// ignore mcp server commands
-		if subCmd.Name() == MCPCommandName || subCmd.Name() == "help" {
-			continue
-		}
-		tools = fromCmd(subCmd, toolName, tools)
-	}
-
-	// Skip if the command has no runnable function
-	if cmd.Run == nil && cmd.RunE == nil {
-		return tools
-	}
-
-	tools = append(tools, newTool(cmd, toolName))
-	return tools
-}
-
 func newTool(cmd *cobra.Command, toolName string) Tool {
 	toolOptions := []mcp.ToolOption{
 		mcp.WithDescription(descFromCmd(cmd)),
