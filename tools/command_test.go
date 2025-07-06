@@ -70,16 +70,22 @@ func TestGenerator_FromRootCmd(t *testing.T) {
 			expected: 1, // only 'other' command, 'mcp' excluded
 		},
 		{
-			name: "nested subcommands",
+			name: "command tree with multiple branches",
 			setupCmd: func() *cobra.Command {
 				root := &cobra.Command{Use: "root", Short: "Root command"}
-				level1 := &cobra.Command{Use: "level1", Short: "Level 1", Run: func(_ *cobra.Command, _ []string) {}}
-				level2 := &cobra.Command{Use: "level2", Short: "Level 2", Run: func(_ *cobra.Command, _ []string) {}}
-				level1.AddCommand(level2)
-				root.AddCommand(level1)
+				// branch 1
+				cmd11 := &cobra.Command{Use: "cmd11", Short: "11", Run: func(_ *cobra.Command, _ []string) {}}
+				cmd12 := &cobra.Command{Use: "cmd12", Short: "12", Run: func(_ *cobra.Command, _ []string) {}}
+				cmd11.AddCommand(cmd12)
+				// branch 2
+				cmd21 := &cobra.Command{Use: "cmd21", Short: "21", Run: func(_ *cobra.Command, _ []string) {}}
+				cmd22 := &cobra.Command{Use: "cmd22", Short: "22", Run: func(_ *cobra.Command, _ []string) {}}
+				cmd21.AddCommand(cmd22)
+				// Add branches to root
+				root.AddCommand(cmd11, cmd21)
 				return root
 			},
-			expected: 2, // level1 and level2
+			expected: 4,
 		},
 	}
 

@@ -2,8 +2,6 @@
 
 **Transform any Cobra CLI application into an MCP (Model Context Protocol) server**
 
-For full documentation, read the [ai-generated-readme](README.ai.md)
-
 ## How it Works
 
 - **Command Tree Traversal**: The `tools.FromRootCmd()` function recursively walks through your `cobra.Command` tree

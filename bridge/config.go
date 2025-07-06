@@ -91,12 +91,3 @@ func parseLogLevel(level string) slog.Level {
 
 	return slogLevel
 }
-
-// GetServerOptions returns the configured server options.
-// Returns an empty slice if ServerOptions is nil or empty.
-func (c *Config) GetServerOptions() []server.ServerOption {
-	if c.ServerOptions == nil {
-		return []server.ServerOption{}
-	}
-	return c.ServerOptions
-}

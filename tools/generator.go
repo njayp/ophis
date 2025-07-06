@@ -6,8 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// FromRootCmd provides backward compatibility by creating a default generator
-// and converting a Cobra command tree into MCP tools.
+// FromRootCmd creates a default generator and converts a Cobra command tree into MCP tools.
 func FromRootCmd(cmd *cobra.Command) []Tool {
 	generator := NewGenerator()
 	return generator.FromRootCmd(cmd)

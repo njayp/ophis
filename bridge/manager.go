@@ -70,7 +70,7 @@ func New(factory CommandFactory, config *Config) (*Manager, error) {
 		server: server.NewMCPServer(
 			config.AppName,
 			config.AppVersion,
-			config.GetServerOptions()...,
+			config.ServerOptions...,
 		),
 	}
 
