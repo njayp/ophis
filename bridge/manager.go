@@ -96,3 +96,8 @@ func New(factory CommandFactory, config *Config) (*Manager, error) {
 func (b *Manager) StartServer() error {
 	return server.ServeStdio(b.server)
 }
+
+// GetLogger returns the logger instance used by the bridge
+func (b *Manager) GetLogger() *slog.Logger {
+	return b.logger
+}
