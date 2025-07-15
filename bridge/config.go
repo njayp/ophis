@@ -24,24 +24,12 @@ type Config struct {
 // newSlogger makes a new slog.logger that writes to file. Don't give the user
 // the option to write to stdout, because that causes errors.
 func (c *Config) newSlogger() (*slog.Logger, error) {
-	// if logfile not set, use usercache
-	if c.LogFile == "" {
-		// Get the cache directory
-		cacheDir, err := os.UserCacheDir()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get user cache directory for log file storage: %w", err)
-		}
-
-		// Create the log directory
-		logDir := filepath.Join(cacheDir, "mcp-servers", c.AppName, "logs")
-		if err := os.MkdirAll(logDir, 0o700); err != nil {
-			return nil, fmt.Errorf("failed to create log directory at '%s': %w", logDir, err)
-		}
-
-		c.LogFile = filepath.Join(logDir, "server.log")
+	path, err := c.logFilePath()
+	if err != nil {
+		return nil, fmt.Errorf("failed to determine log file path: %w", err)
 	}
 
-	file, err := os.OpenFile(c.LogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open log file at '%s': %w", c.LogFile, err)
 	}
@@ -70,6 +58,26 @@ func (c *Config) newSlogger() (*slog.Logger, error) {
 	}()
 
 	return logger, nil
+}
+
+func (c *Config) logFilePath() (string, error) {
+	if c.LogFile != "" {
+		return c.LogFile, nil
+	}
+
+	// Get the cache directory
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		return "", fmt.Errorf("failed to get user cache directory for log file storage: %w", err)
+	}
+
+	// Create the log directory
+	logDir := filepath.Join(cacheDir, "mcp-servers", c.AppName, "logs")
+	if err := os.MkdirAll(logDir, 0o700); err != nil {
+		return "", fmt.Errorf("failed to create log directory at '%s': %w", logDir, err)
+	}
+
+	return filepath.Join(logDir, "server.log"), nil
 }
 
 // parseLogLevel converts a string log level to slog.Level.

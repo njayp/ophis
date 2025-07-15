@@ -117,12 +117,6 @@ Once your application is built, enable it as an MCP server:
 ```bash
 # Enable your CLI as an MCP server in Claude Desktop
 ./your-cli mcp claude enable
-
-# List all configured MCP servers
-./your-cli mcp claude list
-
-# Disable the server
-./your-cli mcp claude disable
 ```
 
 ## Contributing
