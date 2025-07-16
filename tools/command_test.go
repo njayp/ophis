@@ -107,7 +107,7 @@ func TestGenerator_FromRootCmd(t *testing.T) {
 }
 
 func TestGenerator_WithCustomExclusions(t *testing.T) {
-	generator := NewGenerator(WithExclusions([]string{"custom"}))
+	generator := NewGenerator(WithBlackList([]string{"custom"}))
 
 	root := &cobra.Command{Use: "root", Short: "Root command"}
 	customCmd := &cobra.Command{Use: "custom", Short: "Custom", Run: func(_ *cobra.Command, _ []string) {}}

@@ -14,24 +14,49 @@ func FromRootCmd(cmd *cobra.Command) []Tool {
 
 // Generator converts Cobra commands into MCP tools with configurable exclusions.
 type Generator struct {
-	exclusions []string
+	filters []Filter
 }
 
 // GeneratorOption is a function type for configuring Generator instances.
 type GeneratorOption func(*Generator)
 
-// WithExclusions sets the list of command names to exclude from the generated tools.
-func WithExclusions(exclusions []string) GeneratorOption {
+// Filter is a function type used by the Generator to filter commands.
+// It returns true if the command should be included in the generated tools.
+type Filter func(*cobra.Command) bool
+
+// WithFilter adds a custom filter function to the generator.
+func WithFilter(filter Filter) GeneratorOption {
 	return func(g *Generator) {
-		g.exclusions = append(g.exclusions, exclusions...)
+		g.filters = append(g.filters, filter)
 	}
+}
+
+// WithBlackList adds a filter to exclude listed command names from the generated tools.
+func WithBlackList(list []string) GeneratorOption {
+	return WithFilter(func(cmd *cobra.Command) bool {
+		return !slices.Contains(list, cmd.Name())
+	})
+}
+
+// WithWhiteList adds a filter to include only listed command names in the generated tools.
+func WithWhiteList(list []string) GeneratorOption {
+	return WithFilter(func(cmd *cobra.Command) bool {
+		return slices.Contains(list, cmd.Name())
+	})
+}
+
+func withoutHidden() GeneratorOption {
+	return WithFilter(func(cmd *cobra.Command) bool {
+		return !cmd.Hidden
+	})
 }
 
 // NewGenerator creates a new Generator with the specified options.
 func NewGenerator(opts ...GeneratorOption) *Generator {
-	g := &Generator{
-		exclusions: []string{MCPCommandName, "help"},
-	}
+	g := &Generator{}
+
+	WithBlackList([]string{MCPCommandName, "help", "completion"})(g)
+	withoutHidden()(g)
 
 	for _, opt := range opts {
 		opt(g)
@@ -53,14 +78,12 @@ func (g *Generator) fromCmd(cmd *cobra.Command, parentPath string, tools []Tool)
 	}
 
 	// Register subcommands
+outer:
 	for _, subCmd := range cmd.Commands() {
-		if subCmd.Hidden {
-			continue
-		}
-
-		// ignore excluded commands
-		if slices.Contains(g.exclusions, subCmd.Name()) {
-			continue
+		for _, filter := range g.filters {
+			if !filter(subCmd) {
+				continue outer
+			}
 		}
 
 		tools = g.fromCmd(subCmd, toolName, tools)
