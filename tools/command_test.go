@@ -106,18 +106,41 @@ func TestGenerator_FromRootCmd(t *testing.T) {
 	}
 }
 
-func TestGenerator_WithCustomExclusions(t *testing.T) {
-	generator := NewGenerator(WithBlackList([]string{"custom"}))
+func TestGenerator_BlackWhiteListOptions(t *testing.T) {
+	tests := []struct {
+		name     string
+		options  []GeneratorOption
+		expected []string
+	}{
+		{
+			name:     "blacklist custom",
+			options:  []GeneratorOption{WithExclusions([]string{"custom"})},
+			expected: []string{"root_other"},
+		},
+		{
+			name:     "no list (default: blacklist mcp)",
+			options:  nil,
+			expected: []string{"root_custom", "root_other"},
+		},
+	}
 
-	root := &cobra.Command{Use: "root", Short: "Root command"}
-	customCmd := &cobra.Command{Use: "custom", Short: "Custom", Run: func(_ *cobra.Command, _ []string) {}}
-	otherCmd := &cobra.Command{Use: "other", Short: "Other", Run: func(_ *cobra.Command, _ []string) {}}
-	root.AddCommand(customCmd, otherCmd)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			root := &cobra.Command{Use: "root", Short: "Root command"}
+			customCmd := &cobra.Command{Use: "custom", Short: "Custom", Run: func(_ *cobra.Command, _ []string) {}}
+			otherCmd := &cobra.Command{Use: "other", Short: "Other", Run: func(_ *cobra.Command, _ []string) {}}
+			root.AddCommand(customCmd, otherCmd)
 
-	tools := generator.FromRootCmd(root)
+			generator := NewGenerator(tt.options...)
+			tools := generator.FromRootCmd(root)
 
-	assert.Len(t, tools, 1) // only 'other' command, 'custom' excluded
-	assert.Equal(t, "root_other", tools[0].Tool.Name)
+			var toolNames []string
+			for _, tool := range tools {
+				toolNames = append(toolNames, tool.Tool.Name)
+			}
+			assert.ElementsMatch(t, tt.expected, toolNames)
+		})
+	}
 }
 
 func TestFlagToolOption(t *testing.T) {

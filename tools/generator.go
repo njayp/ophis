@@ -31,17 +31,10 @@ func WithFilter(filter Filter) GeneratorOption {
 	}
 }
 
-// WithBlackList adds a filter to exclude listed command names from the generated tools.
-func WithBlackList(list []string) GeneratorOption {
+// WithExclusions adds a filter to exclude listed command names from the generated tools.
+func WithExclusions(list []string) GeneratorOption {
 	return WithFilter(func(cmd *cobra.Command) bool {
 		return !slices.Contains(list, cmd.Name())
-	})
-}
-
-// WithWhiteList adds a filter to include only listed command names in the generated tools.
-func WithWhiteList(list []string) GeneratorOption {
-	return WithFilter(func(cmd *cobra.Command) bool {
-		return slices.Contains(list, cmd.Name())
 	})
 }
 
@@ -55,7 +48,7 @@ func withoutHidden() GeneratorOption {
 func NewGenerator(opts ...GeneratorOption) *Generator {
 	g := &Generator{}
 
-	WithBlackList([]string{MCPCommandName, "help", "completion"})(g)
+	WithExclusions([]string{MCPCommandName, "help", "completion"})(g)
 	withoutHidden()(g)
 
 	for _, opt := range opts {
