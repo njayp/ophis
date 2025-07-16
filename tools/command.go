@@ -18,14 +18,16 @@ func newTool(cmd *cobra.Command, toolName string) Tool {
 	// add flags to tool
 	flagMap := flagMapFromCmd(cmd)
 	toolOptions = append(toolOptions, mcp.WithObject(FlagsParam,
-		mcp.Description("flag options"),
+		mcp.Description("Flag options"),
 		mcp.Properties(flagMap),
+		mcp.Required(),
 	))
 
 	// Add an "args" parameter for positional arguments
 	argsDescription := argsDescFromCmd(cmd)
 	toolOptions = append(toolOptions, mcp.WithString(PositionalArgsParam,
 		mcp.Description(argsDescription),
+		mcp.Required(),
 	))
 
 	// Create the tool
