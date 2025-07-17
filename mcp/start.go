@@ -14,7 +14,7 @@ type StartCommandFlags struct {
 }
 
 // startCommand creates a Cobra command for starting the MCP server.
-func startCommand(factory bridge.CommandFactory, config *bridge.Config) *cobra.Command {
+func startCommand(config *bridge.Config) *cobra.Command {
 	mcpFlags := &StartCommandFlags{}
 	cmd := &cobra.Command{
 		Use:   "start",
@@ -33,7 +33,7 @@ by AI assistants and other MCP-compatible clients.`,
 			}
 
 			// Create and start the bridge
-			bridge, err := bridge.New(factory, config)
+			bridge, err := bridge.New(config)
 			if err != nil {
 				return fmt.Errorf("failed to create MCP server bridge: %w", err)
 			}

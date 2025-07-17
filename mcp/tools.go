@@ -10,13 +10,13 @@ import (
 )
 
 // toolCommand creates a command that outputs available tools to a file
-func toolCommand(factory bridge.CommandFactory) *cobra.Command {
+func toolCommand(config *bridge.Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "tools",
 		Short: "Export available MCP tools to JSON file",
 		Long:  `Export all available MCP tools to mcp-tools.json for inspection and debugging.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			tools := factory.Tools()
+			tools := config.Tools()
 
 			file, err := os.OpenFile("mcp-tools.json", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
 			if err != nil {

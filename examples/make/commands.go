@@ -16,19 +16,16 @@ func createMakeCommands() *cobra.Command {
 		Long:  `Execute make targets and build commands`,
 	}
 
-	mcpCmd := mcp.Command(&CommandFactory{
-		rootCmd: rootCmd,
-	}, &bridge.Config{
+	mcpCmd := mcp.Command(&bridge.Config{
 		AppName:    AppName,
 		AppVersion: AppVersion,
+		RootCmd:    rootCmd,
 	})
 
 	// Add some common flags that make commands might use as persistent flags
 	// These will be available to all subcommands
 	rootCmd.PersistentFlags().StringP("file", "f", "", "Use FILE as a makefile")
 	rootCmd.PersistentFlags().StringP("directory", "C", "", "Change to directory before doing anything")
-	rootCmd.PersistentFlags().BoolP("dry-run", "n", false, "Don't actually run any commands; just print them")
-	rootCmd.PersistentFlags().BoolP("silent", "s", false, "Don't print the commands as they are executed")
 
 	// Add make target commands
 	testCmd := createMakeTargetCommand("test", "Run tests", "Run the test suite using 'make test'")

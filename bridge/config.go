@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/mark3labs/mcp-go/server"
+	"github.com/njayp/ophis/tools"
+	"github.com/spf13/cobra"
 )
 
 // Config holds configuration for the MCP command
@@ -14,7 +16,16 @@ type Config struct {
 	AppVersion    string
 	LogFile       string
 	LogLevel      string
+	RootCmd       *cobra.Command // The root command for the MCP server
+	Generator     *tools.Generator
 	ServerOptions []server.ServerOption
+}
+
+func (c *Config) Tools() []tools.Tool {
+	if c.Generator != nil {
+		return c.Generator.FromRootCmd(c.RootCmd)
+	}
+	return tools.FromRootCmd(c.RootCmd)
 }
 
 // newSlogger makes a new slog.logger that writes to file. Don't give the user

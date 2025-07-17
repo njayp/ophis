@@ -11,12 +11,12 @@ import (
 
 // Command creates a new Cobra command that starts an MCP server
 // This command can be added as a subcommand to any Cobra-based application
-func Command(factory bridge.CommandFactory, config *bridge.Config) *cobra.Command {
+func Command(config *bridge.Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: tools.MCPCommandName,
 	}
 
 	// Add subcommands
-	cmd.AddCommand(startCommand(factory, config), toolCommand(factory), claude.Command())
+	cmd.AddCommand(startCommand(config), toolCommand(config), claude.Command())
 	return cmd
 }

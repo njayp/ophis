@@ -41,6 +41,10 @@ func (g *Generator) FromRootCmd(cmd *cobra.Command) []Tool {
 }
 
 func (g *Generator) fromCmd(cmd *cobra.Command, parentPath string, tools []Tool) []Tool {
+	if cmd == nil {
+		return tools
+	}
+
 	// Create the tool name
 	toolName := cmd.Name()
 	if parentPath != "" {
