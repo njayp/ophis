@@ -45,21 +45,7 @@ func (b *Manager) executeCommand(ctx context.Context, tool tools.Tool, request m
 		}
 	}
 
-	// Execute the command's Run function with proper error recovery
-	var result *mcp.CallToolResult
-	func() {
-		// Recover from any panics that might occur during command execution
-		defer func() {
-			if r := recover(); r != nil {
-				b.logger.Error("Command execution panicked", "command", cmd.Name(), "panic", r)
-				result = mcp.NewToolResultError(fmt.Sprintf("command '%s' execution failed due to unexpected panic: %v", cmd.Name(), r))
-			}
-		}()
-
-		result = exec(ctx, cmd)
-	}()
-
-	return result
+	return exec(ctx, cmd)
 }
 
 func (b *Manager) loadArgs(cmd *cobra.Command, cmdPath []string, message map[string]any) {
@@ -146,7 +132,7 @@ func (b *Manager) loadFlagsFromMap(cmd *cobra.Command, flagMap map[string]any) e
 			continue
 		}
 
-		// Convert value to string with better handling
+		// Convert value to string
 		var valueStr string
 		if v == nil {
 			valueStr = ""
@@ -158,7 +144,6 @@ func (b *Manager) loadFlagsFromMap(cmd *cobra.Command, flagMap map[string]any) e
 		if err != nil {
 			b.logger.Error("Failed to set flag", slog.String("cmd", cmd.Name()), slog.String("key", k), slog.Any("value", v), slog.String("error", err.Error()))
 			return fmt.Errorf("failed to set flag '%s' on command '%s': cannot convert value '%v' to type '%s': %w", k, cmd.Name(), v, flag.Value.Type(), err)
-
 		}
 	}
 

@@ -62,10 +62,11 @@ func New(factory CommandFactory, config *Config) (*Manager, error) {
 	logger := config.newSlogger()
 	logger.Info("Creating MCP server", "app_name", config.AppName, "app_version", config.AppVersion)
 
+	opts := append(config.ServerOptions, server.WithRecovery())
 	server := server.NewMCPServer(
 		config.AppName,
 		config.AppVersion,
-		config.ServerOptions...,
+		opts...,
 	)
 
 	b := &Manager{

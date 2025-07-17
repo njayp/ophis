@@ -18,8 +18,6 @@ func (b *Manager) registerTool(t tools.Tool) {
 	b.logger.Debug("Registering MCP tool", "tool_name", t.Tool.Name)
 	b.server.AddTool(t.Tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		b.logger.Info("MCP tool request received", "tool_name", t.Tool.Name, "arguments", request.Params.Arguments)
-		result := b.executeCommand(ctx, t, request)
-		// TODO figure out what err is used for
-		return result, nil
+		return b.executeCommand(ctx, t, request), nil
 	})
 }
