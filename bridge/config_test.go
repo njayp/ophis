@@ -31,29 +31,3 @@ func TestParseLogLevel(t *testing.T) {
 		})
 	}
 }
-
-func TestLogFilePath(t *testing.T) {
-	config := &Config{
-		AppName: "testapp",
-	}
-
-	// Test with custom log file path
-	config.LogFile = "/tmp/testapp.log"
-	path, err := config.logFilePath()
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-	if path != config.LogFile {
-		t.Errorf("Expected log file path %s, got %s", config.LogFile, path)
-	}
-
-	// Test without custom log file path
-	config.LogFile = ""
-	path, err = config.logFilePath()
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
-	}
-	if path == "" {
-		t.Error("Expected a valid log file path, got empty string")
-	}
-}

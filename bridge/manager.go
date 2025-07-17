@@ -59,19 +59,19 @@ func New(factory CommandFactory, config *Config) (*Manager, error) {
 		config.AppVersion = "unknown"
 	}
 
-	logger, err := config.newSlogger()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create logger for MCP server: %w", err)
-	}
+	logger := config.newSlogger()
+	logger.Info("Creating MCP server", "app_name", config.AppName, "app_version", config.AppVersion)
+
+	server := server.NewMCPServer(
+		config.AppName,
+		config.AppVersion,
+		config.ServerOptions...,
+	)
 
 	b := &Manager{
 		commandFactory: factory,
 		logger:         logger,
-		server: server.NewMCPServer(
-			config.AppName,
-			config.AppVersion,
-			config.ServerOptions...,
-		),
+		server:         server,
 	}
 
 	tools, err := func() (tools []tools.Tool, err error) {
@@ -95,9 +95,4 @@ func New(factory CommandFactory, config *Config) (*Manager, error) {
 // StartServer starts the MCP server using stdio transport
 func (b *Manager) StartServer() error {
 	return server.ServeStdio(b.server)
-}
-
-// GetLogger returns the logger instance used by the bridge
-func (b *Manager) GetLogger() *slog.Logger {
-	return b.logger
 }
