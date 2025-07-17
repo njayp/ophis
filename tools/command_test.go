@@ -114,13 +114,18 @@ func TestGenerator_BlackWhiteListOptions(t *testing.T) {
 	}{
 		{
 			name:     "blacklist custom",
-			options:  []GeneratorOption{WithExclusions([]string{"custom"})},
+			options:  []GeneratorOption{WithFilters(Exclude([]string{"custom"}))},
 			expected: []string{"root_other"},
 		},
 		{
 			name:     "no list (default: blacklist mcp)",
 			options:  nil,
-			expected: []string{"root_custom", "root_other"},
+			expected: []string{"root_custom", "root_other", "root_custom_child"},
+		},
+		{
+			name:     "whitelist custom",
+			options:  []GeneratorOption{WithFilters(Allow([]string{"custom"}))},
+			expected: []string{"root_custom", "root_custom_child"},
 		},
 	}
 
@@ -128,8 +133,10 @@ func TestGenerator_BlackWhiteListOptions(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			root := &cobra.Command{Use: "root", Short: "Root command"}
 			customCmd := &cobra.Command{Use: "custom", Short: "Custom", Run: func(_ *cobra.Command, _ []string) {}}
+			childCmd := &cobra.Command{Use: "child", Short: "Child", Run: func(_ *cobra.Command, _ []string) {}}
 			otherCmd := &cobra.Command{Use: "other", Short: "Other", Run: func(_ *cobra.Command, _ []string) {}}
 			root.AddCommand(customCmd, otherCmd)
+			customCmd.AddCommand(childCmd)
 
 			generator := NewGenerator(tt.options...)
 			tools := generator.FromRootCmd(root)
