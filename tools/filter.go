@@ -47,6 +47,7 @@ func Allow(list []string) Filter {
 	}
 }
 
+// Hidden returns a filter that excludes hidden commands from the generated tools.
 func Hidden() Filter {
 	return func(cmd *cobra.Command) bool {
 		return !cmd.Hidden

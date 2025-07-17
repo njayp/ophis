@@ -10,20 +10,73 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Check out the repository code
+      # Step 1: Check out the repository code with full history
       - name: Checkout repository
-        uses: actions/checkout@v3
-
-      # Step 2: Create a GitHub release
-      - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/checkout@v4
         with:
-          tag_name: ${{ github.ref_name }} # The tag that triggered the workflow
-          release_name: Release ${{ github.ref_name }}
-          body: |
-            ## Changes
-            Automatically generated release for tag ${{ github.ref_name }}.
+          fetch-depth: 0 # Fetch full history to get all tags and commits
+
+      # Step 2: Set up Go (optional, if you want to build binaries)
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      # Step 3: Build binaries (optional)
+      - name: Build binaries
+        run: |
+          make build
+
+      # Step 4: Generate changelog
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get the previous tag
+          PREVIOUS_TAG=$(git tag --sort=-version:refname | head -n 2 | tail -n 1)
+          CURRENT_TAG=${{ github.ref_name }}
+          
+          # If this is the first tag, compare against initial commit
+          if [ -z "$PREVIOUS_TAG" ] || [ "$PREVIOUS_TAG" = "$CURRENT_TAG" ]; then
+            PREVIOUS_TAG=$(git rev-list --max-parents=0 HEAD)
+          fi
+          
+          echo "Generating changelog from $PREVIOUS_TAG to $CURRENT_TAG"
+          
+          # Generate commit messages since last tag
+          CHANGELOG=$(git log --pretty=format:"- %s" "$PREVIOUS_TAG..$CURRENT_TAG" 2>/dev/null || git log --pretty=format:"- %s" "$PREVIOUS_TAG..HEAD")
+          
+          # If no commits found, provide a default message
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG="- Initial release"
+          fi
+          
+          # Create the full release body
+          cat << EOF > release_body.md
+          ## Changes in $CURRENT_TAG
+          
+          $CHANGELOG
+          
+          ## Installation
+          
+          ### Go Install
+          \`\`\`bash
+          go install github.com/njayp/ophis@$CURRENT_TAG
+          \`\`\`
+          
+          echo "RELEASE_BODY<<EOF" >> $GITHUB_OUTPUT
+          cat release_body.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      # Step 5: Create GitHub Release
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: ${{ steps.changelog.outputs.RELEASE_BODY }}
           draft: false
           prerelease: false
+          files: |
+            bin/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
