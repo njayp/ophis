@@ -102,11 +102,8 @@ func (b *Manager) buildCommandArgs(tool tools.Tool, request mcp.CallToolRequest)
 	message := request.GetArguments()
 
 	// Start with the command path (e.g., "root_sub_command" -> ["root", "sub", "command"])
-	cmdPath := strings.Split(tool.Tool.Name, "_")
-	args := make([]string, 0, len(cmdPath))
-
-	// Add command path components
-	args = append(args, cmdPath...)
+	// And remove the root command prefix
+	args := strings.Split(tool.Tool.Name, "_")[1:]
 
 	// Add flags
 	if flagsValue, ok := message[tools.FlagsParam]; ok {
