@@ -50,22 +50,22 @@ jobs:
             CHANGELOG="- Initial release"
           fi
           
-          # Create the full release body
-          cat << EOF > release_body.md
-          ## Changes in $CURRENT_TAG
-          
-          $CHANGELOG
-          
-          ## Installation
-          
-          ### Go Install
-          \`\`\`bash
-          go install github.com/njayp/ophis@$CURRENT_TAG
-          \`\`\`
-          
-          echo "RELEASE_BODY<<EOF" >> $GITHUB_OUTPUT
-          cat release_body.md >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # Create the release body directly in the GitHub output
+          {
+            echo "RELEASE_BODY<<EOF"
+            echo "## Changes in $CURRENT_TAG"
+            echo ""
+            echo "$CHANGELOG"
+            echo ""
+            echo "## Installation"
+            echo ""
+            echo "### Go Install"
+            echo "\`\`\`bash"
+            echo "go install github.com/njayp/ophis@$CURRENT_TAG"
+            echo "\`\`\`"
+            echo ""
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
 
       # Step 5: Create GitHub Release
       - name: Create GitHub Release
