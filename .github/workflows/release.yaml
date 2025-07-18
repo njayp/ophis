@@ -22,6 +22,20 @@ jobs:
         with:
           go-version: '1.24'
 
+      - name: Install dependencies
+        run: |
+          go mod tidy
+          go mod download
+          git diff --exit-code go.mod go.sum
+
+      - name: Run Linter
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin latest
+          golangci-lint run ./...
+
+      - name: Run Tests
+        run: go test -v ./...
+
       # Step 3: Build binaries (optional)
       - name: Build binaries
         run: |

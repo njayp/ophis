@@ -23,6 +23,7 @@ jobs:
       run: |
         go mod tidy
         go mod download
+        git diff --exit-code go.mod go.sum
 
     - name: Run Linter
       run: |
