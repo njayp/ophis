@@ -29,10 +29,7 @@ func main() {
     rootCmd := createMyRootCommand()
     
     // Add MCP server commands
-    rootCmd.AddCommand(mcp.Command(&bridge.Config{
-        AppName: "my-app-name",
-        RootCmd: command,
-    }))
+    rootCmd.AddCommand(mcp.Command(nil))
     
     if err := rootCmd.Execute(); err != nil {
         os.Exit(1)

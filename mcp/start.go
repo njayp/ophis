@@ -22,7 +22,12 @@ func startCommand(config *bridge.Config) *cobra.Command {
 
 The MCP server will expose all available commands as tools that can be called
 by AI assistants and other MCP-compatible clients.`,
-		RunE: func(_ *cobra.Command, _ []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			if config == nil {
+				config = &bridge.Config{}
+			}
+			validateConfig(config, cmd)
+
 			if mcpFlags.LogLevel != "" {
 				config.LogLevel = mcpFlags.LogLevel
 			}

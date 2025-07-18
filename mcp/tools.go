@@ -16,6 +16,11 @@ func toolCommand(config *bridge.Config) *cobra.Command {
 		Short: "Export available MCP tools to JSON file",
 		Long:  `Export all available MCP tools to mcp-tools.json for inspection and debugging.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			if config == nil {
+				config = &bridge.Config{}
+			}
+			validateConfig(config, cmd)
+
 			tools := config.Tools()
 
 			file, err := os.OpenFile("mcp-tools.json", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)

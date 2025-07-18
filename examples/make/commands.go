@@ -5,7 +5,6 @@ package main
 import (
 	"os/exec"
 
-	"github.com/njayp/ophis/bridge"
 	"github.com/njayp/ophis/mcp"
 	"github.com/spf13/cobra"
 )
@@ -24,11 +23,7 @@ func createMakeCommands() *cobra.Command {
 		Long:  `Execute make targets and build commands`,
 	}
 
-	mcpCmd := mcp.Command(&bridge.Config{
-		AppName:    AppName,
-		AppVersion: AppVersion,
-		RootCmd:    rootCmd,
-	})
+	mcpCmd := mcp.Command(nil)
 
 	// Add some common flags that make commands might use as persistent flags
 	// These will be available to all subcommands
