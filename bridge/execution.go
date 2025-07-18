@@ -5,46 +5,12 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 
 	sq "github.com/kballard/go-shellquote"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/njayp/ophis/tools"
 )
-
-// parseArgumentString provides shell-like argument parsing with proper quote handling.
-// It supports single quotes, double quotes, and backslash escaping.
-//
-// The parsing is done using the github.com/kballard/go-shellquote library which
-// follows /bin/sh word-splitting rules. This allows MCP clients to pass complex
-// arguments containing spaces, quotes, and special characters.
-//
-// Examples:
-//   - `foo bar baz` -> ["foo", "bar", "baz"]
-//   - `foo "bar baz"` -> ["foo", "bar baz"]
-//   - `foo 'bar baz'` -> ["foo", "bar baz"]
-//   - `foo bar\ baz` -> ["foo", "bar baz"]
-//
-// If parsing fails due to malformed input (e.g., unterminated quotes), the function
-// falls back to simple space-based splitting to ensure robustness.
-func parseArgumentString(argsStr string) []string {
-	// Trim whitespace and handle empty string
-	argsStr = strings.TrimSpace(argsStr)
-	if argsStr == "" {
-		return nil
-	}
-
-	// Use shellquote to properly parse the arguments
-	args, err := sq.Split(argsStr)
-	if err != nil {
-		// If parsing fails, fall back to simple splitting
-		// This ensures we don't completely fail on malformed input
-		return strings.Fields(argsStr)
-	}
-
-	return args
-}
 
 // executeCommand executes the command using exec.Cmd.
 func (b *Manager) executeCommand(ctx context.Context, tool tools.Tool, request mcp.CallToolRequest) *mcp.CallToolResult {
@@ -55,13 +21,6 @@ func (b *Manager) executeCommand(ctx context.Context, tool tools.Tool, request m
 		return mcp.NewToolResultError(fmt.Sprintf("Failed to get executable path: %s", err.Error()))
 	}
 
-	// Resolve any symlinks
-	executablePath, err = filepath.EvalSymlinks(executablePath)
-	if err != nil {
-		b.logger.Error("Failed to resolve executable symlinks", "path", executablePath, "error", err.Error())
-		return mcp.NewToolResultError(fmt.Sprintf("Failed to resolve executable symlinks: %s", err.Error()))
-	}
-
 	// Build command arguments
 	cmdArgs, err := b.buildCommandArgs(tool, request)
 	if err != nil {
@@ -70,14 +29,11 @@ func (b *Manager) executeCommand(ctx context.Context, tool tools.Tool, request m
 	}
 
 	// Create exec.Cmd
-	cmd := exec.CommandContext(ctx, executablePath, cmdArgs...)
-
 	b.logger.Info("Executing command via exec.Cmd",
 		"executable", executablePath,
-		"args", cmdArgs)
-
-	// Execute the command
-	data, err := cmd.CombinedOutput()
+		"args", cmdArgs,
+	)
+	data, err := exec.CommandContext(ctx, executablePath, cmdArgs...).CombinedOutput()
 	output := string(data)
 
 	if err != nil {
@@ -104,6 +60,7 @@ func (b *Manager) buildCommandArgs(tool tools.Tool, request mcp.CallToolRequest)
 	// Start with the command path (e.g., "root_sub_command" -> ["root", "sub", "command"])
 	// And remove the root command prefix
 	args := strings.Split(tool.Tool.Name, "_")[1:]
+	b.logger.Debug("Initial command arguments", "args", args)
 
 	// Add flags
 	if flagsValue, ok := message[tools.FlagsParam]; ok {
@@ -154,9 +111,43 @@ func (b *Manager) buildFlagArgs(flagMap map[string]any) ([]string, error) {
 
 		// Add flag with value (for non-boolean flags)
 		if valueStr != "" {
+			b.logger.Debug("Adding flag argument", "flag_name", name, "input", value, "value", valueStr)
 			args = append(args, fmt.Sprintf("--%s", name), valueStr)
 		}
 	}
 
 	return args, nil
+}
+
+// parseArgumentString provides shell-like argument parsing with proper quote handling.
+// It supports single quotes, double quotes, and backslash escaping.
+//
+// The parsing is done using the github.com/kballard/go-shellquote library which
+// follows /bin/sh word-splitting rules. This allows MCP clients to pass complex
+// arguments containing spaces, quotes, and special characters.
+//
+// Examples:
+//   - `foo bar baz` -> ["foo", "bar", "baz"]
+//   - `foo "bar baz"` -> ["foo", "bar baz"]
+//   - `foo 'bar baz'` -> ["foo", "bar baz"]
+//   - `foo bar\ baz` -> ["foo", "bar baz"]
+//
+// If parsing fails due to malformed input (e.g., unterminated quotes), the function
+// falls back to simple space-based splitting to ensure robustness.
+func parseArgumentString(argsStr string) []string {
+	// Trim whitespace and handle empty string
+	argsStr = strings.TrimSpace(argsStr)
+	if argsStr == "" {
+		return nil
+	}
+
+	// Use shellquote to properly parse the arguments
+	args, err := sq.Split(argsStr)
+	if err != nil {
+		// If parsing fails, fall back to simple splitting
+		// This ensures we don't completely fail on malformed input
+		return strings.Fields(argsStr)
+	}
+
+	return args
 }
