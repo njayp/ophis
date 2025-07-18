@@ -10,6 +10,7 @@ import (
 	"github.com/njayp/ophis/tools"
 )
 
+// ToolsGenerator is a function type that generates MCP tools from Cobra commands.
 type ToolsGenerator func() []tools.Tool
 
 // Manager converts a Cobra CLI application to an MCP server.
@@ -25,9 +26,15 @@ func New(config *Config) (*Manager, error) {
 	if config == nil {
 		return nil, fmt.Errorf("configuration cannot be nil: must provide a Config struct with AppName and AppVersion")
 	}
+
 	if config.AppName == "" {
 		return nil, fmt.Errorf("application name cannot be empty: Config.AppName is required for server identification")
 	}
+
+	if config.RootCmd == nil {
+		return nil, fmt.Errorf("root command cannot be nil: Config.RootCmd is required to register tools")
+	}
+
 	if config.AppVersion == "" {
 		config.AppVersion = "unknown"
 	}
