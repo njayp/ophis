@@ -70,11 +70,10 @@ jobs:
             echo ""
             echo "$CHANGELOG"
             echo ""
-            echo "## Installation"
+            echo "## Import"
             echo ""
-            echo "### Go Install"
             echo "\`\`\`bash"
-            echo "go install github.com/njayp/ophis@$CURRENT_TAG"
+            echo "go get github.com/njayp/ophis@$CURRENT_TAG"
             echo "\`\`\`"
             echo ""
             echo "EOF"
@@ -89,7 +88,7 @@ jobs:
           body: ${{ steps.changelog.outputs.RELEASE_BODY }}
           draft: false
           prerelease: false
-          files: |
-            bin/*
+          #files: |
+          #  bin/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
