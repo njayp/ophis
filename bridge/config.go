@@ -21,6 +21,8 @@ type Config struct {
 	ServerOptions []server.ServerOption
 }
 
+// Tools returns the list of MCP tools generated from the root command.
+// It uses the configured Generator if available, otherwise falls back to the default generator.
 func (c *Config) Tools() []tools.Tool {
 	if c.Generator != nil {
 		return c.Generator.FromRootCmd(c.RootCmd)
