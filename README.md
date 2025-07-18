@@ -21,7 +21,6 @@ package main
 
 import (
     "os"
-    "github.com/njayp/ophis/bridge"
     "github.com/njayp/ophis/mcp"
 )
 
