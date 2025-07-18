@@ -41,7 +41,6 @@ func createMakeCommands() *cobra.Command {
 
 	// Add subcommands
 	rootCmd.AddCommand(mcpCmd, testCmd, lintCmd)
-	rootCmd.CompletionOptions.HiddenDefaultCmd = true
 	return rootCmd
 }
 
@@ -51,26 +50,17 @@ func createMakeTargetCommand(target, short, long string) *cobra.Command {
 		Use:   target,
 		Short: short,
 		Long:  long,
-		Run: func(cmd *cobra.Command, args []string) {
-			makeArgs := []string{}
-
-			// Add flags to make arguments
-			makeArgs = appendMakeFlags(cmd, makeArgs)
-
-			// Add target
-			makeArgs = append(makeArgs, target)
-
-			// Add any additional positional arguments
-			makeArgs = append(makeArgs, args...)
-
-			data, _ := exec.CommandContext(cmd.Context(), "make", makeArgs...).CombinedOutput()
+		RunE: func(cmd *cobra.Command, args []string) error {
+			execArgs := []string{target}
+			execArgs = append(execArgs, buildArgs(cmd, args)...)
+			data, err := exec.CommandContext(cmd.Context(), "make", execArgs...).CombinedOutput()
 			cmd.Print(string(data))
+			return err
 		},
 	}
 }
 
-// appendMakeFlags converts cobra flags to make command arguments
-func appendMakeFlags(cmd *cobra.Command, args []string) []string {
+func buildArgs(cmd *cobra.Command, args []string) []string {
 	flags := cmd.Flags()
 
 	// Handle --file/-f flag
@@ -81,16 +71,6 @@ func appendMakeFlags(cmd *cobra.Command, args []string) []string {
 	// Handle --directory/-C flag
 	if directory, _ := flags.GetString("directory"); directory != "" {
 		args = append(args, "-C", directory)
-	}
-
-	// Handle --dry-run/-n flag
-	if dryRun, _ := flags.GetBool("dry-run"); dryRun {
-		args = append(args, "-n")
-	}
-
-	// Handle --silent/-s flag
-	if silent, _ := flags.GetBool("silent"); silent {
-		args = append(args, "-s")
 	}
 
 	return args
