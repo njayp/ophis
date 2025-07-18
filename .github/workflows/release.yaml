@@ -10,13 +10,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Check out the repository code with full history
+      # Check out the repository code with full history
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Fetch full history to get all tags and commits
 
-      # Step 2: Set up Go (optional, if you want to build binaries)
+      # Set up Go and run preflight
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -36,12 +36,11 @@ jobs:
       - name: Run Tests
         run: go test -v ./...
 
-      # Step 3: Build binaries (optional)
       - name: Build binaries
         run: |
           make build
 
-      # Step 4: Generate changelog
+      # Generate changelog
       - name: Generate changelog
         id: changelog
         run: |
@@ -81,7 +80,7 @@ jobs:
             echo "EOF"
           } >> $GITHUB_OUTPUT
 
-      # Step 5: Create GitHub Release
+      # Create GitHub Release
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
