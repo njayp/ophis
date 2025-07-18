@@ -14,7 +14,6 @@ import (
 type enableCommandFlags struct {
 	configPath string
 	logLevel   string
-	logFile    string
 	serverName string
 }
 
@@ -33,7 +32,6 @@ func enableCommand() *cobra.Command {
 	// Add flags
 	flags := cmd.Flags()
 	flags.StringVar(&enableFlags.logLevel, "log-level", "info", "Log level (debug, info, warn, error)")
-	flags.StringVar(&enableFlags.logFile, "log-file", "", "Path to log file (default: user cache)")
 	flags.StringVar(&enableFlags.configPath, "config-path", "", "Path to Claude config file")
 	flags.StringVar(&enableFlags.serverName, "server-name", "", "Name for the MCP server (default: derived from executable name)")
 	return cmd
@@ -99,9 +97,6 @@ func enableMCPServer(flags *enableCommandFlags) error {
 	// Add log level and log file to args if specified
 	if flags.logLevel != "" {
 		server.Args = append(server.Args, "--log-level", flags.logLevel)
-	}
-	if flags.logFile != "" {
-		server.Args = append(server.Args, "--log-file", flags.logFile)
 	}
 
 	// Add server to config (with backup)

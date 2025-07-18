@@ -14,7 +14,6 @@ import (
 type Config struct {
 	AppName       string
 	AppVersion    string
-	LogFile       string
 	LogLevel      string
 	RootCmd       *cobra.Command // The root command for the MCP server
 	Generator     *tools.Generator

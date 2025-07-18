@@ -10,7 +10,6 @@ import (
 // StartCommandFlags holds configuration flags for the start command.
 type StartCommandFlags struct {
 	LogLevel string
-	LogFile  string
 }
 
 // startCommand creates a Cobra command for starting the MCP server.
@@ -28,10 +27,6 @@ by AI assistants and other MCP-compatible clients.`,
 				config.LogLevel = mcpFlags.LogLevel
 			}
 
-			if mcpFlags.LogFile != "" {
-				config.LogFile = mcpFlags.LogFile
-			}
-
 			// Create and start the bridge
 			bridge, err := bridge.New(config)
 			if err != nil {
@@ -44,6 +39,5 @@ by AI assistants and other MCP-compatible clients.`,
 	// Add flags
 	flags := cmd.Flags()
 	flags.StringVar(&mcpFlags.LogLevel, "log-level", "", "Log level (debug, info, warn, error)")
-	flags.StringVar(&mcpFlags.LogFile, "log-file", "", "Path to log file (default: user cache)")
 	return cmd
 }
