@@ -1,4 +1,4 @@
-package bridge
+package mcp
 
 import (
 	"log/slog"

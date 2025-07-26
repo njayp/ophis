@@ -3,6 +3,7 @@ package bridge
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"strings"
@@ -13,44 +14,28 @@ import (
 )
 
 // executeCommand executes the command using exec.Cmd.
-func (b *Manager) executeCommand(ctx context.Context, tool tools.Tool, request mcp.CallToolRequest) *mcp.CallToolResult {
+func (b *Manager) executeCommand(ctx context.Context, tool tools.Tool, request mcp.CallToolRequest) ([]byte, error) {
 	// Get the executable path
 	executablePath, err := os.Executable()
 	if err != nil {
-		b.logger.Error("Failed to get executable path", "error", err.Error())
-		return mcp.NewToolResultError(fmt.Sprintf("Failed to get executable path: %s", err.Error()))
+		slog.Error("Failed to get executable path", "error", err.Error())
+		return nil, fmt.Errorf("Failed to get executable path: %s", err.Error())
 	}
 
 	// Build command arguments
 	cmdArgs, err := b.buildCommandArgs(tool, request)
 	if err != nil {
-		b.logger.Error("Failed to build command arguments", "error", err.Error())
-		return mcp.NewToolResultError(fmt.Sprintf("Failed to build command arguments: %s", err.Error()))
+		slog.Error("Failed to build command arguments", "error", err.Error())
+		return nil, fmt.Errorf("Failed to build command arguments: %s", err.Error())
 	}
 
 	// Create exec.Cmd
-	b.logger.Info("Executing command via exec.Cmd",
+	slog.Info("Executing command via exec.Cmd",
 		"executable", executablePath,
 		"args", cmdArgs,
 	)
-	data, err := exec.CommandContext(ctx, executablePath, cmdArgs...).CombinedOutput()
-	output := string(data)
 
-	if err != nil {
-		b.logger.Error("Command execution failed",
-			"error", err.Error(),
-			"out", output,
-		)
-
-		// Include output in error message if available
-		errMsg := fmt.Sprintf("Command execution failed: %s", err.Error())
-		if output != "" {
-			errMsg += fmt.Sprintf("\nOutput: %s", output)
-		}
-		return mcp.NewToolResultError(errMsg)
-	}
-
-	return mcp.NewToolResultText(output)
+	return exec.CommandContext(ctx, executablePath, cmdArgs...).CombinedOutput()
 }
 
 // buildCommandArgs builds the command line arguments from the tool and request.
@@ -60,7 +45,7 @@ func (b *Manager) buildCommandArgs(tool tools.Tool, request mcp.CallToolRequest)
 	// Start with the command path (e.g., "root_sub_command" -> ["root", "sub", "command"])
 	// And remove the root command prefix
 	args := strings.Split(tool.Tool.Name, "_")[1:]
-	b.logger.Debug("Initial command arguments", "args", args)
+	slog.Debug("Initial command arguments", "args", args)
 
 	// Add flags
 	if flagsValue, ok := message[tools.FlagsParam]; ok {
@@ -111,7 +96,7 @@ func (b *Manager) buildFlagArgs(flagMap map[string]any) ([]string, error) {
 
 		// Add flag with value (for non-boolean flags)
 		if valueStr != "" {
-			b.logger.Debug("Adding flag argument", "flag_name", name, "input", value, "value", valueStr)
+			slog.Debug("Adding flag argument", "flag_name", name, "input", value, "value", valueStr)
 			args = append(args, fmt.Sprintf("--%s", name), valueStr)
 		}
 	}

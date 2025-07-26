@@ -18,7 +18,6 @@ type ToolsGenerator func() []tools.Tool
 // fresh command instances for each execution via the CommandFactory.
 type Manager struct {
 	server *server.MCPServer // The MCP server instance
-	logger *slog.Logger
 }
 
 // New creates a new bridge instance with validation
@@ -39,8 +38,8 @@ func New(config *Config) (*Manager, error) {
 		config.AppVersion = "unknown"
 	}
 
-	logger := config.newSlogger()
-	logger.Info("Creating MCP server", "app_name", config.AppName, "app_version", config.AppVersion)
+	config.setupSlogger()
+	slog.Info("Creating MCP server", "app_name", config.AppName, "app_version", config.AppVersion)
 
 	opts := append(config.ServerOptions, server.WithRecovery())
 	server := server.NewMCPServer(
@@ -50,7 +49,6 @@ func New(config *Config) (*Manager, error) {
 	)
 
 	b := &Manager{
-		logger: logger,
 		server: server,
 	}
 
