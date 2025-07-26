@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/njayp/ophis/bridge"
 	"github.com/spf13/cobra"
 )
@@ -22,6 +23,10 @@ func toolCommand(config *bridge.Config) *cobra.Command {
 			validateConfig(config, cmd)
 
 			tools := config.Tools()
+			mcpTools := make([]mcp.Tool, len(tools))
+			for i, tool := range tools {
+				mcpTools[i] = tool.Tool
+			}
 
 			file, err := os.OpenFile("mcp-tools.json", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
 			if err != nil {
@@ -35,7 +40,7 @@ func toolCommand(config *bridge.Config) *cobra.Command {
 
 			encoder := json.NewEncoder(file)
 			encoder.SetIndent("", "  ")
-			err = encoder.Encode(tools)
+			err = encoder.Encode(mcpTools)
 			if err != nil {
 				return fmt.Errorf("failed to encode MCP tools to JSON: %w", err)
 			}
