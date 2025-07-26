@@ -9,8 +9,6 @@ import (
 	"github.com/njayp/ophis/tools"
 )
 
-type Handler func(request mcp.CallToolRequest, data []byte) *mcp.CallToolResult
-
 // registerTools recursively registers all Cobra commands as MCP tools
 func (b *Manager) registerTools(tools []tools.Tool) {
 	for _, tool := range tools {
@@ -39,6 +37,6 @@ func (b *Manager) registerTool(t tools.Tool) {
 			return mcp.NewToolResultError(errMsg), nil
 		}
 
-		return t.Handler(request, data)
+		return t.Handler(request, data), nil
 	})
 }

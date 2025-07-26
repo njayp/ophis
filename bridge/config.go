@@ -15,7 +15,6 @@ type Config struct {
 	AppVersion     string
 	RootCmd        *cobra.Command // The root command for the MCP server
 	Generator      *tools.Generator
-	Handler        Handler
 	SloggerOptions *slog.HandlerOptions
 	ServerOptions  []server.ServerOption
 }
@@ -26,6 +25,7 @@ func (c *Config) Tools() []tools.Tool {
 	if c.Generator != nil {
 		return c.Generator.FromRootCmd(c.RootCmd)
 	}
+
 	return tools.FromRootCmd(c.RootCmd)
 }
 

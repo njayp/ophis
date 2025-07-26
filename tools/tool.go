@@ -14,6 +14,6 @@ const (
 
 // Tool represents an MCP tool with its associated metadata
 type Tool struct {
-	Tool mcp.Tool `json:"tool"`
-	// more fields will likely be necessary in the future
+	Tool    mcp.Tool `json:"tool"`
+	Handler Handler
 }

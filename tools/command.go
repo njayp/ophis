@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func newTool(cmd *cobra.Command, toolName string) Tool {
+func newTool(cmd *cobra.Command) []mcp.ToolOption {
 	toolOptions := []mcp.ToolOption{
 		mcp.WithDescription(descFromCmd(cmd)),
 	}
@@ -25,15 +25,10 @@ func newTool(cmd *cobra.Command, toolName string) Tool {
 
 	// Add an "args" parameter for positional arguments
 	argsDescription := argsDescFromCmd(cmd)
-	toolOptions = append(toolOptions, mcp.WithString(PositionalArgsParam,
+	return append(toolOptions, mcp.WithString(PositionalArgsParam,
 		mcp.Description(argsDescription),
 		mcp.Required(),
 	))
-
-	// Create the tool
-	return Tool{
-		Tool: mcp.NewTool(toolName, toolOptions...),
-	}
 }
 
 func argsDescFromCmd(cmd *cobra.Command) string {

@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/spf13/cobra"
 )
 
@@ -13,6 +14,7 @@ func FromRootCmd(cmd *cobra.Command) []Tool {
 // Generator converts Cobra commands into MCP tools with configurable exclusions.
 type Generator struct {
 	filters []Filter
+	handler Handler
 }
 
 // GeneratorOption is a function type for configuring Generator instances.
@@ -26,6 +28,7 @@ func NewGenerator(opts ...GeneratorOption) *Generator {
 			Hidden(),
 			Exclude([]string{MCPCommandName, "help", "completion"}),
 		},
+		handler: defaultHandler,
 	}
 
 	for _, opt := range opts {
@@ -68,6 +71,9 @@ outer:
 		return tools
 	}
 
-	tools = append(tools, newTool(cmd, toolName))
-	return tools
+	toolOptions := newTool(cmd)
+	return append(tools, Tool{
+		Tool:    mcp.NewTool(toolName, toolOptions...),
+		Handler: g.handler, // Use the configured handler
+	})
 }
