@@ -4,9 +4,9 @@
 
 Ophis automatically converts your existing Cobra commands into MCP tools that Claude can use.
 
-## Installation
+## Import
 
-```go
+```bash
 go get github.com/njayp/ophis
 ```
 
