@@ -1,6 +1,8 @@
 package tools
 
 import (
+	"log/slog"
+
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/spf13/cobra"
 )
@@ -40,7 +42,10 @@ func NewGenerator(opts ...GeneratorOption) *Generator {
 
 // FromRootCmd recursively converts a Cobra command tree into MCP tools.
 func (g *Generator) FromRootCmd(cmd *cobra.Command) []Tool {
-	return g.fromCmd(cmd, "", []Tool{})
+	slog.Debug("starting tool generation from root command", "root_cmd", cmd.Name())
+	tools := g.fromCmd(cmd, "", []Tool{})
+	slog.Info("tool generation completed", "total_tools", len(tools))
+	return tools
 }
 
 func (g *Generator) fromCmd(cmd *cobra.Command, parentPath string, tools []Tool) []Tool {
@@ -54,11 +59,14 @@ func (g *Generator) fromCmd(cmd *cobra.Command, parentPath string, tools []Tool)
 		toolName = parentPath + "_" + toolName
 	}
 
+	slog.Debug("processing command", "command", toolName, "has_run", cmd.Run != nil || cmd.RunE != nil)
+
 	// Register subcommands
 outer:
 	for _, subCmd := range cmd.Commands() {
 		for _, filter := range g.filters {
 			if !filter(subCmd) {
+				// logging should be handled by the filter itself
 				continue outer
 			}
 		}
@@ -68,12 +76,16 @@ outer:
 
 	// Skip if the command has no runnable function
 	if cmd.Run == nil && cmd.RunE == nil {
+		slog.Debug("skipping command without run function", "command", toolName)
 		return tools
 	}
 
 	toolOptions := newTool(cmd)
-	return append(tools, Tool{
+	tool := Tool{
 		Tool:    mcp.NewTool(toolName, toolOptions...),
 		Handler: g.handler, // Use the configured handler
-	})
+	}
+
+	slog.Debug("created tool", "tool_name", toolName, "description", tool.Tool.Description)
+	return append(tools, tool)
 }

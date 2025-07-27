@@ -4,6 +4,7 @@ package tools
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/spf13/cobra"
@@ -47,6 +48,7 @@ func flagMapFromCmd(cmd *cobra.Command) map[string]any {
 	// add local flags to flag map
 	cmd.LocalFlags().VisitAll(func(flag *pflag.Flag) {
 		if flag.Hidden {
+			slog.Debug("skipping hidden flag", "flag", flag.Name, "command", cmd.Name())
 			return
 		}
 
@@ -64,6 +66,11 @@ func flagMapFromCmd(cmd *cobra.Command) map[string]any {
 			flagMap[flag.Name] = flagToolOption(flag)
 		}
 	})
+
+	slog.Debug("collected flags for command",
+		"command", cmd.Name(),
+		"total_flags", len(flagMap),
+	)
 
 	return flagMap
 }
@@ -86,36 +93,30 @@ func flagToolOption(flag *pflag.Flag) map[string]string {
 
 	// Improve type detection for better MCP tool parameter definitions
 	flagType := flag.Value.Type()
+	var mappedType string
 	switch flagType {
 	case "stringSlice", "stringArray":
-		return map[string]string{
-			"type":        "stringArray",
-			"description": description,
-		}
+		mappedType = "stringArray"
 	case "intSlice":
-		return map[string]string{
-			"type":        "intArray",
-			"description": description,
-		}
+		mappedType = "intArray"
 	case "bool":
-		return map[string]string{
-			"type":        "boolean",
-			"description": description,
-		}
+		mappedType = "boolean"
 	case "int", "int8", "int16", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64":
-		return map[string]string{
-			"type":        "integer",
-			"description": description,
-		}
+		mappedType = "integer"
 	case "float32", "float64":
-		return map[string]string{
-			"type":        "number",
-			"description": description,
-		}
+		mappedType = "number"
 	default:
-		return map[string]string{
-			"type":        "string",
-			"description": description,
-		}
+		mappedType = "string"
+	}
+
+	slog.Debug("mapped flag type",
+		"flag", flag.Name,
+		"original_type", flagType,
+		"mapped_type", mappedType,
+	)
+
+	return map[string]string{
+		"type":        mappedType,
+		"description": description,
 	}
 }

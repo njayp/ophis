@@ -39,7 +39,7 @@ func New(config *Config) (*Manager, error) {
 	}
 
 	config.setupSlogger()
-	slog.Info("Creating MCP server", "app_name", config.AppName, "app_version", config.AppVersion)
+	slog.Info("creating MCP server", "app_name", config.AppName, "app_version", config.AppVersion)
 
 	opts := append(config.ServerOptions, server.WithRecovery())
 	server := server.NewMCPServer(

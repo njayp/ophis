@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"log/slog"
 	"slices"
 	"strings"
 
@@ -28,7 +29,11 @@ func AddFilter(filter Filter) GeneratorOption {
 // Exclude adds a filter to exclude listed command names from the generated tools.
 func Exclude(list []string) Filter {
 	return func(cmd *cobra.Command) bool {
-		return !slices.Contains(list, cmd.Name())
+		excluded := slices.Contains(list, cmd.Name())
+		if excluded {
+			slog.Debug("excluding command by name", "command", cmd.Name(), "exclude_list", list)
+		}
+		return !excluded
 	}
 }
 
@@ -39,10 +44,11 @@ func Allow(list []string) Filter {
 	return func(cmd *cobra.Command) bool {
 		for _, name := range list {
 			if strings.Contains(cmd.CommandPath(), name) {
+				slog.Debug("allowing command by path", "command", cmd.CommandPath(), "matched", name)
 				return true
 			}
 		}
-
+		slog.Debug("filtering out command not in allow list", "command", cmd.CommandPath(), "allow_list", list)
 		return false
 	}
 }
@@ -50,6 +56,9 @@ func Allow(list []string) Filter {
 // Hidden returns a filter that excludes hidden commands from the generated tools.
 func Hidden() Filter {
 	return func(cmd *cobra.Command) bool {
+		if cmd.Hidden {
+			slog.Debug("excluding hidden command", "command", cmd.Name())
+		}
 		return !cmd.Hidden
 	}
 }

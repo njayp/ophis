@@ -18,24 +18,35 @@ func (b *Manager) executeCommand(ctx context.Context, tool tools.Tool, request m
 	// Get the executable path
 	executablePath, err := os.Executable()
 	if err != nil {
-		slog.Error("Failed to get executable path", "error", err.Error())
-		return nil, fmt.Errorf("Failed to get executable path: %s", err.Error())
+		slog.Error("failed to get executable path", "error", err)
+		return nil, fmt.Errorf("failed to get executable path: %w", err)
 	}
 
 	// Build command arguments
 	cmdArgs, err := b.buildCommandArgs(tool, request)
 	if err != nil {
-		slog.Error("Failed to build command arguments", "error", err.Error())
-		return nil, fmt.Errorf("Failed to build command arguments: %s", err.Error())
+		slog.Error("failed to build command arguments", "error", err)
+		return nil, fmt.Errorf("failed to build command arguments: %w", err)
 	}
 
 	// Create exec.Cmd
-	slog.Info("Executing command via exec.Cmd",
+	slog.Debug("executing command",
+		"tool", tool.Tool.Name,
 		"executable", executablePath,
 		"args", cmdArgs,
 	)
 
-	return exec.CommandContext(ctx, executablePath, cmdArgs...).CombinedOutput()
+	cmd := exec.CommandContext(ctx, executablePath, cmdArgs...)
+	data, err := cmd.CombinedOutput()
+	if err != nil {
+		// Log command exit error but include it in returned error
+		slog.Debug("command failed",
+			"tool", tool.Tool.Name,
+			"error", err,
+			"exit_code", cmd.ProcessState.ExitCode(),
+		)
+	}
+	return data, err
 }
 
 // buildCommandArgs builds the command line arguments from the tool and request.
@@ -45,7 +56,7 @@ func (b *Manager) buildCommandArgs(tool tools.Tool, request mcp.CallToolRequest)
 	// Start with the command path (e.g., "root_sub_command" -> ["root", "sub", "command"])
 	// And remove the root command prefix
 	args := strings.Split(tool.Tool.Name, "_")[1:]
-	slog.Debug("Initial command arguments", "args", args)
+	slog.Debug("initial command arguments", "args", args)
 
 	// Add flags
 	if flagsValue, ok := message[tools.FlagsParam]; ok {
@@ -96,7 +107,7 @@ func (b *Manager) buildFlagArgs(flagMap map[string]any) ([]string, error) {
 
 		// Add flag with value (for non-boolean flags)
 		if valueStr != "" {
-			slog.Debug("Adding flag argument", "flag_name", name, "input", value, "value", valueStr)
+			slog.Debug("adding flag argument", "flag_name", name, "input", value, "value", valueStr)
 			args = append(args, fmt.Sprintf("--%s", name), valueStr)
 		}
 	}

@@ -17,23 +17,23 @@ func (b *Manager) registerTools(tools []tools.Tool) {
 }
 
 func (b *Manager) registerTool(t tools.Tool) {
-	slog.Debug("Registering MCP tool", "tool_name", t.Tool.Name)
+	slog.Debug("registering MCP tool", "tool_name", t.Tool.Name)
 	b.server.AddTool(t.Tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		slog.Info("MCP tool request received", "tool_name", t.Tool.Name, "arguments", request.Params.Arguments)
 		data, err := b.executeCommand(ctx, t, request)
 		if err != nil {
 			// Include output in error message if available
-			errMsg := fmt.Sprintf("Command execution failed: %s", err.Error())
 			output := string(data)
+			slog.Error("command execution failed",
+				"tool", t.Tool.Name,
+				"error", err,
+				"output", output,
+			)
+
+			errMsg := fmt.Sprintf("command execution failed: %s", err.Error())
 			if output != "" {
 				errMsg += fmt.Sprintf("\nOutput: %s", output)
 			}
-
-			slog.Error("Command execution failed",
-				"error", err.Error(),
-				"out", output,
-			)
-
 			return mcp.NewToolResultError(errMsg), nil
 		}
 
