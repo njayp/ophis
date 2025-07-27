@@ -30,7 +30,7 @@ func NewGenerator(opts ...GeneratorOption) *Generator {
 			Hidden(),
 			Exclude([]string{MCPCommandName, "help", "completion"}),
 		},
-		handler: defaultHandler,
+		handler: DefaultHandler(),
 	}
 
 	for _, opt := range opts {
