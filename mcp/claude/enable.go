@@ -31,7 +31,7 @@ func enableCommand() *cobra.Command {
 
 	// Add flags
 	flags := cmd.Flags()
-	flags.StringVar(&enableFlags.logLevel, "log-level", "info", "Log level (debug, info, warn, error)")
+	flags.StringVar(&enableFlags.logLevel, "log-level", "", "Log level (debug, info, warn, error)")
 	flags.StringVar(&enableFlags.configPath, "config-path", "", "Path to Claude config file")
 	flags.StringVar(&enableFlags.serverName, "server-name", "", "Name for the MCP server (default: derived from executable name)")
 	return cmd
