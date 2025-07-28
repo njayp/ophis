@@ -23,6 +23,28 @@ type Generator struct {
 type GeneratorOption func(*Generator)
 
 // NewGenerator creates a new Generator with the specified options.
+//
+// By default, the Generator:
+//   - Excludes hidden commands
+//   - Excludes "mcp", "help", and "completion" commands
+//   - Uses DefaultHandler() which returns command output as plain text
+//
+// Available options:
+//
+//	WithFilters(filters ...Filter) - Replace all filters with custom ones
+//	  Example: NewGenerator(WithFilters(Allow([]string{"get", "list"})))
+//
+//	AddFilter(filter Filter) - Add an additional filter to the existing ones
+//	  Example: NewGenerator(AddFilter(Exclude([]string{"dangerous-cmd"})))
+//
+//	WithHandler(handler Handler) - Set a custom handler for processing command output
+//	  Example: NewGenerator(WithHandler(myCustomHandler))
+//
+// Common filter functions:
+//
+//	Hidden() - Excludes hidden commands (applied by default)
+//	Exclude([]string) - Excludes commands by name
+//	Allow([]string) - Only includes commands whose path contains these names
 func NewGenerator(opts ...GeneratorOption) *Generator {
 	g := &Generator{
 		// default filters
@@ -80,7 +102,7 @@ outer:
 		return tools
 	}
 
-	toolOptions := newTool(cmd)
+	toolOptions := toolOptsFromCmd(cmd)
 	tool := Tool{
 		Tool:    mcp.NewTool(toolName, toolOptions...),
 		Handler: g.handler, // Use the configured handler

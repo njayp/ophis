@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func newTool(cmd *cobra.Command) []mcp.ToolOption {
+func toolOptsFromCmd(cmd *cobra.Command) []mcp.ToolOption {
 	toolOptions := []mcp.ToolOption{
 		mcp.WithDescription(descFromCmd(cmd)),
 	}

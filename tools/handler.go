@@ -7,10 +7,12 @@ import "github.com/mark3labs/mcp-go/mcp"
 // Custom handlers can be used to format command output or handle special cases.
 type Handler func(request mcp.CallToolRequest, data []byte) *mcp.CallToolResult
 
-// WithHandler sets a custom handler for processing command output.
+// WithHandler returns a GeneratorOption that sets a custom handler for processing command output.
 // By default, the generator uses DefaultHandler which returns output as plain text.
-func (g *Generator) WithHandler(handler Handler) {
-	g.handler = handler
+func WithHandler(handler Handler) GeneratorOption {
+	return func(g *Generator) {
+		g.handler = handler
+	}
 }
 
 // DefaultHandler is the default handler that processes command output as plain text.

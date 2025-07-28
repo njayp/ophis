@@ -13,14 +13,19 @@ import (
 // ToolsGenerator is a function type that generates MCP tools from Cobra commands.
 type ToolsGenerator func() []tools.Tool
 
-// Manager converts a Cobra CLI application to an MCP server.
-// The bridge is thread-safe for concurrent MCP tool calls as it creates
-// fresh command instances for each execution via the CommandFactory.
+// Manager manages the bridge between a Cobra CLI application and an MCP server.
+// It handles tool registration, command execution, and server lifecycle.
+//
+// Manager instances should be created using the New function rather than
+// direct struct initialization to ensure proper validation and setup.
 type Manager struct {
-	server *server.MCPServer // The MCP server instance
+	server *server.MCPServer // The underlying MCP server instance
 }
 
-// New creates a new bridge instance with validation
+// New creates a new Manager instance from the provided configuration.
+// Returns an error if:
+//   - config.AppName is empty
+//   - config.RootCmd is nil
 func New(config *Config) (*Manager, error) {
 	if config == nil {
 		return nil, fmt.Errorf("configuration cannot be nil: must provide a Config struct with AppName and AppVersion")
@@ -56,7 +61,11 @@ func New(config *Config) (*Manager, error) {
 	return b, nil
 }
 
-// StartServer starts the MCP server using stdio transport
+// StartServer starts the MCP server using stdio transport.
+//
+// This method blocks until the server is shut down or encounters an error.
+// The server communicates over stdin/stdout, making it compatible with
+// MCP clients like Claude Desktop.
 func (b *Manager) StartServer() error {
 	return server.ServeStdio(b.server)
 }
