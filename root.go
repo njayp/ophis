@@ -1,10 +1,10 @@
-// Package mcp provides the main MCP command implementations for ophis.
+// Package ophis provides functionality to convert Cobra CLI applications into MCP servers.
 // It includes commands to start MCP servers and manage tools.
-package mcp
+package ophis
 
 import (
 	"github.com/njayp/ophis/bridge"
-	"github.com/njayp/ophis/mcp/claude"
+	"github.com/njayp/ophis/claude"
 	"github.com/njayp/ophis/tools"
 	"github.com/spf13/cobra"
 )

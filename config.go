@@ -1,4 +1,4 @@
-package mcp
+package ophis
 
 import (
 	"github.com/njayp/ophis/bridge"

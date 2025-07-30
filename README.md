@@ -21,14 +21,14 @@ package main
 
 import (
     "os"
-    "github.com/njayp/ophis/mcp"
+    "github.com/njayp/ophis"
 )
 
 func main() {
     rootCmd := createMyRootCommand()
     
     // Add MCP server commands
-    rootCmd.AddCommand(mcp.Command(nil))
+    rootCmd.AddCommand(ophis.Command(nil))
     
     if err := rootCmd.Execute(); err != nil {
         os.Exit(1)
@@ -48,12 +48,12 @@ Your CLI commands are now available as tools in Claude!
 
 ## Configuration
 
-The `mcp.Command()` function accepts an optional `*bridge.Config` parameter to customize the MCP server behavior:
+The `ophis.Command()` function accepts an optional `*bridge.Config` parameter to customize the MCP server behavior:
 
 ```go
 import (
     "log/slog"
-    "github.com/njayp/ophis/mcp"
+    "github.com/njayp/ophis"
     "github.com/njayp/ophis/bridge"
     "github.com/njayp/ophis/tools"
 )
@@ -84,7 +84,7 @@ config := &bridge.Config{
     },
 }
 
-rootCmd.AddCommand(mcp.Command(config))
+rootCmd.AddCommand(ophis.Command(config))
 ```
 
 ### Default Behavior
