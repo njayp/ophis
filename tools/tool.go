@@ -6,7 +6,8 @@ import (
 
 // Constants for MCP parameter names and error messages
 const (
-	MCPCommandName = "mcp"
+	MCPCommandName   = "mcp"
+	StartCommandName = "start"
 	// PositionalArgsParam is the parameter name for positional arguments
 	PositionalArgsParam = "args"
 	FlagsParam          = "flags"

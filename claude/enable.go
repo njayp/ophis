@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/njayp/ophis/claude/config"
+	"github.com/njayp/ophis/tools"
 	"github.com/spf13/cobra"
 )
 
@@ -91,7 +92,7 @@ func enableMCPServer(flags *enableCommandFlags) error {
 	// Build server configuration
 	server := config.MCPServer{
 		Command: executablePath,
-		Args:    []string{"mcp", "start"},
+		Args:    []string{tools.MCPCommandName, tools.StartCommandName},
 	}
 
 	// Add log level and log file to args if specified

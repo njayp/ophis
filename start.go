@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/njayp/ophis/bridge"
+	"github.com/njayp/ophis/tools"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +19,7 @@ type StartCommandFlags struct {
 func startCommand(config *bridge.Config) *cobra.Command {
 	mcpFlags := &StartCommandFlags{}
 	cmd := &cobra.Command{
-		Use:   "start",
+		Use:   tools.StartCommandName,
 		Short: "Start MCP (Model Context Protocol) server",
 		Long: `Start an MCP server that exposes this application's commands to MCP clients.
 
