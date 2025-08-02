@@ -6,23 +6,21 @@ import (
 	"os"
 
 	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/njayp/ophis/bridge"
 	"github.com/spf13/cobra"
 )
 
 // toolCommand creates a command that outputs available tools to a file
-func toolCommand(config *bridge.Config) *cobra.Command {
+func toolCommand(config *Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "tools",
 		Short: "Export available MCP tools to JSON file",
 		Long:  `Export all available MCP tools to mcp-tools.json for inspection and debugging.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if config == nil {
-				config = &bridge.Config{}
+				config = &Config{}
 			}
-			validateConfig(config, cmd)
 
-			tools := config.Tools()
+			tools := config.bridgeConfig(cmd).Tools()
 			mcpTools := make([]mcp.Tool, len(tools))
 			for i, tool := range tools {
 				mcpTools[i] = tool.Tool

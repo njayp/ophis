@@ -16,7 +16,7 @@ type StartCommandFlags struct {
 }
 
 // startCommand creates a Cobra command for starting the MCP server.
-func startCommand(config *bridge.Config) *cobra.Command {
+func startCommand(config *Config) *cobra.Command {
 	mcpFlags := &StartCommandFlags{}
 	cmd := &cobra.Command{
 		Use:   tools.StartCommandName,
@@ -27,9 +27,8 @@ The MCP server will expose all available commands as tools that can be called
 by AI assistants and other MCP-compatible clients.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if config == nil {
-				config = &bridge.Config{}
+				config = &Config{}
 			}
-			validateConfig(config, cmd)
 
 			if mcpFlags.LogLevel != "" {
 				level := parseLogLevel(mcpFlags.LogLevel)
@@ -42,7 +41,7 @@ by AI assistants and other MCP-compatible clients.`,
 			}
 
 			// Create and start the bridge
-			bridge, err := bridge.New(config)
+			bridge, err := bridge.New(config.bridgeConfig(cmd))
 			if err != nil {
 				return fmt.Errorf("failed to create MCP server bridge: %w", err)
 			}

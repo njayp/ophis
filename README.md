@@ -48,24 +48,16 @@ Your CLI commands are now available as tools in Claude!
 
 ## Configuration
 
-The `ophis.Command()` function accepts an optional `*bridge.Config` parameter to customize the MCP server behavior:
+The `ophis.Command()` function accepts an optional `*ophis.Config` parameter to customize the MCP server behavior:
 
 ```go
 import (
     "log/slog"
     "github.com/njayp/ophis"
-    "github.com/njayp/ophis/bridge"
     "github.com/njayp/ophis/tools"
 )
 
-config := &bridge.Config{
-    // Server identification (defaults to root command name)
-    AppName:    "my-cli",
-    AppVersion: "1.0.0",
-    
-    // Root command to expose (defaults to parent of mcp command)
-    RootCmd: rootCmd,
-    
+config := &ophis.Config{
     // Customize command filtering and output handling
     Generator: tools.NewGenerator(
         // Include only specific commands
@@ -90,7 +82,6 @@ rootCmd.AddCommand(ophis.Command(config))
 ### Default Behavior
 
 When called with `nil` config, the MCP server:
-- Uses the root command name as the server name
 - Excludes hidden, "mcp", "help", and "completion" commands
 - Returns command output as plain text
 - Logs at info level
