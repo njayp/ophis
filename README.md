@@ -114,15 +114,6 @@ tools.WithHandler(func(request mcp.CallToolRequest, data []byte) *mcp.CallToolRe
 })
 ```
 
-## Features
-
-- Automatic command-to-tool conversion
-- Full flag and argument support
-- Preserves command descriptions and help text
-- Zero changes to existing commands
-- Selective command filtering
-- Spawns a new process for each tool call
-
 ## Examples
 
 - [helm](https://github.com/njayp/helm)
