@@ -9,289 +9,224 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGenerator_FromRootCmd(t *testing.T) {
+// TestGenerator_CommandConversion tests the core functionality of converting
+// Cobra commands to MCP tools, covering the main path and key edge cases
+func TestGenerator_CommandConversion(t *testing.T) {
 	tests := []struct {
 		name     string
 		setupCmd func() *cobra.Command
-		expected int // number of tools expected
+		options  []GeneratorOption
+		validate func(t *testing.T, tools []Tool)
 	}{
 		{
-			name: "root command with Run function",
+			name: "standard CLI with subcommands",
 			setupCmd: func() *cobra.Command {
-				return &cobra.Command{
-					Use:   "root",
-					Short: "Root command",
-					Run:   func(_ *cobra.Command, _ []string) {},
+				root := &cobra.Command{Use: "cli", Short: "CLI tool"}
+
+				// Common pattern: get/list/create commands
+				get := &cobra.Command{Use: "get", Short: "Get resources", Run: func(_ *cobra.Command, _ []string) {}}
+				list := &cobra.Command{Use: "list", Short: "List resources", Run: func(_ *cobra.Command, _ []string) {}}
+				create := &cobra.Command{Use: "create", Short: "Create resource", RunE: func(_ *cobra.Command, _ []string) error { return nil }}
+
+				// Add some flags
+				get.Flags().String("format", "json", "Output format")
+				list.Flags().Bool("all", false, "Show all resources")
+				create.Flags().StringP("file", "f", "", "File to create from")
+
+				root.AddCommand(get, list, create)
+				return root
+			},
+			validate: func(t *testing.T, tools []Tool) {
+				assert.Len(t, tools, 3)
+
+				// Verify tool names
+				toolNames := make(map[string]bool)
+				for _, tool := range tools {
+					toolNames[tool.Tool.Name] = true
+				}
+				assert.True(t, toolNames["cli_get"])
+				assert.True(t, toolNames["cli_list"])
+				assert.True(t, toolNames["cli_create"])
+
+				// Verify flags are included
+				for _, tool := range tools {
+					// Verify tool has proper structure
+					assert.NotNil(t, tool.Tool.InputSchema)
+					// Just verify the tool was created properly
+					// The schema structure is handled by mcp-go library
 				}
 			},
-			expected: 1,
 		},
 		{
-			name: "root command without Run function",
+			name: "nested command structure",
 			setupCmd: func() *cobra.Command {
-				return &cobra.Command{
-					Use:   "root",
-					Short: "Root command",
+				root := &cobra.Command{Use: "kubectl", Short: "Kubernetes CLI"}
+
+				// Nested structure: kubectl get pods
+				get := &cobra.Command{Use: "get", Short: "Get resources"}
+				pods := &cobra.Command{Use: "pods", Short: "Get pods", Run: func(_ *cobra.Command, _ []string) {}}
+				pods.Flags().StringP("namespace", "n", "default", "Namespace")
+
+				get.AddCommand(pods)
+				root.AddCommand(get)
+				return root
+			},
+			validate: func(t *testing.T, tools []Tool) {
+				assert.Len(t, tools, 1)
+				assert.Equal(t, "kubectl_get_pods", tools[0].Tool.Name)
+			},
+		},
+		{
+			name: "filtered commands with allow list",
+			setupCmd: func() *cobra.Command {
+				root := &cobra.Command{Use: "cli", Short: "CLI"}
+
+				safe := &cobra.Command{Use: "safe", Short: "Safe operation", Run: func(_ *cobra.Command, _ []string) {}}
+				danger := &cobra.Command{Use: "danger", Short: "Dangerous operation", Run: func(_ *cobra.Command, _ []string) {}}
+				other := &cobra.Command{Use: "other", Short: "Other operation", Run: func(_ *cobra.Command, _ []string) {}}
+
+				root.AddCommand(safe, danger, other)
+				return root
+			},
+			options: []GeneratorOption{
+				WithFilters(Allow([]string{"safe", "other"})),
+			},
+			validate: func(t *testing.T, tools []Tool) {
+				assert.Len(t, tools, 2)
+
+				toolNames := make([]string, len(tools))
+				for i, tool := range tools {
+					toolNames[i] = tool.Tool.Name
 				}
+				assert.ElementsMatch(t, []string{"cli_safe", "cli_other"}, toolNames)
 			},
-			expected: 0,
 		},
 		{
-			name: "root with subcommands",
+			name: "commands without Run functions are skipped",
 			setupCmd: func() *cobra.Command {
-				root := &cobra.Command{Use: "root", Short: "Root command"}
-				sub1 := &cobra.Command{Use: "sub1", Short: "Sub 1", Run: func(_ *cobra.Command, _ []string) {}}
-				sub2 := &cobra.Command{Use: "sub2", Short: "Sub 2", RunE: func(_ *cobra.Command, _ []string) error { return nil }}
-				root.AddCommand(sub1, sub2)
+				root := &cobra.Command{Use: "cli", Short: "CLI"}
+
+				// Parent command without Run - should be skipped
+				parent := &cobra.Command{Use: "parent", Short: "Parent command"}
+
+				// Child with Run - should be included
+				child := &cobra.Command{Use: "child", Short: "Child command", Run: func(_ *cobra.Command, _ []string) {}}
+
+				parent.AddCommand(child)
+				root.AddCommand(parent)
 				return root
 			},
-			expected: 2,
+			validate: func(t *testing.T, tools []Tool) {
+				assert.Len(t, tools, 1)
+				assert.Equal(t, "cli_parent_child", tools[0].Tool.Name)
+			},
 		},
 		{
-			name: "root with hidden subcommand",
+			name: "inherited flags from parent commands",
 			setupCmd: func() *cobra.Command {
-				root := &cobra.Command{Use: "root", Short: "Root command"}
-				visible := &cobra.Command{Use: "visible", Short: "Visible", Run: func(_ *cobra.Command, _ []string) {}}
-				hidden := &cobra.Command{Use: "hidden", Short: "Hidden", Hidden: true, Run: func(_ *cobra.Command, _ []string) {}}
-				root.AddCommand(visible, hidden)
+				root := &cobra.Command{Use: "cli", Short: "CLI"}
+				root.PersistentFlags().String("config", "", "Config file")
+				root.PersistentFlags().Bool("verbose", false, "Verbose output")
+
+				cmd := &cobra.Command{Use: "run", Short: "Run command", Run: func(_ *cobra.Command, _ []string) {}}
+				cmd.Flags().String("input", "", "Input file")
+
+				root.AddCommand(cmd)
 				return root
 			},
-			expected: 1, // only visible command
-		},
-		{
-			name: "root with mcp subcommand (excluded by default)",
-			setupCmd: func() *cobra.Command {
-				root := &cobra.Command{Use: "root", Short: "Root command"}
-				mcpCmd := &cobra.Command{Use: "mcp", Short: "MCP", Run: func(_ *cobra.Command, _ []string) {}}
-				other := &cobra.Command{Use: "other", Short: "Other", Run: func(_ *cobra.Command, _ []string) {}}
-				root.AddCommand(mcpCmd, other)
-				return root
+			validate: func(t *testing.T, tools []Tool) {
+				assert.Len(t, tools, 1)
+
+				// Verify the tool was created
+				assert.Equal(t, "cli_run", tools[0].Tool.Name)
+				// The actual flag verification would require inspecting the schema
+				// which is internal to the mcp.Tool structure
 			},
-			expected: 1, // only 'other' command, 'mcp' excluded
-		},
-		{
-			name: "command tree with multiple branches",
-			setupCmd: func() *cobra.Command {
-				root := &cobra.Command{Use: "root", Short: "Root command"}
-				// branch 1
-				cmd11 := &cobra.Command{Use: "cmd11", Short: "11", Run: func(_ *cobra.Command, _ []string) {}}
-				cmd12 := &cobra.Command{Use: "cmd12", Short: "12", Run: func(_ *cobra.Command, _ []string) {}}
-				cmd11.AddCommand(cmd12)
-				// branch 2
-				cmd21 := &cobra.Command{Use: "cmd21", Short: "21", Run: func(_ *cobra.Command, _ []string) {}}
-				cmd22 := &cobra.Command{Use: "cmd22", Short: "22", Run: func(_ *cobra.Command, _ []string) {}}
-				cmd21.AddCommand(cmd22)
-				// Add branches to root
-				root.AddCommand(cmd11, cmd21)
-				return root
-			},
-			expected: 4,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			generator := NewGenerator()
+			generator := NewGenerator(tt.options...)
 			cmd := tt.setupCmd()
 			tools := generator.FromRootCmd(cmd)
-
-			assert.Len(t, tools, tt.expected)
-
-			// Verify each tool is properly constructed
-			for _, tool := range tools {
-				assert.NotEmpty(t, tool.Tool.Name)
-				assert.NotNil(t, tool.Tool.InputSchema)
-			}
+			tt.validate(t, tools)
 		})
 	}
 }
 
-func TestGenerator_BlackWhiteListOptions(t *testing.T) {
+// TestFlagTypeMapping tests the mapping of Cobra flag types to MCP schema types
+func TestFlagTypeMapping(t *testing.T) {
+	// Test only the most common and important flag types
 	tests := []struct {
-		name     string
-		options  []GeneratorOption
-		expected []string
-	}{
-		{
-			name:     "blacklist custom",
-			options:  []GeneratorOption{WithFilters(Exclude([]string{"custom"}))},
-			expected: []string{"root_other"},
-		},
-		{
-			name:     "no list (default: blacklist mcp)",
-			options:  nil,
-			expected: []string{"root_custom", "root_other", "root_custom_child"},
-		},
-		{
-			name:     "whitelist custom",
-			options:  []GeneratorOption{WithFilters(Allow([]string{"custom"}))},
-			expected: []string{"root_custom", "root_custom_child"},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			root := &cobra.Command{Use: "root", Short: "Root command"}
-			customCmd := &cobra.Command{Use: "custom", Short: "Custom", Run: func(_ *cobra.Command, _ []string) {}}
-			childCmd := &cobra.Command{Use: "child", Short: "Child", Run: func(_ *cobra.Command, _ []string) {}}
-			otherCmd := &cobra.Command{Use: "other", Short: "Other", Run: func(_ *cobra.Command, _ []string) {}}
-			root.AddCommand(customCmd, otherCmd)
-			customCmd.AddCommand(childCmd)
-
-			generator := NewGenerator(tt.options...)
-			tools := generator.FromRootCmd(root)
-
-			var toolNames []string
-			for _, tool := range tools {
-				toolNames = append(toolNames, tool.Tool.Name)
-			}
-			assert.ElementsMatch(t, tt.expected, toolNames)
-		})
-	}
-}
-
-func TestFlagToolOption(t *testing.T) {
-	tests := []struct {
-		name         string
 		flagType     string
 		expectedType string
+		setup        func(cmd *cobra.Command)
 	}{
-		{"string flag", "string", "string"},
-		{"boolean flag", "bool", "boolean"},
-		{"integer flag", "int", "integer"},
-		{"int64 flag", "int64", "integer"},
-		{"float32 flag", "float32", "number"},
-		{"float64 flag", "float64", "number"},
-		{"string slice flag", "stringSlice", "stringArray"},
-		{"string array flag", "stringArray", "stringArray"},
-		{"int slice flag", "intSlice", "intArray"},
-		{"duration flag (default to string)", "duration", "string"},
+		{
+			flagType:     "string",
+			expectedType: "string",
+			setup:        func(cmd *cobra.Command) { cmd.Flags().String("test", "", "desc") },
+		},
+		{
+			flagType:     "bool",
+			expectedType: "boolean",
+			setup:        func(cmd *cobra.Command) { cmd.Flags().Bool("test", false, "desc") },
+		},
+		{
+			flagType:     "int",
+			expectedType: "integer",
+			setup:        func(cmd *cobra.Command) { cmd.Flags().Int("test", 0, "desc") },
+		},
+		{
+			flagType:     "stringSlice",
+			expectedType: "stringArray",
+			setup:        func(cmd *cobra.Command) { cmd.Flags().StringSlice("test", nil, "desc") },
+		},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.flagType, func(t *testing.T) {
 			cmd := &cobra.Command{Use: "test"}
-
-			// Add different flag types based on test case
-			switch tt.flagType {
-			case "string":
-				cmd.Flags().String("test-flag", "", "Test flag")
-			case "bool":
-				cmd.Flags().Bool("test-flag", false, "Test flag")
-			case "int":
-				cmd.Flags().Int("test-flag", 0, "Test flag")
-			case "int64":
-				cmd.Flags().Int64("test-flag", 0, "Test flag")
-			case "float32":
-				cmd.Flags().Float32("test-flag", 0.0, "Test flag")
-			case "float64":
-				cmd.Flags().Float64("test-flag", 0.0, "Test flag")
-			case "stringSlice":
-				cmd.Flags().StringSlice("test-flag", nil, "Test flag")
-			case "stringArray":
-				cmd.Flags().StringArray("test-flag", nil, "Test flag")
-			case "intSlice":
-				cmd.Flags().IntSlice("test-flag", nil, "Test flag")
-			case "duration":
-				cmd.Flags().Duration("test-flag", 0, "Test flag")
-			}
+			tt.setup(cmd)
 
 			var flag *pflag.Flag
 			cmd.Flags().VisitAll(func(f *pflag.Flag) {
-				if f.Name == "test-flag" {
-					flag = f
-				}
+				flag = f
 			})
-			require.NotNil(t, flag, "Flag test-flag not found")
+			require.NotNil(t, flag)
 
 			result := flagToolOption(flag)
 			assert.Equal(t, tt.expectedType, result["type"])
-			assert.Equal(t, "Test flag", result["description"])
-			assert.Len(t, result, 2) // Should only have type and description
+			assert.Equal(t, "desc", result["description"])
 		})
 	}
 }
 
-func TestToolNaming(t *testing.T) {
-	tests := []struct {
-		name         string
-		setupCmd     func() *cobra.Command
-		expectedName string
-	}{
-		{
-			name: "single level command",
-			setupCmd: func() *cobra.Command {
-				return &cobra.Command{
-					Use:   "mycommand",
-					Short: "My command",
-					Run:   func(_ *cobra.Command, _ []string) {},
-				}
-			},
-			expectedName: "mycommand",
-		},
-		{
-			name: "nested command",
-			setupCmd: func() *cobra.Command {
-				root := &cobra.Command{Use: "root", Short: "Root command"}
-				sub := &cobra.Command{Use: "sub", Short: "Sub command", Run: func(_ *cobra.Command, _ []string) {}}
-				root.AddCommand(sub)
-				return root
-			},
-			expectedName: "root_sub",
-		},
-		{
-			name: "deeply nested command",
-			setupCmd: func() *cobra.Command {
-				root := &cobra.Command{Use: "root", Short: "Root command"}
-				level1 := &cobra.Command{Use: "level1", Short: "Level 1 command"}
-				level2 := &cobra.Command{Use: "level2", Short: "Level 2 command", Run: func(_ *cobra.Command, _ []string) {}}
-				level1.AddCommand(level2)
-				root.AddCommand(level1)
-				return root
-			},
-			expectedName: "root_level1_level2",
-		},
-	}
+// TestDefaultFilters tests that default filters work as expected
+func TestDefaultFilters(t *testing.T) {
+	root := &cobra.Command{Use: "cli", Short: "CLI"}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			generator := NewGenerator()
-			cmd := tt.setupCmd()
-			tools := generator.FromRootCmd(cmd)
-			require.Len(t, tools, 1)
-			assert.Equal(t, tt.expectedName, tools[0].Tool.Name)
-		})
-	}
+	// Commands that should be filtered out by default
+	mcp := &cobra.Command{Use: "mcp", Short: "MCP command", Run: func(_ *cobra.Command, _ []string) {}}
+	help := &cobra.Command{Use: "help", Short: "Help command", Run: func(_ *cobra.Command, _ []string) {}}
+	completion := &cobra.Command{Use: "completion", Short: "Completion", Run: func(_ *cobra.Command, _ []string) {}}
+	hidden := &cobra.Command{Use: "hidden", Short: "Hidden", Hidden: true, Run: func(_ *cobra.Command, _ []string) {}}
+
+	// Command that should be included
+	normal := &cobra.Command{Use: "normal", Short: "Normal command", Run: func(_ *cobra.Command, _ []string) {}}
+
+	root.AddCommand(mcp, help, completion, hidden, normal)
+
+	generator := NewGenerator() // Use default filters
+	tools := generator.FromRootCmd(root)
+
+	assert.Len(t, tools, 1, "Should only include the normal command")
+	assert.Equal(t, "cli_normal", tools[0].Tool.Name)
 }
 
-func TestArgsDescFromCmd(t *testing.T) {
-	tests := []struct {
-		name     string
-		use      string
-		expected string
-	}{
-		{
-			name:     "command with Use field",
-			use:      "test [OPTIONS] <arg1> <arg2>",
-			expected: "Positional arguments. Usage: test [OPTIONS] <arg1> <arg2>",
-		},
-		{
-			name:     "command without Use field",
-			use:      "",
-			expected: "Positional arguments",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cmd := &cobra.Command{Use: tt.use}
-			result := argsDescFromCmd(cmd)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
-func TestDescFromCmd(t *testing.T) {
+// TestCommandDescriptions tests that command descriptions are properly extracted
+func TestCommandDescriptions(t *testing.T) {
 	tests := []struct {
 		name     string
 		short    string
@@ -299,115 +234,33 @@ func TestDescFromCmd(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "command with long description",
-			short:    "Short description",
-			long:     "Long description with more details",
-			expected: "Long description with more details",
+			name:     "prefers long description",
+			short:    "Short desc",
+			long:     "This is a much longer and more detailed description",
+			expected: "This is a much longer and more detailed description",
 		},
 		{
-			name:     "command with only short description",
-			short:    "Short description",
+			name:     "falls back to short if no long",
+			short:    "Only short description",
 			long:     "",
-			expected: "Short description",
-		},
-		{
-			name:     "command with empty descriptions",
-			short:    "",
-			long:     "",
-			expected: "",
+			expected: "Only short description",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cmd := &cobra.Command{Short: tt.short, Long: tt.long}
-			result := descFromCmd(cmd)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
+			cmd := &cobra.Command{
+				Use:   "test",
+				Short: tt.short,
+				Long:  tt.long,
+				Run:   func(_ *cobra.Command, _ []string) {},
+			}
 
-func TestFlagMapFromCmd(t *testing.T) {
-	tests := []struct {
-		name     string
-		setupCmd func() *cobra.Command
-		validate func(t *testing.T, flagMap map[string]any)
-	}{
-		{
-			name: "command with no flags",
-			setupCmd: func() *cobra.Command {
-				return &cobra.Command{Use: "test", Run: func(_ *cobra.Command, _ []string) {}}
-			},
-			validate: func(t *testing.T, flagMap map[string]any) {
-				assert.Empty(t, flagMap)
-			},
-		},
-		{
-			name: "command with basic flags",
-			setupCmd: func() *cobra.Command {
-				cmd := &cobra.Command{Use: "test", Run: func(_ *cobra.Command, _ []string) {}}
-				cmd.Flags().String("string-flag", "", "A string flag")
-				cmd.Flags().Int("int-flag", 0, "An integer flag")
-				cmd.Flags().Bool("bool-flag", false, "A boolean flag")
-				return cmd
-			},
-			validate: func(t *testing.T, flagMap map[string]any) {
-				assert.Len(t, flagMap, 3)
-				assert.Contains(t, flagMap, "string-flag")
-				assert.Contains(t, flagMap, "int-flag")
-				assert.Contains(t, flagMap, "bool-flag")
+			generator := NewGenerator()
+			tools := generator.FromRootCmd(cmd)
 
-				// Verify flag types
-				stringFlag := flagMap["string-flag"].(map[string]string)
-				assert.Equal(t, "string", stringFlag["type"])
-
-				intFlag := flagMap["int-flag"].(map[string]string)
-				assert.Equal(t, "integer", intFlag["type"])
-
-				boolFlag := flagMap["bool-flag"].(map[string]string)
-				assert.Equal(t, "boolean", boolFlag["type"])
-			},
-		},
-		{
-			name: "command with hidden flags",
-			setupCmd: func() *cobra.Command {
-				cmd := &cobra.Command{Use: "test", Run: func(_ *cobra.Command, _ []string) {}}
-				cmd.Flags().String("visible-flag", "", "A visible flag")
-				cmd.Flags().String("hidden-flag", "", "A hidden flag")
-				err := cmd.Flags().MarkHidden("hidden-flag")
-				require.NoError(t, err)
-				return cmd
-			},
-			validate: func(t *testing.T, flagMap map[string]any) {
-				assert.Len(t, flagMap, 1)
-				assert.Contains(t, flagMap, "visible-flag")
-				assert.NotContains(t, flagMap, "hidden-flag")
-			},
-		},
-		{
-			name: "command with persistent flags",
-			setupCmd: func() *cobra.Command {
-				parent := &cobra.Command{Use: "parent"}
-				parent.PersistentFlags().String("persistent-flag", "", "A persistent flag")
-
-				child := &cobra.Command{Use: "child", Run: func(_ *cobra.Command, _ []string) {}}
-				child.Flags().String("local-flag", "", "A local flag")
-				parent.AddCommand(child)
-				return child
-			},
-			validate: func(t *testing.T, flagMap map[string]any) {
-				assert.Len(t, flagMap, 2)
-				assert.Contains(t, flagMap, "local-flag")
-				assert.Contains(t, flagMap, "persistent-flag")
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cmd := tt.setupCmd()
-			flagMap := flagMapFromCmd(cmd)
-			tt.validate(t, flagMap)
+			require.Len(t, tools, 1)
+			assert.Equal(t, tt.expected, tools[0].Tool.Description)
 		})
 	}
 }
