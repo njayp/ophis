@@ -85,7 +85,7 @@ func descFromCmd(cmd *cobra.Command) string {
 	return desc
 }
 
-func flagToolOption(flag *pflag.Flag) map[string]string {
+func flagToolOption(flag *pflag.Flag) map[string]any {
 	description := flag.Usage
 	if description == "" {
 		description = fmt.Sprintf("Flag: %s", flag.Name)
@@ -93,30 +93,47 @@ func flagToolOption(flag *pflag.Flag) map[string]string {
 
 	// Improve type detection for better MCP tool parameter definitions
 	flagType := flag.Value.Type()
-	var mappedType string
+	var schema map[string]any
 	switch flagType {
 	case "stringSlice", "stringArray":
-		mappedType = "stringArray"
+		schema = map[string]any{
+			"type": "array",
+			"items": map[string]any{
+				"type": "string",
+			},
+		}
 	case "intSlice":
-		mappedType = "intArray"
+		schema = map[string]any{
+			"type": "array",
+			"items": map[string]any{
+				"type": "integer",
+			},
+		}
 	case "bool":
-		mappedType = "boolean"
+		schema = map[string]any{
+			"type": "boolean",
+		}
 	case "int", "int8", "int16", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64":
-		mappedType = "integer"
+		schema = map[string]any{
+			"type": "integer",
+		}
 	case "float32", "float64":
-		mappedType = "number"
+		schema = map[string]any{
+			"type": "number",
+		}
 	default:
-		mappedType = "string"
+		schema = map[string]any{
+			"type": "string",
+		}
 	}
 
 	slog.Debug("mapped flag type",
 		"flag", flag.Name,
 		"original_type", flagType,
-		"mapped_type", mappedType,
+		"schema", schema,
 	)
 
-	return map[string]string{
-		"type":        mappedType,
-		"description": description,
-	}
+	// Add description to the schema
+	schema["description"] = description
+	return schema
 }
