@@ -60,6 +60,7 @@ func (c *Config) bridgeConfig(cmd *cobra.Command) *bridge.Config {
 
 	return &bridge.Config{
 		AppName:        rootCmd.Name(),
+		AppVersion:     rootCmd.Version,
 		RootCmd:        rootCmd,
 		Generator:      c.Generator,
 		SloggerOptions: c.SloggerOptions,
