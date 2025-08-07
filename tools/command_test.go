@@ -159,29 +159,55 @@ func TestGenerator_CommandConversion(t *testing.T) {
 func TestFlagTypeMapping(t *testing.T) {
 	// Test only the most common and important flag types
 	tests := []struct {
-		flagType     string
-		expectedType string
-		setup        func(cmd *cobra.Command)
+		flagType       string
+		setup          func(cmd *cobra.Command)
+		validateSchema func(t *testing.T, result map[string]any)
 	}{
 		{
-			flagType:     "string",
-			expectedType: "string",
-			setup:        func(cmd *cobra.Command) { cmd.Flags().String("test", "", "desc") },
+			flagType: "string",
+			setup:    func(cmd *cobra.Command) { cmd.Flags().String("test", "", "desc") },
+			validateSchema: func(t *testing.T, result map[string]any) {
+				assert.Equal(t, "string", result["type"])
+				assert.Equal(t, "desc", result["description"])
+			},
 		},
 		{
-			flagType:     "bool",
-			expectedType: "boolean",
-			setup:        func(cmd *cobra.Command) { cmd.Flags().Bool("test", false, "desc") },
+			flagType: "bool",
+			setup:    func(cmd *cobra.Command) { cmd.Flags().Bool("test", false, "desc") },
+			validateSchema: func(t *testing.T, result map[string]any) {
+				assert.Equal(t, "boolean", result["type"])
+				assert.Equal(t, "desc", result["description"])
+			},
 		},
 		{
-			flagType:     "int",
-			expectedType: "integer",
-			setup:        func(cmd *cobra.Command) { cmd.Flags().Int("test", 0, "desc") },
+			flagType: "int",
+			setup:    func(cmd *cobra.Command) { cmd.Flags().Int("test", 0, "desc") },
+			validateSchema: func(t *testing.T, result map[string]any) {
+				assert.Equal(t, "integer", result["type"])
+				assert.Equal(t, "desc", result["description"])
+			},
 		},
 		{
-			flagType:     "stringSlice",
-			expectedType: "stringArray",
-			setup:        func(cmd *cobra.Command) { cmd.Flags().StringSlice("test", nil, "desc") },
+			flagType: "stringSlice",
+			setup:    func(cmd *cobra.Command) { cmd.Flags().StringSlice("test", nil, "desc") },
+			validateSchema: func(t *testing.T, result map[string]any) {
+				assert.Equal(t, "array", result["type"])
+				assert.Equal(t, "desc", result["description"])
+				items, ok := result["items"].(map[string]any)
+				require.True(t, ok, "items should be a map")
+				assert.Equal(t, "string", items["type"])
+			},
+		},
+		{
+			flagType: "intSlice",
+			setup:    func(cmd *cobra.Command) { cmd.Flags().IntSlice("test", nil, "desc") },
+			validateSchema: func(t *testing.T, result map[string]any) {
+				assert.Equal(t, "array", result["type"])
+				assert.Equal(t, "desc", result["description"])
+				items, ok := result["items"].(map[string]any)
+				require.True(t, ok, "items should be a map")
+				assert.Equal(t, "integer", items["type"])
+			},
 		},
 	}
 
@@ -197,8 +223,7 @@ func TestFlagTypeMapping(t *testing.T) {
 			require.NotNil(t, flag)
 
 			result := flagToolOption(flag)
-			assert.Equal(t, tt.expectedType, result["type"])
-			assert.Equal(t, "desc", result["description"])
+			tt.validateSchema(t, result)
 		})
 	}
 }
