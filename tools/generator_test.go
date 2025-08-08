@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"context"
 	"testing"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -47,7 +48,7 @@ func TestGeneratorOptions(t *testing.T) {
 	})
 
 	t.Run("multiple options", func(t *testing.T) {
-		handler := func(_ mcp.CallToolRequest, _ []byte) *mcp.CallToolResult {
+		handler := func(_ context.Context, _ mcp.CallToolRequest, _ []byte) *mcp.CallToolResult {
 			return mcp.NewToolResultText("custom")
 		}
 
