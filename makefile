@@ -24,7 +24,7 @@ build:
 	go build -o bin/ ./...
 
 .PHONY: release
-release:
+release: all
 	@echo "Creating release..."
 	@if ! git diff-index --quiet HEAD --; then \
 		echo "Error: Working directory is not clean. Please commit or stash changes."; \
