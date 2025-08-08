@@ -69,7 +69,7 @@ func TestGeneratorOptions(t *testing.T) {
 func TestFromRootCmdEdgeCases(t *testing.T) {
 	t.Run("nil command", func(t *testing.T) {
 		gen := NewGenerator()
-		tools := gen.fromCmd(nil, "", []Tool{})
+		tools := gen.fromCmd(nil, "", []Controller{})
 		assert.Empty(t, tools)
 	})
 

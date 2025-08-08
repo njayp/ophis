@@ -1,4 +1,4 @@
-package bridge
+package tools
 
 import (
 	"context"
@@ -9,12 +9,27 @@ import (
 	"strings"
 
 	sq "github.com/kballard/go-shellquote"
+
 	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/njayp/ophis/tools"
 )
 
-// executeCommand executes the command using exec.Cmd.
-func (b *Manager) executeCommand(ctx context.Context, tool tools.Tool, request mcp.CallToolRequest) ([]byte, error) {
+// Constants for MCP parameter names and error messages
+const (
+	MCPCommandName   = "mcp"
+	StartCommandName = "start"
+	// PositionalArgsParam is the parameter name for positional arguments
+	PositionalArgsParam = "args"
+	FlagsParam          = "flags"
+)
+
+// Controller represents an MCP tool with its associated logic for execution and output handling.
+type Controller struct {
+	Tool    mcp.Tool `json:"tool"`
+	Handler Handler
+}
+
+// Execute runs the tool command with the provided request.
+func (c *Controller) Execute(ctx context.Context, request mcp.CallToolRequest) ([]byte, error) {
 	// Get the executable path
 	executablePath, err := os.Executable()
 	if err != nil {
@@ -23,7 +38,7 @@ func (b *Manager) executeCommand(ctx context.Context, tool tools.Tool, request m
 	}
 
 	// Build command arguments
-	cmdArgs, err := b.buildCommandArgs(tool, request)
+	cmdArgs, err := c.buildCommandArgs(request)
 	if err != nil {
 		slog.Error("failed to build command arguments", "error", err)
 		return nil, fmt.Errorf("failed to build command arguments: %w", err)
@@ -31,7 +46,7 @@ func (b *Manager) executeCommand(ctx context.Context, tool tools.Tool, request m
 
 	// Create exec.Cmd
 	slog.Debug("executing command",
-		"tool", tool.Tool.Name,
+		"tool", c.Tool.Name,
 		"executable", executablePath,
 		"args", cmdArgs,
 	)
@@ -41,7 +56,7 @@ func (b *Manager) executeCommand(ctx context.Context, tool tools.Tool, request m
 	if err != nil {
 		// Log command exit error but include it in returned error
 		slog.Debug("command failed",
-			"tool", tool.Tool.Name,
+			"tool", c.Tool.Name,
 			"error", err,
 			"exit_code", cmd.ProcessState.ExitCode(),
 		)
@@ -50,18 +65,18 @@ func (b *Manager) executeCommand(ctx context.Context, tool tools.Tool, request m
 }
 
 // buildCommandArgs builds the command line arguments from the tool and request.
-func (b *Manager) buildCommandArgs(tool tools.Tool, request mcp.CallToolRequest) ([]string, error) {
+func (c *Controller) buildCommandArgs(request mcp.CallToolRequest) ([]string, error) {
 	message := request.GetArguments()
 
 	// Start with the command path (e.g., "root_sub_command" -> ["root", "sub", "command"])
 	// And remove the root command prefix
-	args := strings.Split(tool.Tool.Name, "_")[1:]
+	args := strings.Split(c.Tool.Name, "_")[1:]
 	slog.Debug("initial command arguments", "args", args)
 
 	// Add flags
-	if flagsValue, ok := message[tools.FlagsParam]; ok {
+	if flagsValue, ok := message[FlagsParam]; ok {
 		if flagMap, ok := flagsValue.(map[string]any); ok {
-			flagArgs, err := b.buildFlagArgs(flagMap)
+			flagArgs, err := buildFlagArgs(flagMap)
 			if err != nil {
 				return nil, fmt.Errorf("failed to build flag arguments: %w", err)
 			}
@@ -70,7 +85,7 @@ func (b *Manager) buildCommandArgs(tool tools.Tool, request mcp.CallToolRequest)
 	}
 
 	// Add positional arguments
-	if argsValue, ok := message[tools.PositionalArgsParam]; ok {
+	if argsValue, ok := message[PositionalArgsParam]; ok {
 		if argsStr, ok := argsValue.(string); ok && argsStr != "" {
 			parsedArgs := parseArgumentString(argsStr)
 			args = append(args, parsedArgs...)
@@ -81,7 +96,7 @@ func (b *Manager) buildCommandArgs(tool tools.Tool, request mcp.CallToolRequest)
 }
 
 // buildFlagArgs converts a flag map to command line flag arguments.
-func (b *Manager) buildFlagArgs(flagMap map[string]any) ([]string, error) {
+func buildFlagArgs(flagMap map[string]any) ([]string, error) {
 	var args []string
 
 	for name, value := range flagMap {

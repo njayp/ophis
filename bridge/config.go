@@ -68,7 +68,7 @@ type Config struct {
 //   - Excludes hidden commands
 //   - Excludes "mcp", "help", and "completion" commands
 //   - Returns command output as plain text
-func (c *Config) Tools() []tools.Tool {
+func (c *Config) Tools() []tools.Controller {
 	if c.Generator != nil {
 		return c.Generator.FromRootCmd(c.RootCmd)
 	}

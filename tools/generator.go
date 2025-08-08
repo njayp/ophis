@@ -8,9 +8,8 @@ import (
 )
 
 // FromRootCmd creates a default generator and converts a Cobra command tree into MCP tools.
-func FromRootCmd(cmd *cobra.Command) []Tool {
-	generator := NewGenerator()
-	return generator.FromRootCmd(cmd)
+func FromRootCmd(cmd *cobra.Command) []Controller {
+	return NewGenerator().FromRootCmd(cmd)
 }
 
 // Generator converts Cobra commands into MCP tools with configurable exclusions.
@@ -63,14 +62,14 @@ func NewGenerator(opts ...GeneratorOption) *Generator {
 }
 
 // FromRootCmd recursively converts a Cobra command tree into MCP tools.
-func (g *Generator) FromRootCmd(cmd *cobra.Command) []Tool {
+func (g *Generator) FromRootCmd(cmd *cobra.Command) []Controller {
 	slog.Debug("starting tool generation from root command", "root_cmd", cmd.Name())
-	tools := g.fromCmd(cmd, "", []Tool{})
+	tools := g.fromCmd(cmd, "", []Controller{})
 	slog.Info("tool generation completed", "total_tools", len(tools))
 	return tools
 }
 
-func (g *Generator) fromCmd(cmd *cobra.Command, parentPath string, tools []Tool) []Tool {
+func (g *Generator) fromCmd(cmd *cobra.Command, parentPath string, tools []Controller) []Controller {
 	if cmd == nil {
 		return tools
 	}
@@ -103,7 +102,7 @@ outer:
 	}
 
 	toolOptions := toolOptsFromCmd(cmd)
-	tool := Tool{
+	tool := Controller{
 		Tool:    mcp.NewTool(toolName, toolOptions...),
 		Handler: g.handler, // Use the configured handler
 	}

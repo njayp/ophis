@@ -7,11 +7,7 @@ import (
 	"log/slog"
 
 	"github.com/mark3labs/mcp-go/server"
-	"github.com/njayp/ophis/tools"
 )
-
-// ToolsGenerator is a function type that generates MCP tools from Cobra commands.
-type ToolsGenerator func() []tools.Tool
 
 // Manager manages the bridge between a Cobra CLI application and an MCP server.
 // It handles tool registration, command execution, and server lifecycle.
@@ -38,13 +34,13 @@ func New(config *Config) (*Manager, error) {
 	config.setupSlogger()
 
 	appName := config.RootCmd.Name()
-	slog.Info("creating MCP server", "app_name", appName, "app_version", config.RootCmd.Version)
+	version := config.RootCmd.Version
+	slog.Info("creating MCP server", "app_name", appName, "app_version", version)
 
-	opts := append(config.ServerOptions, server.WithRecovery())
 	server := server.NewMCPServer(
 		appName,
-		config.RootCmd.Version,
-		opts...,
+		version,
+		config.ServerOptions...,
 	)
 
 	b := &Manager{

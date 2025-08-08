@@ -16,7 +16,7 @@ func TestGenerator_CommandConversion(t *testing.T) {
 		name     string
 		setupCmd func() *cobra.Command
 		options  []GeneratorOption
-		validate func(t *testing.T, tools []Tool)
+		validate func(t *testing.T, tools []Controller)
 	}{
 		{
 			name: "standard CLI with subcommands",
@@ -36,7 +36,7 @@ func TestGenerator_CommandConversion(t *testing.T) {
 				root.AddCommand(get, list, create)
 				return root
 			},
-			validate: func(t *testing.T, tools []Tool) {
+			validate: func(t *testing.T, tools []Controller) {
 				assert.Len(t, tools, 3)
 
 				// Verify tool names
@@ -71,7 +71,7 @@ func TestGenerator_CommandConversion(t *testing.T) {
 				root.AddCommand(get)
 				return root
 			},
-			validate: func(t *testing.T, tools []Tool) {
+			validate: func(t *testing.T, tools []Controller) {
 				assert.Len(t, tools, 1)
 				assert.Equal(t, "kubectl_get_pods", tools[0].Tool.Name)
 			},
@@ -91,7 +91,7 @@ func TestGenerator_CommandConversion(t *testing.T) {
 			options: []GeneratorOption{
 				WithFilters(Allow([]string{"safe", "other"})),
 			},
-			validate: func(t *testing.T, tools []Tool) {
+			validate: func(t *testing.T, tools []Controller) {
 				assert.Len(t, tools, 2)
 
 				toolNames := make([]string, len(tools))
@@ -116,7 +116,7 @@ func TestGenerator_CommandConversion(t *testing.T) {
 				root.AddCommand(parent)
 				return root
 			},
-			validate: func(t *testing.T, tools []Tool) {
+			validate: func(t *testing.T, tools []Controller) {
 				assert.Len(t, tools, 1)
 				assert.Equal(t, "cli_parent_child", tools[0].Tool.Name)
 			},
@@ -134,7 +134,7 @@ func TestGenerator_CommandConversion(t *testing.T) {
 				root.AddCommand(cmd)
 				return root
 			},
-			validate: func(t *testing.T, tools []Tool) {
+			validate: func(t *testing.T, tools []Controller) {
 				assert.Len(t, tools, 1)
 
 				// Verify the tool was created
