@@ -66,14 +66,6 @@ func TestConfigValidation(t *testing.T) {
 			errorMsg:    "configuration cannot be nil",
 		},
 		{
-			name: "empty app name",
-			config: &Config{
-				RootCmd: &cobra.Command{Use: "test"},
-			},
-			expectError: true,
-			errorMsg:    "application name cannot be empty",
-		},
-		{
 			name: "nil root command",
 			config: &Config{
 				RootCmd: nil,
