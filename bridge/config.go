@@ -15,8 +15,6 @@ import (
 // Example usage:
 //
 //	config := &bridge.Config{
-//		AppName:    "my-cli",
-//		AppVersion: "1.0.0",
 //		RootCmd:    rootCmd,
 //		Generator: tools.NewGenerator(
 //			tools.WithFilters(tools.Allow([]string{"get", "list"})),
@@ -27,14 +25,6 @@ import (
 //		},
 //	}
 type Config struct {
-	// AppName is the name of the MCP server.
-	// Required: This identifies your server to MCP clients.
-	AppName string
-
-	// AppVersion is the version of the MCP server.
-	// Optional: Defaults to "unknown" if not provided.
-	AppVersion string
-
 	// RootCmd is the root Cobra command whose subcommands will be exposed as MCP tools.
 	// Required: This is the entry point for discovering available commands.
 	// Only commands with Run or RunE functions will be converted to tools.

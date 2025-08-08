@@ -24,32 +24,26 @@ type Manager struct {
 
 // New creates a new Manager instance from the provided configuration.
 // Returns an error if:
-//   - config.AppName is empty
+//   - config is nil
 //   - config.RootCmd is nil
 func New(config *Config) (*Manager, error) {
 	if config == nil {
-		return nil, fmt.Errorf("configuration cannot be nil: must provide a Config struct with AppName and AppVersion")
-	}
-
-	if config.AppName == "" {
-		return nil, fmt.Errorf("application name cannot be empty: Config.AppName is required for server identification")
+		return nil, fmt.Errorf("configuration cannot be nil: must provide a Config struct with a RootCmd")
 	}
 
 	if config.RootCmd == nil {
 		return nil, fmt.Errorf("root command cannot be nil: Config.RootCmd is required to register tools")
 	}
 
-	if config.AppVersion == "" {
-		config.AppVersion = "unknown"
-	}
-
 	config.setupSlogger()
-	slog.Info("creating MCP server", "app_name", config.AppName, "app_version", config.AppVersion)
+
+	appName := config.RootCmd.Name()
+	slog.Info("creating MCP server", "app_name", appName, "app_version", config.RootCmd.Version)
 
 	opts := append(config.ServerOptions, server.WithRecovery())
 	server := server.NewMCPServer(
-		config.AppName,
-		config.AppVersion,
+		appName,
+		config.RootCmd.Version,
 		opts...,
 	)
 

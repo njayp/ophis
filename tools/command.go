@@ -26,10 +26,12 @@ func toolOptsFromCmd(cmd *cobra.Command) []mcp.ToolOption {
 
 	// Add an "args" parameter for positional arguments
 	argsDescription := argsDescFromCmd(cmd)
-	return append(toolOptions, mcp.WithString(PositionalArgsParam,
+	toolOptions = append(toolOptions, mcp.WithString(PositionalArgsParam,
 		mcp.Description(argsDescription),
 		mcp.Required(),
 	))
+
+	return toolOptions
 }
 
 func argsDescFromCmd(cmd *cobra.Command) string {

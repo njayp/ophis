@@ -9,12 +9,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Configuration constants
-const (
-	AppName    = "make"
-	AppVersion = "0.0.1"
-)
-
 func createMakeCommands() *cobra.Command {
 	// Create the root make command
 	rootCmd := &cobra.Command{

@@ -140,6 +140,7 @@ func parseArgumentString(argsStr string) []string {
 	// Use shellquote to properly parse the arguments
 	args, err := sq.Split(argsStr)
 	if err != nil {
+		slog.Error("failed to parse argument string", "input", argsStr, "error", err)
 		// If parsing fails, fall back to simple splitting
 		// This ensures we don't completely fail on malformed input
 		return strings.Fields(argsStr)

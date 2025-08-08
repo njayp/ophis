@@ -30,7 +30,6 @@ func TestConfigTools(t *testing.T) {
 		)
 
 		config := &Config{
-			AppName:   "test-app",
 			RootCmd:   rootCmd,
 			Generator: customGen,
 		}
@@ -42,7 +41,6 @@ func TestConfigTools(t *testing.T) {
 
 	t.Run("with default generator", func(t *testing.T) {
 		config := &Config{
-			AppName: "test-app",
 			RootCmd: rootCmd,
 			// Generator is nil, should use default
 		}
@@ -70,7 +68,6 @@ func TestConfigValidation(t *testing.T) {
 		{
 			name: "empty app name",
 			config: &Config{
-				AppName: "",
 				RootCmd: &cobra.Command{Use: "test"},
 			},
 			expectError: true,
@@ -79,7 +76,6 @@ func TestConfigValidation(t *testing.T) {
 		{
 			name: "nil root command",
 			config: &Config{
-				AppName: "test-app",
 				RootCmd: nil,
 			},
 			expectError: true,
@@ -88,7 +84,6 @@ func TestConfigValidation(t *testing.T) {
 		{
 			name: "valid config with defaults",
 			config: &Config{
-				AppName: "test-app",
 				RootCmd: &cobra.Command{Use: "test"},
 			},
 			expectError: false,
@@ -96,10 +91,8 @@ func TestConfigValidation(t *testing.T) {
 		{
 			name: "config with all options",
 			config: &Config{
-				AppName:    "test-app",
-				AppVersion: "1.0.0",
-				RootCmd:    &cobra.Command{Use: "test"},
-				Generator:  tools.NewGenerator(),
+				RootCmd:   &cobra.Command{Use: "test"},
+				Generator: tools.NewGenerator(),
 				SloggerOptions: &slog.HandlerOptions{
 					Level: slog.LevelDebug,
 				},
@@ -125,7 +118,6 @@ func TestConfigValidation(t *testing.T) {
 // TestConfigDefaults tests that defaults are properly set
 func TestConfigDefaults(t *testing.T) {
 	config := &Config{
-		AppName: "test-app",
 		RootCmd: &cobra.Command{Use: "test"},
 		// AppVersion not set
 	}
