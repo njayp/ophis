@@ -84,6 +84,10 @@ func descFromCmd(cmd *cobra.Command) string {
 		desc = cmd.Short
 	}
 
+	if cmd.Example != "" {
+		desc += "\nExamples:\n" + cmd.Example
+	}
+
 	return desc
 }
 
