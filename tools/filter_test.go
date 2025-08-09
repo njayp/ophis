@@ -54,20 +54,20 @@ func TestAllowFilter(t *testing.T) {
 			cmd.SetUsageTemplate(tt.commandPath) // Hack to set a testable path
 			// Since CommandPath() is not easily mockable, we test with the Use field
 			// In real usage, Allow checks CommandPath() which includes parent commands
-			
+
 			// For this test, we'll create a simple parent-child structure
 			if tt.commandPath == "cli get" || tt.commandPath == "cli list" || tt.commandPath == "cli resource get" {
 				parent := &cobra.Command{Use: "cli"}
 				parent.AddCommand(cmd)
 			}
-			
+
 			result := filter(cmd)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
 
-// TestHiddenFilter tests the Hidden filter function  
+// TestHiddenFilter tests the Hidden filter function
 func TestHiddenFilter(t *testing.T) {
 	filter := Hidden()
 

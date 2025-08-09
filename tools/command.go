@@ -37,7 +37,7 @@ func toolOptsFromCmd(cmd *cobra.Command) []mcp.ToolOption {
 func argsDescFromCmd(cmd *cobra.Command) string {
 	argsDescription := "Positional arguments"
 	if cmd.Use != "" {
-		argsDescription += fmt.Sprintf(". Usage: %s", cmd.Use)
+		argsDescription += "\nUsage: " + cmd.Use
 	}
 
 	return argsDescription
