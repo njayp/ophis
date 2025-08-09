@@ -256,6 +256,7 @@ func TestCommandDescriptions(t *testing.T) {
 		name     string
 		short    string
 		long     string
+		example  string
 		expected string
 	}{
 		{
@@ -270,15 +271,23 @@ func TestCommandDescriptions(t *testing.T) {
 			long:     "",
 			expected: "Only short description",
 		},
+		{
+			name:     "adds example to description",
+			short:    "Only short description",
+			long:     "",
+			example:  "and example",
+			expected: "Only short description\nExamples:\nand example",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cmd := &cobra.Command{
-				Use:   "test",
-				Short: tt.short,
-				Long:  tt.long,
-				Run:   func(_ *cobra.Command, _ []string) {},
+				Use:     "test",
+				Short:   tt.short,
+				Long:    tt.long,
+				Example: tt.example,
+				Run:     func(_ *cobra.Command, _ []string) {},
 			}
 
 			generator := NewGenerator()
