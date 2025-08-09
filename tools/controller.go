@@ -37,11 +37,7 @@ func (c *Controller) Execute(ctx context.Context, request mcp.CallToolRequest) (
 	}
 
 	// Build command arguments
-	cmdArgs, err := c.buildCommandArgs(request)
-	if err != nil {
-		slog.Error("failed to build command arguments", "error", err)
-		return nil, fmt.Errorf("failed to build command arguments: %w", err)
-	}
+	cmdArgs := c.buildCommandArgs(request)
 
 	// Create exec.Cmd
 	slog.Debug("executing command",
@@ -64,7 +60,7 @@ func (c *Controller) Execute(ctx context.Context, request mcp.CallToolRequest) (
 }
 
 // buildCommandArgs builds the command line arguments from the tool and request.
-func (c *Controller) buildCommandArgs(request mcp.CallToolRequest) ([]string, error) {
+func (c *Controller) buildCommandArgs(request mcp.CallToolRequest) []string {
 	message := request.GetArguments()
 
 	// Start with the command path (e.g., "root_sub_command" -> ["root", "sub", "command"])
@@ -75,10 +71,7 @@ func (c *Controller) buildCommandArgs(request mcp.CallToolRequest) ([]string, er
 	// Add flags
 	if flagsValue, ok := message[FlagsParam]; ok {
 		if flagMap, ok := flagsValue.(map[string]any); ok {
-			flagArgs, err := buildFlagArgs(flagMap)
-			if err != nil {
-				return nil, fmt.Errorf("failed to build flag arguments: %w", err)
-			}
+			flagArgs := buildFlagArgs(flagMap)
 			args = append(args, flagArgs...)
 		}
 	}
@@ -91,11 +84,11 @@ func (c *Controller) buildCommandArgs(request mcp.CallToolRequest) ([]string, er
 		}
 	}
 
-	return args, nil
+	return args
 }
 
 // buildFlagArgs converts a flag map to command line flag arguments.
-func buildFlagArgs(flagMap map[string]any) ([]string, error) {
+func buildFlagArgs(flagMap map[string]any) []string {
 	var args []string
 
 	for name, value := range flagMap {
@@ -126,7 +119,7 @@ func buildFlagArgs(flagMap map[string]any) ([]string, error) {
 		}
 	}
 
-	return args, nil
+	return args
 }
 
 // parseArgumentString provides shell-like argument parsing with proper quote handling.
