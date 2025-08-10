@@ -24,7 +24,18 @@ const (
 // Controller represents an MCP tool with its associated logic for execution and output handling.
 type Controller struct {
 	Tool    mcp.Tool `json:"tool"`
-	Handler Handler
+	handler Handler
+}
+
+// Handle processes the result of a tool execution into an MCP response.
+func (c *Controller) Handle(ctx context.Context, request mcp.CallToolRequest, data []byte) *mcp.CallToolResult {
+	if c.handler != nil {
+		// Use custom handler if provided
+		return c.handler(ctx, request, data)
+	}
+
+	// Default handling: return output as plain text
+	return defaultHandler(ctx, request, data)
 }
 
 // Execute runs the tool command with the provided request.

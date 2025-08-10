@@ -16,9 +16,6 @@ func TestGeneratorOptions(t *testing.T) {
 
 		// Should have default filters
 		assert.Len(t, gen.filters, 2) // Hidden() and Exclude(mcp, help, completion)
-
-		// Should have default handler
-		assert.NotNil(t, gen.handler)
 	})
 
 	t.Run("generator with custom filters", func(t *testing.T) {
@@ -128,5 +125,4 @@ func TestFromRootCmdStandaloneFunction(t *testing.T) {
 
 	assert.Len(t, tools, 1)
 	assert.Equal(t, "test", tools[0].Tool.Name)
-	assert.NotNil(t, tools[0].Handler)
 }

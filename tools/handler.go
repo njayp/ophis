@@ -19,9 +19,7 @@ func WithHandler(handler Handler) GeneratorOption {
 	}
 }
 
-// DefaultHandler is the default handler that processes command output as plain text.
-func DefaultHandler() Handler {
-	return func(_ context.Context, _ mcp.CallToolRequest, data []byte) *mcp.CallToolResult {
-		return mcp.NewToolResultText(string(data))
-	}
+// defaultHandler is the default handler that processes command output as plain text.
+func defaultHandler(_ context.Context, _ mcp.CallToolRequest, data []byte) *mcp.CallToolResult {
+	return mcp.NewToolResultText(string(data))
 }

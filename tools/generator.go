@@ -51,7 +51,6 @@ func NewGenerator(opts ...GeneratorOption) *Generator {
 			Hidden(),
 			Exclude([]string{MCPCommandName, "help", "completion"}),
 		},
-		handler: DefaultHandler(),
 	}
 
 	for _, opt := range opts {
@@ -104,7 +103,7 @@ outer:
 	toolOptions := toolOptsFromCmd(cmd)
 	tool := Controller{
 		Tool:    mcp.NewTool(toolName, toolOptions...),
-		Handler: g.handler, // Use the configured handler
+		handler: g.handler, // Use the configured handler
 	}
 
 	slog.Debug("created tool", "tool_name", toolName, "description", tool.Tool.Description)

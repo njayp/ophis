@@ -37,6 +37,6 @@ func (b *Manager) registerTool(ctrl tools.Controller) {
 			return mcp.NewToolResultError(errMsg), nil
 		}
 
-		return ctrl.Handler(ctx, request, data), nil
+		return ctrl.Handle(ctx, request, data), nil
 	})
 }
