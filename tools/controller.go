@@ -50,24 +50,15 @@ func (c *Controller) Execute(ctx context.Context, request mcp.CallToolRequest) (
 	// Build command arguments
 	cmdArgs := c.buildCommandArgs(request)
 
-	// Create exec.Cmd
 	slog.Debug("executing command",
 		"tool", c.Tool.Name,
 		"executable", executablePath,
 		"args", cmdArgs,
 	)
 
+	// Create exec.Cmd and run it
 	cmd := exec.CommandContext(ctx, executablePath, cmdArgs...)
-	data, err := cmd.CombinedOutput()
-	if err != nil {
-		// Log command exit error but include it in returned error
-		slog.Debug("command failed",
-			"tool", c.Tool.Name,
-			"error", err,
-			"exit_code", cmd.ProcessState.ExitCode(),
-		)
-	}
-	return data, err
+	return cmd.CombinedOutput()
 }
 
 // buildCommandArgs builds the command line arguments from the tool and request.
