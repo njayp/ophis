@@ -115,6 +115,22 @@ func TestBuildFlagArgs(t *testing.T) {
 			},
 			expected: nil,
 		},
+		{
+			name: "string slice flag",
+			flagMap: map[string]any{
+				"flag":  []any{"value1", "value2"},
+				"flag2": "json",
+			},
+			expected: []string{"--flag", "value1", "--flag", "value2", "--flag2", "json"},
+		},
+		{
+			name: "bool slice flag",
+			flagMap: map[string]any{
+				"flag":  []any{true, false, true},
+				"flag2": true,
+			},
+			expected: []string{"--flag", "--flag", "--flag2"},
+		},
 	}
 
 	for _, tt := range tests {
