@@ -94,34 +94,40 @@ func buildFlagArgs(flagMap map[string]any) []string {
 	var args []string
 
 	for name, value := range flagMap {
-		if name == "" {
+		if name == "" || value == nil {
 			continue
 		}
 
-		// Convert value to string
-		valueStr := ""
-		if value != nil {
-			// Special handling for boolean flags
-			if boolVal, ok := value.(bool); ok {
-				if boolVal {
-					// For true boolean flags, just add the flag name
-					args = append(args, fmt.Sprintf("--%s", name))
-				}
-				// For false boolean flags, don't add anything
-				continue
+		if items, ok := value.([]any); ok {
+			for _, item := range items {
+				slog.Debug("adding flag slice argument", "flag_name", name, "input", value, "value", item)
+				args = append(args, parseFlagArgValue(name, item)...)
 			}
 
-			valueStr = fmt.Sprintf("%v", value)
+			continue
 		}
 
-		// Add flag with value (for non-boolean flags)
-		if valueStr != "" {
-			slog.Debug("adding flag argument", "flag_name", name, "input", value, "value", valueStr)
-			args = append(args, fmt.Sprintf("--%s", name), valueStr)
-		}
+		args = append(args, parseFlagArgValue(name, value)...)
 	}
 
 	return args
+}
+
+func parseFlagArgValue(name string, value any) (retVal []string) {
+	if value != nil {
+		switch v := value.(type) {
+		case bool:
+			if v {
+				slog.Debug("adding boolean flag argument", "flag_name", name, "value", v)
+				retVal = append(retVal, fmt.Sprintf("--%s", name))
+			}
+		default:
+			slog.Debug("adding flag argument", "flag_name", name, "value", value)
+			retVal = append(retVal, fmt.Sprintf("--%s", name), fmt.Sprintf("%v", value))
+		}
+	}
+
+	return retVal
 }
 
 // parseArgumentString provides shell-like argument parsing with proper quote handling.
