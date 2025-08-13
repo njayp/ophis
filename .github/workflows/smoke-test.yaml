@@ -1,0 +1,43 @@
+name: smoke test
+
+# This is a reusable workflow that validates the project
+on:
+  workflow_call:
+    inputs:
+      go-version:
+        description: 'Go version to use'
+        required: false
+        type: string
+        default: '1.24'
+      fetch-depth:
+        description: 'Number of commits to fetch (0 for all history)'
+        required: false
+        type: number
+        default: 1
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      # Check out the repository code with specified fetch depth
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: ${{ inputs.fetch-depth }}
+
+      # Set up Go
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ inputs.go-version }}
+
+      # Install golangci-lint
+      - name: Install golangci-lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin latest
+
+      # Run smoke test using make
+      - name: Smoke test
+        run: |
+          make
+          git diff --exit-code go.mod go.sum
