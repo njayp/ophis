@@ -46,6 +46,16 @@ func main() {
 
 Your CLI commands are now available as tools in Claude!
 
+### Enable in VSCode
+
+```bash
+./my-cli mcp vscode enable
+```
+
+**Restart VSCode or reload the window**
+
+Your CLI commands are now available as tools in VSCode!
+
 ## Configuration
 
 The `ophis.Command()` function accepts an optional `*ophis.Config` parameter to customize the MCP server behavior:
