@@ -2,10 +2,9 @@ package claude
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/njayp/ophis/claude/config"
+	"github.com/njayp/ophis/internal/mcpconfig"
 	"github.com/spf13/cobra"
 )
 
@@ -38,23 +37,9 @@ func disableMCPServer(flags *disableCommandFlags) error {
 	configManager := config.NewClaudeConfigManager(flags.configPath)
 
 	// Determine server name
-	serverName := flags.serverName
-	if serverName == "" {
-		// Get the current executable path for default name
-		executablePath, err := os.Executable()
-		if err != nil {
-			return fmt.Errorf("failed to get executable path for determining default server name: %w", err)
-		}
-		serverName = filepath.Base(executablePath)
-		// Remove extension if present
-		if ext := filepath.Ext(serverName); ext != "" {
-			serverName = serverName[:len(serverName)-len(ext)]
-		}
-	}
-
-	// Validate server name
-	if serverName == "" {
-		return fmt.Errorf("MCP server name cannot be empty: unable to derive name from executable path")
+	serverName, err := mcpconfig.GetExecutableServerName(flags.serverName)
+	if err != nil {
+		return err
 	}
 
 	// Check if server exists

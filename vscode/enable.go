@@ -1,14 +1,14 @@
-// Package claude provides Cobra command implementations for MCP server management.
-// It includes commands to enable, disable, and list MCP servers in Claude's configuration.
-package claude
+// Package vscode provides Cobra command implementations for VSCode MCP server management.
+// It includes commands to enable, disable, and list MCP servers in VSCode's configuration.
+package vscode
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/njayp/ophis/claude/config"
 	"github.com/njayp/ophis/internal/mcpconfig"
 	"github.com/njayp/ophis/tools"
+	"github.com/njayp/ophis/vscode/config"
 	"github.com/spf13/cobra"
 )
 
@@ -16,15 +16,17 @@ type enableCommandFlags struct {
 	configPath string
 	logLevel   string
 	serverName string
+	workspace  bool
+	configType string
 }
 
-// enableCommand creates a Cobra command for enabling the MCP server.
+// enableCommand creates a Cobra command for enabling the MCP server in VSCode.
 func enableCommand() *cobra.Command {
 	enableFlags := &enableCommandFlags{}
 	cmd := &cobra.Command{
 		Use:   "enable",
-		Short: "Enable the MCP server",
-		Long:  `Enable the MCP server by adding it to Claude's MCP config file`,
+		Short: "Enable the MCP server in VSCode",
+		Long:  `Enable the MCP server by adding it to VSCode's MCP configuration file (.vscode/mcp.json or user mcp.json)`,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			return enableMCPServer(enableFlags)
 		},
@@ -33,8 +35,11 @@ func enableCommand() *cobra.Command {
 	// Add flags
 	flags := cmd.Flags()
 	flags.StringVar(&enableFlags.logLevel, "log-level", "", "Log level (debug, info, warn, error)")
-	flags.StringVar(&enableFlags.configPath, "config-path", "", "Path to Claude config file")
+	flags.StringVar(&enableFlags.configPath, "config-path", "", "Path to VSCode config file")
 	flags.StringVar(&enableFlags.serverName, "server-name", "", "Name for the MCP server (default: derived from executable name)")
+	flags.BoolVar(&enableFlags.workspace, "workspace", false, "Add to workspace settings (.vscode/mcp.json) instead of user settings")
+	flags.StringVar(&enableFlags.configType, "config-type", "", "Configuration type: 'workspace' or 'user' (default: user)")
+
 	return cmd
 }
 
@@ -51,8 +56,18 @@ func enableMCPServer(flags *enableCommandFlags) error {
 		return err
 	}
 
+	// Determine configuration type
+	configType := config.UserConfig
+	if flags.workspace || flags.configType == "workspace" {
+		configType = config.WorkspaceConfig
+	} else if flags.configType == "user" {
+		configType = config.UserConfig
+	} else if flags.configType != "" {
+		return fmt.Errorf("invalid config type '%s': must be 'workspace' or 'user'", flags.configType)
+	}
+
 	// Create config manager
-	configManager := config.NewClaudeConfigManager(flags.configPath)
+	configManager := config.NewVSCodeConfigManager(flags.configPath, configType)
 
 	// Determine server name
 	serverName := flags.serverName
@@ -66,20 +81,21 @@ func enableMCPServer(flags *enableCommandFlags) error {
 	// Check if server already exists
 	exists, err := configManager.HasServer(serverName)
 	if err != nil {
-		return fmt.Errorf("failed to check if MCP server '%s' exists in Claude configuration: %w", serverName, err)
+		return fmt.Errorf("failed to check if MCP server '%s' exists in VSCode configuration: %w", serverName, err)
 	}
 	if exists {
-		fmt.Printf("MCP server '%s' is already enabled\n", serverName)
+		fmt.Printf("MCP server '%s' is already enabled in VSCode\n", serverName)
 		return nil
 	}
 
 	// Build server configuration
 	server := config.MCPServer{
+		Type:    "stdio",
 		Command: executablePath,
 		Args:    []string{tools.MCPCommandName, tools.StartCommandName},
 	}
 
-	// Add log level and log file to args if specified
+	// Add log level to args if specified
 	if flags.logLevel != "" {
 		server.Args = append(server.Args, "--log-level", flags.logLevel)
 	}
@@ -90,12 +106,21 @@ func enableMCPServer(flags *enableCommandFlags) error {
 	}
 
 	if err := configManager.AddServer(serverName, server); err != nil {
-		return fmt.Errorf("failed to add MCP server '%s' to Claude configuration: %w", serverName, err)
+		return fmt.Errorf("failed to add MCP server '%s' to VSCode configuration: %w", serverName, err)
 	}
 
-	fmt.Printf("Successfully enabled MCP server '%s'\n", serverName)
+	configTypeStr := "user"
+	if configType == config.WorkspaceConfig {
+		configTypeStr = "workspace"
+	}
+
+	fmt.Printf("Successfully enabled MCP server '%s' in VSCode (%s configuration)\n", serverName, configTypeStr)
 	fmt.Printf("Executable: %s\n", executablePath)
 	fmt.Printf("Args: %v\n", server.Args)
-	fmt.Printf("\nTo use this server, restart Claude Desktop.\n")
+	fmt.Printf("Configuration file: %s\n", configManager.GetConfigPath())
+	fmt.Printf("\nTo use this server:\n")
+	fmt.Printf("1. Restart VSCode or reload the window\n")
+	fmt.Printf("2. Open GitHub Copilot Chat\n")
+	fmt.Printf("3. Use agent mode to access MCP tools\n")
 	return nil
 }

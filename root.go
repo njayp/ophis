@@ -5,6 +5,7 @@ package ophis
 import (
 	"github.com/njayp/ophis/claude"
 	"github.com/njayp/ophis/tools"
+	"github.com/njayp/ophis/vscode"
 	"github.com/spf13/cobra"
 )
 
@@ -16,6 +17,6 @@ func Command(config *Config) *cobra.Command {
 	}
 
 	// Add subcommands
-	cmd.AddCommand(startCommand(config), toolCommand(config), claude.Command())
+	cmd.AddCommand(startCommand(config), toolCommand(config), claude.Command(), vscode.Command())
 	return cmd
 }
