@@ -36,25 +36,19 @@ func main() {
 }
 ```
 
-### Enable in Claude Desktop
+### Enable in Claude Desktop or VSCode
 
 ```bash
 ./my-cli mcp claude enable
 ```
 
-**Restart Claude Desktop**
-
-Your CLI commands are now available as tools in Claude!
-
-### Enable in VSCode
-
 ```bash
 ./my-cli mcp vscode enable
 ```
 
-**Restart VSCode or reload the window**
+**Restart Claude Desktop or VSCode**
 
-Your CLI commands are now available as tools in VSCode!
+Your CLI commands are now available as mcp server tools!
 
 ## Configuration
 
