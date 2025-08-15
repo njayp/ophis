@@ -1,9 +1,3 @@
-// Package config provides utilities for managing VSCode MCP server configuration.
-// It handles reading, writing, and modifying the VSCode configuration files that define MCP servers.
-//
-// Note: As of VS Code 1.96+, MCP configuration is stored in a dedicated mcp.json file
-// rather than in the main settings.json file. The structure is now at the root level
-// of the mcp.json file, not nested under an "mcp" property.
 package config
 
 import (
@@ -85,8 +79,6 @@ func (cm *Manager) LoadConfig() (*Config, error) {
 	}
 
 	var config Config
-	// Both user and workspace mcp.json files have the same structure now
-	// The MCP configuration is at the root level
 	if err := json.Unmarshal(data, &config); err != nil {
 		return nil, fmt.Errorf("failed to parse VSCode MCP configuration file at '%s': invalid JSON format: %w", cm.configPath, err)
 	}
@@ -106,8 +98,6 @@ func (cm *Manager) SaveConfig(config *Config) error {
 		return fmt.Errorf("failed to create VSCode configuration directory at '%s': %w", filepath.Dir(cm.configPath), err)
 	}
 
-	// Both user and workspace mcp.json files have the same structure now
-	// Write the config directly
 	dataToWrite, err := json.MarshalIndent(config, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal VSCode MCP configuration to JSON: %w", err)
