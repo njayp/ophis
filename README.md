@@ -113,7 +113,7 @@ tools.AddFilter(func(cmd *cobra.Command) bool {
 Return the data as an image instead of as text.
 
 ```go
-tools.WithHandler(func(request mcp.CallToolRequest, data []byte) *mcp.CallToolResult {
+tools.WithHandler(func(ctx context.Context, request mcp.CallToolRequest, data []byte) *mcp.CallToolResult {
     return mcp.NewToolResultImage(data)
 })
 ```
