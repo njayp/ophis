@@ -42,11 +42,13 @@ func main() {
 ./my-cli mcp claude enable
 ```
 
+**Restart Claude Desktop**
+
 ```bash
 ./my-cli mcp vscode enable
 ```
 
-**Restart Claude Desktop or VSCode**
+**Ensure Copilot is in Agent Mode**
 
 Your CLI commands are now available as mcp server tools!
 
