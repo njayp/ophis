@@ -8,7 +8,9 @@ import (
 // This command can be added as a subcommand to any Cobra-based application
 func Command() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "claude",
+		Use:   "claude",
+		Short: "Manage Claude MCP server configuration",
+		Long:  `Manage MCP servers for Claude by configuring .claude_desktop_config.json`,
 	}
 
 	// Add subcommands
