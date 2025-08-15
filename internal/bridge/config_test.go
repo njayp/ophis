@@ -95,7 +95,7 @@ func TestConfigValidation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := New(tt.config)
+			_, err := NewManager(tt.config)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -114,7 +114,7 @@ func TestConfigDefaults(t *testing.T) {
 		// AppVersion not set
 	}
 
-	manager, err := New(config)
+	manager, err := NewManager(config)
 	assert.NoError(t, err)
 	assert.NotNil(t, manager)
 

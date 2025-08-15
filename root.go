@@ -1,11 +1,9 @@
-// Package ophis provides functionality to convert Cobra CLI applications into MCP servers.
-// It includes commands to start MCP servers and manage tools.
 package ophis
 
 import (
-	"github.com/njayp/ophis/claude"
+	"github.com/njayp/ophis/internal/cfgmgr/claude"
+	"github.com/njayp/ophis/internal/cfgmgr/vscode"
 	"github.com/njayp/ophis/tools"
-	"github.com/njayp/ophis/vscode"
 	"github.com/spf13/cobra"
 )
 

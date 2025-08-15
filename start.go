@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/njayp/ophis/bridge"
+	"github.com/njayp/ophis/internal/bridge"
 	"github.com/njayp/ophis/tools"
 	"github.com/spf13/cobra"
 )
@@ -41,7 +41,7 @@ by AI assistants and other MCP-compatible clients.`,
 			}
 
 			// Create and start the bridge
-			bridge, err := bridge.New(config.bridgeConfig(cmd))
+			bridge, err := bridge.NewManager(config.bridgeConfig(cmd))
 			if err != nil {
 				return fmt.Errorf("failed to create MCP server bridge: %w", err)
 			}

@@ -4,7 +4,7 @@ import (
 	"log/slog"
 
 	"github.com/mark3labs/mcp-go/server"
-	"github.com/njayp/ophis/bridge"
+	"github.com/njayp/ophis/internal/bridge"
 	"github.com/njayp/ophis/tools"
 	"github.com/spf13/cobra"
 )

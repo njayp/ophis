@@ -16,11 +16,11 @@ type Manager struct {
 	server *server.MCPServer // The underlying MCP server instance
 }
 
-// New creates a new Manager instance from the provided configuration.
+// NewManager creates a new Manager instance from the provided configuration.
 // Returns an error if:
 //   - config is nil
 //   - config.RootCmd is nil
-func New(config *Config) (*Manager, error) {
+func NewManager(config *Config) (*Manager, error) {
 	if config == nil {
 		return nil, fmt.Errorf("configuration cannot be nil: must provide a Config struct with a RootCmd")
 	}

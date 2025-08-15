@@ -1,6 +1,4 @@
-// Package mcpconfig provides shared utilities for managing MCP server configurations
-// across different platforms (Claude Desktop, VSCode, etc.).
-package mcpconfig
+package cfgmgr
 
 import (
 	"fmt"

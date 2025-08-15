@@ -3,8 +3,8 @@ package claude
 import (
 	"fmt"
 
-	"github.com/njayp/ophis/claude/config"
-	"github.com/njayp/ophis/internal/mcpconfig"
+	"github.com/njayp/ophis/internal/cfgmgr"
+	"github.com/njayp/ophis/internal/cfgmgr/claude/config"
 	"github.com/spf13/cobra"
 )
 
@@ -37,7 +37,7 @@ func disableMCPServer(flags *disableCommandFlags) error {
 	configManager := config.NewClaudeConfigManager(flags.configPath)
 
 	// Determine server name
-	serverName, err := mcpconfig.GetExecutableServerName(flags.serverName)
+	serverName, err := cfgmgr.GetExecutableServerName(flags.serverName)
 	if err != nil {
 		return err
 	}

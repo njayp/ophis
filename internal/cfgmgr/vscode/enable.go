@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/njayp/ophis/internal/mcpconfig"
+	"github.com/njayp/ophis/internal/cfgmgr"
+	"github.com/njayp/ophis/internal/cfgmgr/vscode/config"
 	"github.com/njayp/ophis/tools"
-	"github.com/njayp/ophis/vscode/config"
 	"github.com/spf13/cobra"
 )
 
@@ -49,7 +49,7 @@ func enableMCPServer(flags *enableCommandFlags) error {
 	}
 
 	// Validate the executable
-	executablePath, err = mcpconfig.ValidateExecutable(executablePath)
+	executablePath, err = cfgmgr.ValidateExecutable(executablePath)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func enableMCPServer(flags *enableCommandFlags) error {
 	// Determine server name
 	serverName := flags.serverName
 	if serverName == "" {
-		serverName = mcpconfig.DeriveServerName(executablePath)
+		serverName = cfgmgr.DeriveServerName(executablePath)
 		if serverName == "" {
 			return fmt.Errorf("MCP server name cannot be empty: unable to derive name from executable path '%s'", executablePath)
 		}

@@ -3,7 +3,7 @@ package vscode
 import (
 	"fmt"
 
-	"github.com/njayp/ophis/vscode/config"
+	"github.com/njayp/ophis/internal/cfgmgr/vscode/config"
 	"github.com/spf13/cobra"
 )
 
