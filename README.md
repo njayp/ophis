@@ -40,15 +40,13 @@ func main() {
 
 ```bash
 ./my-cli mcp claude enable
+# Restart Claude Desktop
 ```
-
-**Restart Claude Desktop**
 
 ```bash
 ./my-cli mcp vscode enable
+# Ensure Copilot is in Agent Mode
 ```
-
-**Ensure Copilot is in Agent Mode**
 
 Your CLI commands are now available as mcp server tools!
 
@@ -66,10 +64,7 @@ import (
 config := &ophis.Config{
     // Customize command filtering and output handling
     Generator: tools.NewGenerator(
-        // Include only specific commands
-        tools.WithFilters(tools.Allow([]string{"get", "list"})),
-        
-        // Or exclude specific commands
+        // Command filtering
         tools.AddFilter(tools.Exclude([]string{"dangerous"})),
         
         // Custom output handler
@@ -100,7 +95,7 @@ Control which commands are exposed as MCP tools:
 // Only expose specific commands
 tools.WithFilters(tools.Allow([]string{"get", "list", "describe"}))
 
-// Exclude specific commands (in addition to defaults)
+// Or exclude specific commands (in addition to defaults)
 tools.AddFilter(tools.Exclude([]string{"delete", "destroy"}))
 
 // Custom filter function
