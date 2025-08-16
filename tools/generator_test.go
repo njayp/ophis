@@ -45,8 +45,8 @@ func TestGeneratorOptions(t *testing.T) {
 	})
 
 	t.Run("multiple options", func(t *testing.T) {
-		handler := func(_ context.Context, _ mcp.CallToolRequest, _ []byte) *mcp.CallToolResult {
-			return mcp.NewToolResultText("custom")
+		handler := func(_ context.Context, _ mcp.CallToolRequest, _ []byte, _ error) (*mcp.CallToolResult, error) {
+			return mcp.NewToolResultText("custom"), nil
 		}
 
 		gen := NewGenerator(

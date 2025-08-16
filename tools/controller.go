@@ -28,14 +28,14 @@ type Controller struct {
 }
 
 // Handle processes the result of a tool execution into an MCP response.
-func (c *Controller) Handle(ctx context.Context, request mcp.CallToolRequest, data []byte) *mcp.CallToolResult {
+func (c *Controller) Handle(ctx context.Context, request mcp.CallToolRequest, data []byte, err error) (*mcp.CallToolResult, error) {
 	if c.handler != nil {
 		// Use custom handler if provided
-		return c.handler(ctx, request, data)
+		return c.handler(ctx, request, data, err)
 	}
 
 	// Default handling: return output as plain text
-	return defaultHandler(ctx, request, data)
+	return defaultHandler(ctx, request, data, err)
 }
 
 // Execute runs the tool command with the provided request.

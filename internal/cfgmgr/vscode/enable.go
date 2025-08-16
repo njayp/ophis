@@ -117,8 +117,7 @@ func enableMCPServer(flags *enableCommandFlags) error {
 	fmt.Printf("Args: %v\n", server.Args)
 	fmt.Printf("Configuration file: %s\n", configManager.GetConfigPath())
 	fmt.Printf("\nTo use this server:\n")
-	fmt.Printf("1. Restart VSCode or reload the window\n")
-	fmt.Printf("2. Open GitHub Copilot Chat\n")
-	fmt.Printf("3. Use agent mode to access MCP tools\n")
+	fmt.Printf("1. Open GitHub Copilot Chat\n")
+	fmt.Printf("2. Use agent mode to access MCP tools\n")
 	return nil
 }
