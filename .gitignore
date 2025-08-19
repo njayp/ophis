@@ -29,7 +29,7 @@ go.work.sum
 
 # Editor/IDE
 # .idea/
-# .vscode/
+.vscode/
 
 # build output
 bin/
@@ -38,5 +38,5 @@ output/
 # log files
 *.log
 *.json
-
+*.backup
 .DS_Store
