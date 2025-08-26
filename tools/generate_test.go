@@ -298,3 +298,43 @@ func TestCommandDescriptions(t *testing.T) {
 		})
 	}
 }
+
+// TestArgsDescFromCmd tests that the argsDescFromCmd function strips
+// the first word from the Use field to avoid redundancy with the command name
+func TestArgsDescFromCmd(t *testing.T) {
+	tests := []struct {
+		name     string
+		use      string
+		expected string
+	}{
+		{
+			name:     "command with arguments",
+			use:      "get RESOURCE [NAME]",
+			expected: "Positional arguments\nUsage: RESOURCE [NAME]",
+		},
+		{
+			name:     "command with flags only",
+			use:      "list [flags]",
+			expected: "Positional arguments\nUsage: [flags]",
+		},
+		{
+			name:     "command with no arguments (just command name)",
+			use:      "version",
+			expected: "Positional arguments",
+		},
+		{
+			name:     "empty use field",
+			use:      "",
+			expected: "Positional arguments",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Note: Cobra's Name() method returns the first word of Use
+			cmd := &cobra.Command{Use: tt.use}
+			result := argsDescFromCmd(cmd)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}

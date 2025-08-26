@@ -64,6 +64,7 @@ func TestBuildFlagArgs(t *testing.T) {
 		name     string
 		flagMap  map[string]any
 		expected []string
+		multiple bool
 	}{
 		{
 			name: "boolean true flag",
@@ -102,6 +103,7 @@ func TestBuildFlagArgs(t *testing.T) {
 			},
 			// Order may vary, so we check length and contents
 			expected: []string{"--verbose", "--output", "json"},
+			multiple: true,
 		},
 		{
 			name:     "empty flag map",
@@ -122,6 +124,7 @@ func TestBuildFlagArgs(t *testing.T) {
 				"flag2": "json",
 			},
 			expected: []string{"--flag", "value1", "--flag", "value2", "--flag2", "json"},
+			multiple: true,
 		},
 		{
 			name: "bool slice flag",
@@ -130,6 +133,7 @@ func TestBuildFlagArgs(t *testing.T) {
 				"flag2": true,
 			},
 			expected: []string{"--flag", "--flag", "--flag2"},
+			multiple: true,
 		},
 	}
 
@@ -137,8 +141,9 @@ func TestBuildFlagArgs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := buildFlagArgs(tt.flagMap)
 
-			// For multiple flags test, check elements match regardless of order
-			if tt.name == "multiple flags" {
+			// For tests with multiple flags from a map, check elements match regardless of order
+			// since map iteration order is non-deterministic
+			if tt.multiple {
 				assert.ElementsMatch(t, tt.expected, result)
 			} else {
 				assert.Equal(t, tt.expected, result)

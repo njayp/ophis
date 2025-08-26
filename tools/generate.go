@@ -3,6 +3,7 @@ package tools
 import (
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/spf13/cobra"
@@ -35,7 +36,20 @@ func toolOptsFromCmd(cmd *cobra.Command) []mcp.ToolOption {
 func argsDescFromCmd(cmd *cobra.Command) string {
 	argsDescription := "Positional arguments"
 	if cmd.Use != "" {
-		argsDescription += "\nUsage: " + cmd.Use
+		// Strip the command name from the Use field to avoid redundancy
+		// cmd.Use typically starts with the command name (e.g., "get RESOURCE [NAME]")
+		// We want just the arguments part (e.g., "RESOURCE [NAME]")
+		// Since cmd.Name() returns the first word of Use, we can just remove the first word
+		use := cmd.Use
+		if spaceIdx := strings.IndexByte(use, ' '); spaceIdx != -1 {
+			// Take everything after the first space
+			use = use[spaceIdx+1:]
+			if use != "" {
+				argsDescription += "\nUsage: " + use
+			}
+		}
+		// If there's no space, Use is just a single word (the command name),
+		// so we don't add anything to the description
 	}
 
 	return argsDescription
