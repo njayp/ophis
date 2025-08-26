@@ -1,10 +1,9 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
+
+	"github.com/njayp/ophis/internal/cfgmgr"
 )
 
 // Config represents the structure of Claude's desktop configuration
@@ -36,48 +35,27 @@ func NewClaudeConfigManager(configPath string) *Manager {
 
 // LoadConfig loads the Claude configuration from file
 func (cm *Manager) LoadConfig() (*Config, error) {
-	// Check if config file exists
-	if _, err := os.Stat(cm.configPath); os.IsNotExist(err) {
-		// Return empty config if file doesn't exist
-		return &Config{
-			MCPServers: make(map[string]MCPServer),
-		}, nil
+	config := &Config{
+		MCPServers: make(map[string]MCPServer),
 	}
 
-	data, err := os.ReadFile(cm.configPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read Claude configuration file at '%s': %w", cm.configPath, err)
+	if err := cfgmgr.LoadJSONConfig(cm.configPath, config); err != nil {
+		return nil, fmt.Errorf("failed to load Claude configuration: %w", err)
 	}
 
-	var config Config
-	if err := json.Unmarshal(data, &config); err != nil {
-		return nil, fmt.Errorf("failed to parse Claude configuration file at '%s': invalid JSON format: %w", cm.configPath, err)
-	}
-
-	// Initialize MCPServers map if it's nil
+	// Initialize MCPServers map if it's nil (for existing configs)
 	if config.MCPServers == nil {
 		config.MCPServers = make(map[string]MCPServer)
 	}
 
-	return &config, nil
+	return config, nil
 }
 
 // SaveConfig saves the Claude configuration to file
 func (cm *Manager) SaveConfig(config *Config) error {
-	// Ensure the directory exists
-	if err := os.MkdirAll(filepath.Dir(cm.configPath), 0o755); err != nil {
-		return fmt.Errorf("failed to create Claude configuration directory at '%s': %w", filepath.Dir(cm.configPath), err)
+	if err := cfgmgr.SaveJSONConfig(cm.configPath, config); err != nil {
+		return fmt.Errorf("failed to save Claude configuration: %w", err)
 	}
-
-	data, err := json.MarshalIndent(config, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal Claude configuration to JSON: %w", err)
-	}
-
-	if err := os.WriteFile(cm.configPath, data, 0o644); err != nil {
-		return fmt.Errorf("failed to write Claude configuration file at '%s': %w", cm.configPath, err)
-	}
-
 	return nil
 }
 
@@ -121,20 +99,5 @@ func (cm *Manager) GetConfigPath() string {
 
 // BackupConfig creates a backup of the current configuration file
 func (cm *Manager) BackupConfig() error {
-	if _, err := os.Stat(cm.configPath); os.IsNotExist(err) {
-		// No config file to backup
-		return nil
-	}
-
-	backupPath := cm.configPath + ".backup"
-	data, err := os.ReadFile(cm.configPath)
-	if err != nil {
-		return fmt.Errorf("failed to read Claude configuration file for backup at '%s': %w", cm.configPath, err)
-	}
-
-	if err := os.WriteFile(backupPath, data, 0o644); err != nil {
-		return fmt.Errorf("failed to write backup configuration file at '%s': %w", backupPath, err)
-	}
-
-	return nil
+	return cfgmgr.BackupConfigFile(cm.configPath)
 }

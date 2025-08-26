@@ -2,8 +2,8 @@ package claude
 
 import (
 	"fmt"
-	"os"
 
+	"github.com/njayp/ophis/internal/cfgmgr"
 	"github.com/njayp/ophis/internal/cfgmgr/claude/config"
 	"github.com/spf13/cobra"
 )
@@ -61,7 +61,7 @@ func listMCPServers(flags *listCommandFlags) error {
 		}
 
 		// Check if the executable still exists
-		if _, err := os.Stat(server.Command); os.IsNotExist(err) {
+		if !cfgmgr.CheckExecutableExists(server.Command) {
 			fmt.Printf("     ⚠️  Warning: Executable not found\n")
 		}
 		fmt.Println()

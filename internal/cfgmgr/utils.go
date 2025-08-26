@@ -1,6 +1,7 @@
 package cfgmgr
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -62,4 +63,74 @@ func GetExecutableServerName(serverName string) (string, error) {
 	}
 
 	return derivedName, nil
+}
+
+// BackupConfigFile creates a backup of a configuration file.
+// If the file doesn't exist, it returns nil (no error).
+// The backup is created with a .backup extension.
+func BackupConfigFile(configPath string) error {
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		// No config file to backup
+		return nil
+	}
+
+	backupPath := configPath + ".backup"
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return fmt.Errorf("failed to read configuration file for backup at '%s': %w", configPath, err)
+	}
+
+	if err := os.WriteFile(backupPath, data, 0o644); err != nil {
+		return fmt.Errorf("failed to write backup configuration file at '%s': %w", backupPath, err)
+	}
+
+	return nil
+}
+
+// LoadJSONConfig loads a JSON configuration file into the provided interface.
+// If the file doesn't exist, it returns nil error and leaves the config unchanged.
+func LoadJSONConfig(configPath string, config interface{}) error {
+	// Check if config file exists
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		// File doesn't exist - caller should handle initialization
+		return nil
+	}
+
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return fmt.Errorf("failed to read configuration file at '%s': %w", configPath, err)
+	}
+
+	if err := json.Unmarshal(data, config); err != nil {
+		return fmt.Errorf("failed to parse configuration file at '%s': invalid JSON format: %w", configPath, err)
+	}
+
+	return nil
+}
+
+// SaveJSONConfig saves a configuration to a JSON file with proper formatting.
+// It ensures the directory exists before writing.
+func SaveJSONConfig(configPath string, config interface{}) error {
+	// Ensure the directory exists
+	if err := os.MkdirAll(filepath.Dir(configPath), 0o755); err != nil {
+		return fmt.Errorf("failed to create configuration directory at '%s': %w", filepath.Dir(configPath), err)
+	}
+
+	data, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal configuration to JSON: %w", err)
+	}
+
+	if err := os.WriteFile(configPath, data, 0o644); err != nil {
+		return fmt.Errorf("failed to write configuration file at '%s': %w", configPath, err)
+	}
+
+	return nil
+}
+
+// CheckExecutableExists checks if an executable file exists at the given path.
+// Returns true if the file exists, false otherwise.
+func CheckExecutableExists(executablePath string) bool {
+	_, err := os.Stat(executablePath)
+	return err == nil
 }
