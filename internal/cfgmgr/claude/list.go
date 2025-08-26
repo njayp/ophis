@@ -3,7 +3,6 @@ package claude
 import (
 	"fmt"
 
-	"github.com/njayp/ophis/internal/cfgmgr"
 	"github.com/njayp/ophis/internal/cfgmgr/claude/config"
 	"github.com/spf13/cobra"
 )
@@ -51,19 +50,15 @@ func listMCPServers(flags *listCommandFlags) error {
 
 	fmt.Printf("Configured MCP servers (%d):\n\n", len(claudeConfig.MCPServers))
 	for name, server := range claudeConfig.MCPServers {
-		fmt.Printf("  📦 %s\n", name)
-		fmt.Printf("     Command: %s\n", server.Command)
+		fmt.Printf("Server: %s\n", name)
+		fmt.Printf("  Command: %s\n", server.Command)
 		if len(server.Args) > 0 {
-			fmt.Printf("     Args: %v\n", server.Args)
+			fmt.Printf("  Args: %v\n", server.Args)
 		}
 		if len(server.Env) > 0 {
-			fmt.Printf("     Environment: %v\n", server.Env)
+			fmt.Printf("  Environment: %v\n", server.Env)
 		}
 
-		// Check if the executable still exists
-		if !cfgmgr.CheckExecutableExists(server.Command) {
-			fmt.Printf("     ⚠️  Warning: Executable not found\n")
-		}
 		fmt.Println()
 	}
 
