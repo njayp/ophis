@@ -21,8 +21,8 @@ func enableCommand() *cobra.Command {
 	enableFlags := &enableCommandFlags{}
 	cmd := &cobra.Command{
 		Use:   "enable",
-		Short: "Enable the MCP server",
-		Long:  `Enable the MCP server by adding it to Claude's MCP config file`,
+		Short: "Add server to Claude config",
+		Long:  `Add this application as an MCP server in Claude Desktop`,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			return enableMCPServer(enableFlags)
 		},

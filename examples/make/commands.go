@@ -13,7 +13,7 @@ func createMakeCommands() *cobra.Command {
 	// Create the root make command
 	rootCmd := &cobra.Command{
 		Use:   "make",
-		Short: "Run make commands",
+		Short: "Run make targets",
 		Long:  `Execute make targets and build commands`,
 	}
 
@@ -26,7 +26,7 @@ func createMakeCommands() *cobra.Command {
 
 	// Add make target commands
 	testCmd := createMakeTargetCommand("test", "Run tests", "Run the test suite using 'make test'")
-	lintCmd := createMakeTargetCommand("lint", "Run linter", "Run 'golangci-lint run' using 'make test'")
+	lintCmd := createMakeTargetCommand("lint", "Run linter", "Run 'golangci-lint run' using 'make lint'")
 
 	// Add subcommands
 	rootCmd.AddCommand(mcpCmd, testCmd, lintCmd)

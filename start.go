@@ -20,11 +20,8 @@ func startCommand(config *Config) *cobra.Command {
 	mcpFlags := &StartCommandFlags{}
 	cmd := &cobra.Command{
 		Use:   tools.StartCommandName,
-		Short: "Start MCP (Model Context Protocol) server",
-		Long: `Start an MCP server that exposes this application's commands to MCP clients.
-
-The MCP server will expose all available commands as tools that can be called
-by AI assistants and other MCP-compatible clients.`,
+		Short: "Start the MCP server",
+		Long:  `Start MCP server to expose CLI commands to AI assistants`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if config == nil {
 				config = &Config{}

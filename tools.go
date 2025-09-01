@@ -13,8 +13,8 @@ import (
 func toolCommand(config *Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "tools",
-		Short: "Export available MCP tools to JSON file",
-		Long:  `Export all available MCP tools to mcp-tools.json for inspection and debugging.`,
+		Short: "Export tools as JSON",
+		Long:  `Export available MCP tools to mcp-tools.json for inspection`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if config == nil {
 				config = &Config{}

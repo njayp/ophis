@@ -23,8 +23,8 @@ func enableCommand() *cobra.Command {
 	enableFlags := &enableCommandFlags{}
 	cmd := &cobra.Command{
 		Use:   "enable",
-		Short: "Enable the MCP server in VSCode",
-		Long:  `Enable the MCP server by adding it to VSCode's MCP configuration file (.vscode/mcp.json or user mcp.json)`,
+		Short: "Add server to VSCode config",
+		Long:  `Add this application as an MCP server in VSCode`,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			return enableMCPServer(enableFlags)
 		},

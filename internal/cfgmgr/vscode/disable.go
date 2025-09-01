@@ -20,8 +20,8 @@ func disableCommand() *cobra.Command {
 	disableFlags := &disableCommandFlags{}
 	cmd := &cobra.Command{
 		Use:   "disable",
-		Short: "Disable the MCP server in VSCode",
-		Long:  `Disable the MCP server by removing it from VSCode's MCP configuration file (.vscode/mcp.json or user mcp.json)`,
+		Short: "Remove server from VSCode config",
+		Long:  `Remove this application from VSCode MCP servers`,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			return disableMCPServer(disableFlags)
 		},

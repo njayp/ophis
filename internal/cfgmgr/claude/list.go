@@ -16,8 +16,8 @@ func listCommand() *cobra.Command {
 	listFlags := &listCommandFlags{} // Reuse flags struct for config-path
 	cmd := &cobra.Command{
 		Use:   "list",
-		Short: "List configured MCP servers",
-		Long:  `List all MCP servers currently configured in Claude's MCP config file`,
+		Short: "Show Claude MCP servers",
+		Long:  `Show all MCP servers configured in Claude Desktop`,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			return listMCPServers(listFlags)
 		},

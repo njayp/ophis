@@ -12,10 +12,8 @@ import (
 func Command(config *Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   tools.MCPCommandName,
-		Short: "MCP (Modal Context Protocol) Server Tools",
-		Long: `MCP (Modal Context Protocol) Server Tools
-
-A programmatically-created mcp server with support for multiple LLMs and IDEs. Use the 'tools' subcommand to export available tools.`,
+		Short: "MCP server management",
+		Long:  `Manage MCP servers for AI assistants and code editors`,
 	}
 
 	// Add subcommands

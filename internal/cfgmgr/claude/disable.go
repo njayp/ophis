@@ -18,8 +18,8 @@ func disableCommand() *cobra.Command {
 	disableFlags := &disableCommandFlags{} // Reuse flags struct
 	cmd := &cobra.Command{
 		Use:   "disable",
-		Short: "Disable the MCP server",
-		Long:  `Disable the MCP server by removing it from Claude's MCP config file`,
+		Short: "Remove server from Claude config",
+		Long:  `Remove this application from Claude Desktop MCP servers`,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			return disableMCPServer(disableFlags)
 		},

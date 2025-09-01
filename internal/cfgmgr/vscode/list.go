@@ -18,8 +18,8 @@ func listCommand() *cobra.Command {
 	listFlags := &listCommandFlags{}
 	cmd := &cobra.Command{
 		Use:   "list",
-		Short: "List MCP servers in VSCode",
-		Long:  `List all configured MCP servers in VSCode's configuration file (.vscode/mcp.json or user mcp.json)`,
+		Short: "Show VSCode MCP servers",
+		Long:  `Show all MCP servers configured in VSCode`,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			return listMCPServers(listFlags)
 		},
