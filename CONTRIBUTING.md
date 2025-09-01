@@ -24,19 +24,9 @@
    cd ophis
    ```
 
-2. **Install dependencies**
+2. **Run dependencies, tests, linter, and builder**
    ```bash
-   make up
-   ```
-
-3. **Run tests to ensure everything works**
-   ```bash
-   make test
-   ```
-
-4. **Run the linter**
-   ```bash
-   make lint
+   make
    ```
 
 
