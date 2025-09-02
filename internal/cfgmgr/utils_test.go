@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 	"testing"
 
+	"github.com/njayp/ophis/tools"
 	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBackupConfigFile(t *testing.T) {
@@ -163,28 +164,16 @@ func TestGetExecutableServerName(t *testing.T) {
 
 func TestGetMCPCommandPath(t *testing.T) {
 	t.Run("MCPAtRoot", func(t *testing.T) {
-		cmd := buildCommand("root", "mcp", "post")
-		path := GetMCPCommandPath(cmd)
-		expected := []string{"mcp"}
-		if !slices.Equal(path, expected) {
-			t.Errorf("didn't generated expected path when MCP server was at the root: got %v - expected %v", path, expected)
-		}
+		cmd := buildCommand("root", tools.MCPCommandName, "post")
+		assert.Equal(t, []string{tools.MCPCommandName}, GetMCPCommandPath(cmd))
 	})
 	t.Run("NestedMCP", func(t *testing.T) {
-		cmd := buildCommand("root", "pre", "mcp", "post")
-		path := GetMCPCommandPath(cmd)
-		expected := []string{"pre", "mcp"}
-		if !slices.Equal(path, expected) {
-			t.Errorf("didn't generated expected path when MCP server was one level nested: got %v - expected %v", path, expected)
-		}
+		cmd := buildCommand("root", "pre", tools.MCPCommandName, "post")
+		assert.Equal(t, []string{"pre", tools.MCPCommandName}, GetMCPCommandPath(cmd))
 	})
 	t.Run("MultipleNestedMCP", func(t *testing.T) {
-		cmd := buildCommand("root", "pre1", "pre2", "mcp", "post", "post2")
-		path := GetMCPCommandPath(cmd)
-		expected := []string{"pre1", "pre2", "mcp"}
-		if !slices.Equal(path, expected) {
-			t.Errorf("didn't generated expected path when MCP server was nested multiple levels deep: got %v - expected %v", path, expected)
-		}
+		cmd := buildCommand("root", "pre1", "pre2", tools.MCPCommandName, "post", "post2")
+		assert.Equal(t, []string{"pre1", "pre2", tools.MCPCommandName}, GetMCPCommandPath(cmd))
 	})
 }
 

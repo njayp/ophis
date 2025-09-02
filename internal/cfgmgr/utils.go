@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"slices"
 
+	"github.com/njayp/ophis/tools"
 	"github.com/spf13/cobra"
 )
 
@@ -76,7 +77,7 @@ func GetMCPCommandPath(cmd *cobra.Command) []string {
 	foundMCP := false
 	cur := cmd
 	for {
-		if cur.Name() == "mcp" {
+		if cur.Name() == tools.MCPCommandName {
 			foundMCP = true
 		}
 		if foundMCP {
