@@ -9,7 +9,7 @@ import (
 func Command() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "vscode",
-		Short: "Configure VSCode MCP",
+		Short: "Configure VSCode MCP servers",
 		Long:  `Configure MCP servers for Visual Studio Code`,
 	}
 

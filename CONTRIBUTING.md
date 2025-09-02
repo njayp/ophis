@@ -1,12 +1,9 @@
 ### Thank you for contributing to Ophis! Your efforts help make this project better for everyone.
 
-## Getting Started
+## How to Contribute
 
 1. Fork the repository on GitHub
-2. Clone your fork locally
-3. Create a new branch for your contribution
-4. Make your changes
-5. Push to your fork and submit a pull request
+2. Push changes to your fork and submit a pull request
 
 ## Development Setup
 
