@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
+
+	"github.com/spf13/cobra"
 )
 
 func TestBackupConfigFile(t *testing.T) {
@@ -156,6 +159,45 @@ func TestGetExecutableServerName(t *testing.T) {
 	if name == "" {
 		t.Error("GetExecutableServerName should return non-empty derived name")
 	}
+}
+
+func TestGetMCPCommandPath(t *testing.T) {
+	t.Run("MCPAtRoot", func(t *testing.T) {
+		cmd := buildCommand("root", "mcp", "post")
+		path := GetMCPCommandPath(cmd)
+		expected := []string{"mcp"}
+		if !slices.Equal(path, expected) {
+			t.Errorf("didn't generated expected path when MCP server was at the root: got %v - expected %v", path, expected)
+		}
+	})
+	t.Run("NestedMCP", func(t *testing.T) {
+		cmd := buildCommand("root", "pre", "mcp", "post")
+		path := GetMCPCommandPath(cmd)
+		expected := []string{"pre", "mcp"}
+		if !slices.Equal(path, expected) {
+			t.Errorf("didn't generated expected path when MCP server was one level nested: got %v - expected %v", path, expected)
+		}
+	})
+	t.Run("MultipleNestedMCP", func(t *testing.T) {
+		cmd := buildCommand("root", "pre1", "pre2", "mcp", "post", "post2")
+		path := GetMCPCommandPath(cmd)
+		expected := []string{"pre1", "pre2", "mcp"}
+		if !slices.Equal(path, expected) {
+			t.Errorf("didn't generated expected path when MCP server was nested multiple levels deep: got %v - expected %v", path, expected)
+		}
+	})
+}
+
+func buildCommand(cmds ...string) *cobra.Command {
+	var parent *cobra.Command
+	for _, cmd := range cmds {
+		cur := &cobra.Command{Use: cmd}
+		if parent != nil {
+			parent.AddCommand(cur)
+		}
+		parent = cur
+	}
+	return parent
 }
 
 func TestDeriveServerName(t *testing.T) {

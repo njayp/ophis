@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
+
+	"github.com/spf13/cobra"
 )
 
 // ValidateExecutable validates that the given path is an executable file.
@@ -63,6 +66,35 @@ func GetExecutableServerName(serverName string) (string, error) {
 	}
 
 	return derivedName, nil
+}
+
+// GetMCPCommandPath constructs the command path for invoking the MCP server. It searches for the MCP command up the
+// tree and builds the path to execute it from that point up. For example if the command path was
+// `<command> alpha mcp start` then this will return `alpha mcp`.
+func GetMCPCommandPath(cmd *cobra.Command) []string {
+	args := []string{}
+	foundMCP := false
+	cur := cmd
+	for {
+		if cur.Name() == "mcp" {
+			foundMCP = true
+		}
+		if foundMCP {
+			args = append(args, cur.Name())
+		}
+		if cur.Parent() == nil {
+			break
+		}
+		cur = cur.Parent()
+	}
+
+	if len(args) == 0 {
+		return []string{}
+	}
+
+	slices.Reverse(args)
+
+	return args[1:]
 }
 
 // BackupConfigFile creates a backup of a configuration file.

@@ -23,8 +23,8 @@ func enableCommand() *cobra.Command {
 		Use:   "enable",
 		Short: "Add server to Claude config",
 		Long:  `Add this application as an MCP server in Claude Desktop`,
-		RunE: func(_ *cobra.Command, _ []string) error {
-			return enableMCPServer(enableFlags)
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return enableMCPServer(cmd, enableFlags)
 		},
 	}
 
@@ -36,7 +36,7 @@ func enableCommand() *cobra.Command {
 	return cmd
 }
 
-func enableMCPServer(flags *enableCommandFlags) error {
+func enableMCPServer(cmd *cobra.Command, flags *enableCommandFlags) error {
 	// Get the current executable path
 	executablePath, err := os.Executable()
 	if err != nil {
@@ -74,7 +74,7 @@ func enableMCPServer(flags *enableCommandFlags) error {
 	// Build server configuration
 	server := config.MCPServer{
 		Command: executablePath,
-		Args:    []string{tools.MCPCommandName, tools.StartCommandName},
+		Args:    append(cfgmgr.GetMCPCommandPath(cmd), tools.StartCommandName),
 	}
 
 	// Add log level and log file to args if specified
