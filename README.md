@@ -94,10 +94,14 @@ Control which commands are exposed as MCP tools:
 ```go
 // Only expose specific commands
 tools.WithFilters(tools.Allow([]string{"get", "list", "describe"}))
+```
 
+```go
 // Or exclude specific commands (in addition to defaults)
 tools.AddFilter(tools.Exclude([]string{"delete", "destroy"}))
+```
 
+```go
 // Custom filter function
 tools.AddFilter(func(cmd *cobra.Command) bool {
     // Exclude admin commands
@@ -107,17 +111,17 @@ tools.AddFilter(func(cmd *cobra.Command) bool {
 
 ### Custom Output Handler
 
-Return the data as an image instead of as text.
+The output handler will be applied to all tools. See proposal [#9](https://github.com/njayp/ophis/issues/9).
 
 ```go
+// Return the data as an image instead of as text
 tools.WithHandler(func(ctx context.Context, request mcp.CallToolRequest, data []byte, err error) *mcp.CallToolResult {
     return mcp.NewToolResultImage(data)
 })
 ```
 
-Or add middleware.
-
 ```go
+// Or add middleware
 tools.WithHandler(func(ctx context.Context, request mcp.CallToolRequest, data []byte, err error) *mcp.CallToolResult {
     // Your middleware here
     return tools.DefaultHandler(ctx, request, data, err)
