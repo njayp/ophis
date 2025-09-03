@@ -35,7 +35,7 @@ func (c *Controller) Handle(ctx context.Context, request mcp.CallToolRequest, da
 	}
 
 	// Default handling: return output as plain text
-	return defaultHandler(ctx, request, data, err)
+	return DefaultHandler(ctx, request, data, err)
 }
 
 // Execute runs the tool command with the provided request.

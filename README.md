@@ -110,8 +110,17 @@ tools.AddFilter(func(cmd *cobra.Command) bool {
 Return the data as an image instead of as text.
 
 ```go
-tools.WithHandler(func(ctx context.Context, request mcp.CallToolRequest, data []byte) *mcp.CallToolResult {
+tools.WithHandler(func(ctx context.Context, request mcp.CallToolRequest, data []byte, err error) *mcp.CallToolResult {
     return mcp.NewToolResultImage(data)
+})
+```
+
+Or add middleware.
+
+```go
+tools.WithHandler(func(ctx context.Context, request mcp.CallToolRequest, data []byte, err error) *mcp.CallToolResult {
+    // Your middleware here
+    return tools.DefaultHandler(ctx, request, data, err)
 })
 ```
 

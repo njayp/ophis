@@ -22,8 +22,8 @@ func WithHandler(handler Handler) GeneratorOption {
 	}
 }
 
-// defaultHandler is the default handler that processes command output as plain text.
-func defaultHandler(_ context.Context, request mcp.CallToolRequest, data []byte, err error) (*mcp.CallToolResult, error) {
+// DefaultHandler is the default handler that processes command output as plain text.
+func DefaultHandler(_ context.Context, request mcp.CallToolRequest, data []byte, err error) (*mcp.CallToolResult, error) {
 	output := string(data)
 	if err != nil {
 		slog.Error("command execution failed",
