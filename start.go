@@ -1,7 +1,6 @@
 package ophis
 
 import (
-	"fmt"
 	"log/slog"
 	"strings"
 
@@ -43,11 +42,7 @@ func startCommand(config *Config) *cobra.Command {
 			}
 
 			// Create and start the bridge
-			bridge, err := bridge.NewManager(config.bridgeConfig(rootCmd))
-			if err != nil {
-				return fmt.Errorf("failed to create MCP server bridge: %w", err)
-			}
-			return bridge.StartServer()
+			return bridge.Run(config.bridgeConfig(rootCmd))
 		},
 	}
 

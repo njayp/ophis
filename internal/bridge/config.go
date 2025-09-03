@@ -27,7 +27,6 @@ import (
 type Config struct {
 	// RootCmd is the root Cobra command whose subcommands will be exposed as MCP tools.
 	// Required: This is the entry point for discovering available commands.
-	// Only commands with Run or RunE functions will be converted to tools.
 	RootCmd *cobra.Command
 
 	// Generator controls how Cobra commands are converted to MCP tools.
