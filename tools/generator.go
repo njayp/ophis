@@ -7,11 +7,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// FromRootCmd creates a default generator and converts a Cobra command tree into MCP tools.
-func FromRootCmd(cmd *cobra.Command) []Controller {
-	return NewGenerator().FromRootCmd(cmd)
-}
-
 // Generator converts Cobra commands into MCP tools with configurable exclusions.
 type Generator struct {
 	filters []Filter

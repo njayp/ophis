@@ -112,17 +112,3 @@ func TestFromRootCmdEdgeCases(t *testing.T) {
 		assert.ElementsMatch(t, expectedNames, actualNames)
 	})
 }
-
-// TestFromRootCmdStandaloneFunction tests the standalone FromRootCmd function
-func TestFromRootCmdStandaloneFunction(t *testing.T) {
-	cmd := &cobra.Command{
-		Use:   "test",
-		Short: "Test command",
-		Run:   func(_ *cobra.Command, _ []string) {},
-	}
-
-	tools := FromRootCmd(cmd)
-
-	assert.Len(t, tools, 1)
-	assert.Equal(t, "test", tools[0].Tool.Name)
-}
