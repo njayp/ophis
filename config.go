@@ -24,12 +24,6 @@ import (
 //		},
 //	}
 type Config struct {
-	// RootCmd allows the user to decide which command should be the root command for generating tools.
-	// This allows the mcp command to be nested under another command while still generating tools from
-	// the entire tree. For example: "<command> alpha mcp" could still generate the tools from the root
-	// "<command>". If omitted, it will use mcp's parent command.
-	RootCmd *cobra.Command
-
 	// Generator controls how Cobra commands are converted to MCP tools.
 	// Optional: If nil, a default generator will be used that:
 	//   - Excludes hidden commands
@@ -61,7 +55,12 @@ type Config struct {
 	ServerOptions []server.ServerOption
 }
 
-func (c *Config) bridgeConfig(rootCmd *cobra.Command) *bridge.Config {
+func (c *Config) bridgeConfig(cmd *cobra.Command) *bridge.Config {
+	rootCmd := cmd
+	for rootCmd.Parent() != nil {
+		rootCmd = rootCmd.Parent()
+	}
+
 	return &bridge.Config{
 		RootCmd:          rootCmd,
 		GeneratorOptions: c.GeneratorOptions,

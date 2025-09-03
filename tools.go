@@ -20,12 +20,7 @@ func toolCommand(config *Config) *cobra.Command {
 				config = &Config{}
 			}
 
-			rootCmd := cmd.Parent().Parent()
-			if config.RootCmd != nil {
-				rootCmd = config.RootCmd
-			}
-
-			tools := config.bridgeConfig(rootCmd).Tools()
+			tools := config.bridgeConfig(cmd).Tools()
 			mcpTools := make([]mcp.Tool, len(tools))
 			for i, tool := range tools {
 				mcpTools[i] = tool.Tool

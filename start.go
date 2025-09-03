@@ -36,13 +36,8 @@ func startCommand(config *Config) *cobra.Command {
 				config.SloggerOptions.Level = level
 			}
 
-			rootCmd := cmd.Parent().Parent()
-			if config.RootCmd != nil {
-				rootCmd = config.RootCmd
-			}
-
 			// Create and start the bridge
-			return bridge.Run(config.bridgeConfig(rootCmd))
+			return bridge.Run(config.bridgeConfig(cmd))
 		},
 	}
 
