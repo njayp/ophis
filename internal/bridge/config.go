@@ -41,7 +41,7 @@ type Config struct {
 	//       tools.WithFilters(tools.Allow([]string{"get", "list"})),
 	//       tools.WithHandler(customHandler),
 	//   )
-	Generator *tools.Generator
+	GeneratorOptions []tools.GeneratorOption
 
 	// SloggerOptions configures the structured logger used by the MCP server.
 	// Optional: If nil, default options will be used.
@@ -69,11 +69,7 @@ type Config struct {
 //   - Excludes "mcp", "help", and "completion" commands
 //   - Returns command output as plain text
 func (c *Config) Tools() []tools.Controller {
-	if c.Generator != nil {
-		return c.Generator.FromRootCmd(c.RootCmd)
-	}
-
-	return tools.FromRootCmd(c.RootCmd)
+	return tools.NewGenerator(c.GeneratorOptions...).FromRootCmd(c.RootCmd)
 }
 
 // setupSlogger configures the structured logger for the MCP server.

@@ -25,13 +25,11 @@ func TestConfigTools(t *testing.T) {
 	rootCmd.AddCommand(subCmd)
 
 	t.Run("with custom generator", func(t *testing.T) {
-		customGen := tools.NewGenerator(
-			tools.WithFilters(tools.Allow([]string{"sub"})),
-		)
+		customGen := []tools.GeneratorOption{tools.WithFilters(tools.Allow([]string{"sub"}))}
 
 		config := &Config{
-			RootCmd:   rootCmd,
-			Generator: customGen,
+			RootCmd:          rootCmd,
+			GeneratorOptions: customGen,
 		}
 
 		tools := config.Tools()
@@ -83,8 +81,7 @@ func TestConfigValidation(t *testing.T) {
 		{
 			name: "config with all options",
 			config: &Config{
-				RootCmd:   &cobra.Command{Use: "test"},
-				Generator: tools.NewGenerator(),
+				RootCmd: &cobra.Command{Use: "test"},
 				SloggerOptions: &slog.HandlerOptions{
 					Level: slog.LevelDebug,
 				},

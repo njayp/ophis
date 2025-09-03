@@ -41,7 +41,7 @@ type Config struct {
 	//       tools.WithFilters(tools.Allow([]string{"get", "list"})),
 	//       tools.WithHandler(customHandler),
 	//   )
-	Generator *tools.Generator
+	GeneratorOptions []tools.GeneratorOption
 
 	// SloggerOptions configures the structured logger used by the MCP server.
 	// Optional: If nil, default options will be used.
@@ -63,9 +63,9 @@ type Config struct {
 
 func (c *Config) bridgeConfig(rootCmd *cobra.Command) *bridge.Config {
 	return &bridge.Config{
-		RootCmd:        rootCmd,
-		Generator:      c.Generator,
-		SloggerOptions: c.SloggerOptions,
-		ServerOptions:  c.ServerOptions,
+		RootCmd:          rootCmd,
+		GeneratorOptions: c.GeneratorOptions,
+		SloggerOptions:   c.SloggerOptions,
+		ServerOptions:    c.ServerOptions,
 	}
 }
