@@ -37,8 +37,13 @@ func startCommand(config *Config) *cobra.Command {
 				config.SloggerOptions.Level = level
 			}
 
+			rootCmd := cmd.Parent().Parent()
+			if config.RootCmd != nil {
+				rootCmd = config.RootCmd
+			}
+
 			// Create and start the bridge
-			bridge, err := bridge.NewManager(config.bridgeConfig(cmd))
+			bridge, err := bridge.NewManager(config.bridgeConfig(rootCmd))
 			if err != nil {
 				return fmt.Errorf("failed to create MCP server bridge: %w", err)
 			}

@@ -6,6 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/njayp/ophis/tools"
+	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBackupConfigFile(t *testing.T) {
@@ -156,6 +160,33 @@ func TestGetExecutableServerName(t *testing.T) {
 	if name == "" {
 		t.Error("GetExecutableServerName should return non-empty derived name")
 	}
+}
+
+func TestGetMCPCommandPath(t *testing.T) {
+	t.Run("MCPAtRoot", func(t *testing.T) {
+		cmd := buildCommand("root", tools.MCPCommandName, "post")
+		assert.Equal(t, []string{tools.MCPCommandName}, GetMCPCommandPath(cmd))
+	})
+	t.Run("NestedMCP", func(t *testing.T) {
+		cmd := buildCommand("root", "pre", tools.MCPCommandName, "post")
+		assert.Equal(t, []string{"pre", tools.MCPCommandName}, GetMCPCommandPath(cmd))
+	})
+	t.Run("MultipleNestedMCP", func(t *testing.T) {
+		cmd := buildCommand("root", "pre1", "pre2", tools.MCPCommandName, "post", "post2")
+		assert.Equal(t, []string{"pre1", "pre2", tools.MCPCommandName}, GetMCPCommandPath(cmd))
+	})
+}
+
+func buildCommand(cmds ...string) *cobra.Command {
+	var parent *cobra.Command
+	for _, cmd := range cmds {
+		cur := &cobra.Command{Use: cmd}
+		if parent != nil {
+			parent.AddCommand(cur)
+		}
+		parent = cur
+	}
+	return parent
 }
 
 func TestDeriveServerName(t *testing.T) {

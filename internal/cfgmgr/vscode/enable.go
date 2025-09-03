@@ -25,8 +25,8 @@ func enableCommand() *cobra.Command {
 		Use:   "enable",
 		Short: "Add server to VSCode config",
 		Long:  `Add this application as an MCP server in VSCode`,
-		RunE: func(_ *cobra.Command, _ []string) error {
-			return enableMCPServer(enableFlags)
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return enableMCPServer(cmd, enableFlags)
 		},
 	}
 
@@ -41,7 +41,7 @@ func enableCommand() *cobra.Command {
 	return cmd
 }
 
-func enableMCPServer(flags *enableCommandFlags) error {
+func enableMCPServer(cmd *cobra.Command, flags *enableCommandFlags) error {
 	// Get the current executable path
 	executablePath, err := os.Executable()
 	if err != nil {
@@ -90,7 +90,7 @@ func enableMCPServer(flags *enableCommandFlags) error {
 	server := config.MCPServer{
 		Type:    "stdio",
 		Command: executablePath,
-		Args:    []string{tools.MCPCommandName, tools.StartCommandName},
+		Args:    append(cfgmgr.GetMCPCommandPath(cmd), tools.StartCommandName),
 	}
 
 	// Add log level to args if specified
