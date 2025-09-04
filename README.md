@@ -12,9 +12,9 @@ go get github.com/njayp/ophis
 
 ## Quick Start
 
-### Add MCP server commands to your root command.
+### Add MCP server commands to your command tree.
 
-Below is an example of a `main()` that adds MCP commands to a root command. Alternatively, this logic can be placed in your `createMyRootCommand()`.
+MCP commands can be added anywhere in a command tree. Below is an example of a `main()` that adds MCP commands to a root command. Alternatively, this logic can be placed in your `createMyRootCommand()`.
 
 ```go
 package main
@@ -63,13 +63,13 @@ import (
 
 config := &ophis.Config{
     // Customize command filtering and output handling
-    Generator: tools.NewGenerator(
+    GeneratorOptions: []tools.GeneratorOption{
         // Command filtering
         tools.AddFilter(tools.Exclude([]string{"dangerous"})),
         
         // Custom output handler
         tools.WithHandler(myCustomHandler),
-    ),
+    },
     
     // Configure logging (logs to stderr)
     SloggerOptions: &slog.HandlerOptions{
