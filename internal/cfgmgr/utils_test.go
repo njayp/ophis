@@ -163,18 +163,34 @@ func TestGetExecutableServerName(t *testing.T) {
 }
 
 func TestGetMCPCommandPath(t *testing.T) {
-	t.Run("MCPAtRoot", func(t *testing.T) {
-		cmd := buildCommand("root", tools.MCPCommandName, "post")
-		assert.Equal(t, []string{tools.MCPCommandName}, GetMCPCommandPath(cmd))
-	})
-	t.Run("NestedMCP", func(t *testing.T) {
-		cmd := buildCommand("root", "pre", tools.MCPCommandName, "post")
-		assert.Equal(t, []string{"pre", tools.MCPCommandName}, GetMCPCommandPath(cmd))
-	})
-	t.Run("MultipleNestedMCP", func(t *testing.T) {
-		cmd := buildCommand("root", "pre1", "pre2", tools.MCPCommandName, "post", "post2")
-		assert.Equal(t, []string{"pre1", "pre2", tools.MCPCommandName}, GetMCPCommandPath(cmd))
-	})
+	tests := []struct {
+		name     string
+		commands []string
+		expected []string
+	}{
+		{
+			name:     "MCPAtRoot",
+			commands: []string{"root", tools.MCPCommandName, "post"},
+			expected: []string{tools.MCPCommandName},
+		},
+		{
+			name:     "NestedMCP",
+			commands: []string{"root", "pre", tools.MCPCommandName, "post"},
+			expected: []string{"pre", tools.MCPCommandName},
+		},
+		{
+			name:     "MultipleNestedMCP",
+			commands: []string{"root", "pre1", "pre2", tools.MCPCommandName, "post", "post2"},
+			expected: []string{"pre1", "pre2", tools.MCPCommandName},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := buildCommand(tt.commands...)
+			assert.Equal(t, tt.expected, GetMCPCommandPath(cmd))
+		})
+	}
 }
 
 func buildCommand(cmds ...string) *cobra.Command {
