@@ -6,7 +6,6 @@ import (
 
 	"github.com/njayp/ophis/internal/cfgmgr"
 	"github.com/njayp/ophis/internal/cfgmgr/claude/config"
-	"github.com/njayp/ophis/tools"
 	"github.com/spf13/cobra"
 )
 
@@ -74,7 +73,7 @@ func enableMCPServer(cmd *cobra.Command, flags *enableCommandFlags) error {
 	// Build server configuration
 	server := config.MCPServer{
 		Command: executablePath,
-		Args:    append(cfgmgr.GetMCPCommandPath(cmd), tools.StartCommandName),
+		Args:    append(cfgmgr.GetMCPCommandPath(cmd), cfgmgr.StartCommandName),
 	}
 
 	// Add log level and log file to args if specified

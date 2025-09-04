@@ -10,15 +10,7 @@ import (
 
 	sq "github.com/kballard/go-shellquote"
 	"github.com/mark3labs/mcp-go/mcp"
-)
-
-// Constants for MCP parameter names and error messages
-const (
-	MCPCommandName   = "mcp"
-	StartCommandName = "start"
-	// PositionalArgsParam is the parameter name for positional arguments
-	PositionalArgsParam = "args"
-	FlagsParam          = "flags"
+	"github.com/njayp/ophis/internal/cfgmgr"
 )
 
 // Controller represents an MCP tool with its associated logic for execution and output handling.
@@ -71,7 +63,7 @@ func (c *Controller) buildCommandArgs(request mcp.CallToolRequest) []string {
 	slog.Debug("initial command arguments", "args", args)
 
 	// Add flags
-	if flagsValue, ok := message[FlagsParam]; ok {
+	if flagsValue, ok := message[cfgmgr.FlagsParam]; ok {
 		if flagMap, ok := flagsValue.(map[string]any); ok {
 			flagArgs := buildFlagArgs(flagMap)
 			args = append(args, flagArgs...)
@@ -79,7 +71,7 @@ func (c *Controller) buildCommandArgs(request mcp.CallToolRequest) []string {
 	}
 
 	// Add positional arguments
-	if argsValue, ok := message[PositionalArgsParam]; ok {
+	if argsValue, ok := message[cfgmgr.PositionalArgsParam]; ok {
 		if argsStr, ok := argsValue.(string); ok && argsStr != "" {
 			parsedArgs := parseArgumentString(argsStr)
 			args = append(args, parsedArgs...)

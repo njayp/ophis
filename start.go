@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/njayp/ophis/internal/bridge"
-	"github.com/njayp/ophis/tools"
+	"github.com/njayp/ophis/internal/cfgmgr"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +18,7 @@ type StartCommandFlags struct {
 func startCommand(config *Config) *cobra.Command {
 	mcpFlags := &StartCommandFlags{}
 	cmd := &cobra.Command{
-		Use:   tools.StartCommandName,
+		Use:   cfgmgr.StartCommandName,
 		Short: "Start the MCP server",
 		Long:  `Start MCP server to expose CLI commands to AI assistants`,
 		RunE: func(cmd *cobra.Command, _ []string) error {

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/njayp/ophis/internal/cfgmgr"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -17,7 +18,7 @@ func toolOptsFromCmd(cmd *cobra.Command) []mcp.ToolOption {
 
 	// add flags to tool
 	flagMap := flagMapFromCmd(cmd)
-	toolOptions = append(toolOptions, mcp.WithObject(FlagsParam,
+	toolOptions = append(toolOptions, mcp.WithObject(cfgmgr.FlagsParam,
 		mcp.Description("Flag options"),
 		mcp.Properties(flagMap),
 		mcp.Required(),
@@ -25,7 +26,7 @@ func toolOptsFromCmd(cmd *cobra.Command) []mcp.ToolOption {
 
 	// Add an "args" parameter for positional arguments
 	argsDescription := argsDescFromCmd(cmd)
-	toolOptions = append(toolOptions, mcp.WithString(PositionalArgsParam,
+	toolOptions = append(toolOptions, mcp.WithString(cfgmgr.PositionalArgsParam,
 		mcp.Description(argsDescription),
 		mcp.Required(),
 	))

@@ -7,8 +7,16 @@ import (
 	"path/filepath"
 	"slices"
 
-	"github.com/njayp/ophis/tools"
 	"github.com/spf13/cobra"
+)
+
+// Constants for MCP parameter names and error messages
+const (
+	MCPCommandName   = "mcp"
+	StartCommandName = "start"
+	// PositionalArgsParam is the parameter name for positional arguments
+	PositionalArgsParam = "args"
+	FlagsParam          = "flags"
 )
 
 // ValidateExecutable validates that the given path is an executable file.
@@ -77,7 +85,7 @@ func GetMCPCommandPath(cmd *cobra.Command) []string {
 	foundMCP := false
 	cur := cmd
 	for {
-		if cur.Name() == tools.MCPCommandName {
+		if cur.Name() == MCPCommandName {
 			foundMCP = true
 		}
 		if foundMCP {

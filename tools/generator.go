@@ -4,6 +4,7 @@ import (
 	"log/slog"
 
 	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/njayp/ophis/internal/cfgmgr"
 	"github.com/spf13/cobra"
 )
 
@@ -44,7 +45,7 @@ func NewGenerator(opts ...GeneratorOption) *Generator {
 		// default filters
 		filters: []Filter{
 			Hidden(),
-			Exclude([]string{MCPCommandName, "help", "completion"}),
+			Exclude([]string{cfgmgr.MCPCommandName, "help", "completion"}),
 		},
 	}
 

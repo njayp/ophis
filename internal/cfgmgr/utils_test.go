@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/njayp/ophis/tools"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 )
@@ -170,18 +169,18 @@ func TestGetMCPCommandPath(t *testing.T) {
 	}{
 		{
 			name:     "MCPAtRoot",
-			commands: []string{"root", tools.MCPCommandName, "post"},
-			expected: []string{tools.MCPCommandName},
+			commands: []string{"root", MCPCommandName, "post"},
+			expected: []string{MCPCommandName},
 		},
 		{
 			name:     "NestedMCP",
-			commands: []string{"root", "pre", tools.MCPCommandName, "post"},
-			expected: []string{"pre", tools.MCPCommandName},
+			commands: []string{"root", "pre", MCPCommandName, "post"},
+			expected: []string{"pre", MCPCommandName},
 		},
 		{
 			name:     "MultipleNestedMCP",
-			commands: []string{"root", "pre1", "pre2", tools.MCPCommandName, "post", "post2"},
-			expected: []string{"pre1", "pre2", tools.MCPCommandName},
+			commands: []string{"root", "pre1", "pre2", MCPCommandName, "post", "post2"},
+			expected: []string{"pre1", "pre2", MCPCommandName},
 		},
 	}
 

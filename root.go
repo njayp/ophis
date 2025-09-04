@@ -1,9 +1,9 @@
 package ophis
 
 import (
+	"github.com/njayp/ophis/internal/cfgmgr"
 	"github.com/njayp/ophis/internal/cfgmgr/claude"
 	"github.com/njayp/ophis/internal/cfgmgr/vscode"
-	"github.com/njayp/ophis/tools"
 	"github.com/spf13/cobra"
 )
 
@@ -11,7 +11,7 @@ import (
 // This command can be added as a subcommand to any Cobra-based application
 func Command(config *Config) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   tools.MCPCommandName,
+		Use:   cfgmgr.MCPCommandName,
 		Short: "MCP server management",
 		Long:  `Manage MCP servers for AI assistants and code editors`,
 	}
