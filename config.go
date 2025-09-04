@@ -29,12 +29,6 @@ type Config struct {
 	//   - Excludes hidden commands
 	//   - Excludes "mcp", "help", and "completion" commands
 	//   - Returns command output as plain text
-	//
-	// Example:
-	//   config.Generator = tools.NewGenerator(
-	//       tools.WithFilters(tools.Allow([]string{"get", "list"})),
-	//       tools.WithHandler(customHandler),
-	//   )
 	GeneratorOptions []tools.GeneratorOption
 
 	// SloggerOptions configures the structured logger used by the MCP server.
