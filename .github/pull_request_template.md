@@ -9,3 +9,4 @@ Closes #123
 ## Checklist
 
 - [ ] Tests added or updated
+- [ ] Docs added or updated
