@@ -128,6 +128,24 @@ tools.WithHandler(func(ctx context.Context, request mcp.CallToolRequest, data []
 })
 ```
 
+## MCP Command Tree
+
+`ophis.Command` returns the following tree of commands:
+
+```
+mcp
+├── start            # Start MCP server on stdio
+├── tools            # Export available MCP tools as JSON
+├── claude
+│   ├── enable       # Enable Helm MCP in Claude Desktop
+│   ├── disable      # Disable Helm MCP in Claude Desktop
+│   └── list         # List MCP configurations in Claude Desktop
+└── vscode
+    ├── enable       # Enable Helm MCP in VS Code
+    ├── disable      # Disable Helm MCP in VS Code
+    └── list         # List MCP configurations in VS Code
+```
+
 ## Examples
 
 - [helm](https://github.com/njayp/helm)
