@@ -128,7 +128,7 @@ tools.WithHandler(func(ctx context.Context, request mcp.CallToolRequest, data []
 })
 ```
 
-## MCP Command Tree
+## Ophis Commands
 
 `ophis.Command` returns the following tree of commands:
 
