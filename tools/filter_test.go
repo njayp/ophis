@@ -7,25 +7,50 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestExcludeFilter tests the Exclude filter function
-func TestExcludeFilter(t *testing.T) {
-	filter := Exclude([]string{"test", "admin"})
-
+// TestPathContains tests the pathContains function
+func TestPathContains(t *testing.T) {
 	tests := []struct {
 		name     string
-		cmdName  string
+		path     string
+		phrase   string
 		expected bool
 	}{
-		{"excludes test command", "test", false},
-		{"excludes admin command", "admin", false},
-		{"allows other commands", "get", true},
-		{"allows empty name", "", true},
+		{"allows exact match", "get", "get", true},
+		{"allows subcommand match", "user_get", "get", true},
+		{"allows multi-word phrase match", "user_get_details", "user get", true},
+		{"disallows non-matching command", "delete", "get", false},
+		{"disallows partial non-matching phrase", "user_delete", "user get", false},
+		{"allows multi-word phrase with extra words", "admin_user_get_info", "user get", true},
+		{"allows multi-word phrase with extra words", "admin_user_get_info", "user info", false},
+		{"disallows completely different command", "status", "user get", false},
+		{"disallows single word match in multi-word phrase", "user", "user get", false},
+		{"disallows when no words match", "create", "user get", false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cmd := &cobra.Command{Use: tt.cmdName}
-			result := filter(cmd)
+			result := pathContains(tt.path, tt.phrase)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+// TestExcludeFilter tests the Exclude filter function
+func TestExcludeFilter(t *testing.T) {
+	tests := []struct {
+		name     string
+		path     string
+		filter   Filter
+		expected bool
+	}{
+		{"excludes if any phrase matches", "admin_user_test_info", Exclude([]string{"delete", "user test"}), false},
+		{"allows if no phrases match", "admin_user_info", Exclude([]string{"delete", "user test"}), true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := &cobra.Command{Use: tt.path}
+			result := tt.filter(cmd)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -33,35 +58,20 @@ func TestExcludeFilter(t *testing.T) {
 
 // TestAllowFilter tests the Allow filter function
 func TestAllowFilter(t *testing.T) {
-	filter := Allow([]string{"get", "list"})
-
 	tests := []struct {
-		name        string
-		commandPath string
-		cmdName     string
-		expected    bool
+		name     string
+		path     string
+		filter   Filter
+		expected bool
 	}{
-		{"allows get command", "cli get", "get", true},
-		{"allows list command", "cli list", "list", true},
-		{"filters other commands", "cli delete", "delete", false},
-		{"allows nested get", "cli resource get", "get", true},
+		{"allows if any phrase matches", "admin_user_get_info", Allow([]string{"delete", "user get"}), true},
+		{"disallows if no phrases match", "admin_user_info", Allow([]string{"delete", "user get"}), false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cmd := &cobra.Command{Use: tt.cmdName}
-			// Mock the command path
-			cmd.SetUsageTemplate(tt.commandPath) // Hack to set a testable path
-			// Since CommandPath() is not easily mockable, we test with the Use field
-			// In real usage, Allow checks CommandPath() which includes parent commands
-
-			// For this test, we'll create a simple parent-child structure
-			if tt.commandPath == "cli get" || tt.commandPath == "cli list" || tt.commandPath == "cli resource get" {
-				parent := &cobra.Command{Use: "cli"}
-				parent.AddCommand(cmd)
-			}
-
-			result := filter(cmd)
+			cmd := &cobra.Command{Use: tt.path}
+			result := tt.filter(cmd)
 			assert.Equal(t, tt.expected, result)
 		})
 	}

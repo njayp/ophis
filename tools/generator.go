@@ -77,16 +77,8 @@ func (g *Generator) fromCmd(cmd *cobra.Command, parentPath string, tools []Contr
 
 	slog.Debug("processing command", "command", toolName, "has_run", cmd.Run != nil || cmd.RunE != nil)
 
-	// Register subcommands
-outer:
+	// Register all subcommands
 	for _, subCmd := range cmd.Commands() {
-		for _, filter := range g.filters {
-			if !filter(subCmd) {
-				// logging should be handled by the filter itself
-				continue outer
-			}
-		}
-
 		tools = g.fromCmd(subCmd, toolName, tools)
 	}
 
@@ -94,6 +86,13 @@ outer:
 	if cmd.Run == nil && cmd.RunE == nil {
 		slog.Debug("skipping command without run function", "command", toolName)
 		return tools
+	}
+
+	// Apply all filters
+	for _, filter := range g.filters {
+		if !filter(cmd) {
+			return tools
+		}
 	}
 
 	toolOptions := toolOptsFromCmd(cmd)

@@ -2,7 +2,6 @@ package tools
 
 import (
 	"log/slog"
-	"slices"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -26,29 +25,41 @@ func AddFilter(filter Filter) GeneratorOption {
 	}
 }
 
+// pathContains returns true if the command path contains all words in the phrase.
+func pathContains(cmdPath, phrase string) bool {
+	words := strings.Fields(phrase) // splits on any whitespace
+	path := strings.Join(words, "_")
+	return strings.Contains(cmdPath, path)
+}
+
 // Exclude adds a filter to exclude listed command names from the generated tools.
+// E.g., Exclude([]string{"delete", "user test"}) will exclude any command whose
+// path contains "delete" or "user test".
 func Exclude(list []string) Filter {
 	return func(cmd *cobra.Command) bool {
-		excluded := slices.Contains(list, cmd.Name())
-		if excluded {
-			slog.Debug("excluding command by name", "command", cmd.Name(), "exclude_list", list)
+		for _, phrase := range list {
+			if pathContains(cmd.CommandPath(), phrase) {
+				slog.Debug("excluding command by exclude list", "command_path", cmd.CommandPath(), "phrase", phrase)
+				return false
+			}
 		}
-		return !excluded
+
+		return true
 	}
 }
 
 // Allow adds a filter to include only subcommands that match the provided list.
-// It checks if the command path contains any of the specified white-listed command names.
-// Therefore, it only works for first-level subcommands.
+// E.g., Allow([]string{"get", "user info"}) will only include any command whose
+// path contains "get" or "user info".
 func Allow(list []string) Filter {
 	return func(cmd *cobra.Command) bool {
-		for _, name := range list {
-			if strings.Contains(cmd.CommandPath(), name) {
-				slog.Debug("allowing command by path", "command", cmd.CommandPath(), "matched", name)
+		for _, phrase := range list {
+			if pathContains(cmd.CommandPath(), phrase) {
 				return true
 			}
 		}
-		slog.Debug("filtering out command not in allow list", "command", cmd.CommandPath(), "allow_list", list)
+
+		slog.Debug("excluding command by allow list", "command_path", cmd.CommandPath(), "allow_list", list)
 		return false
 	}
 }
