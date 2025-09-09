@@ -83,6 +83,7 @@ rootCmd.AddCommand(ophis.Command(config))
 ### Default Behavior
 
 When called with `nil` config, the MCP server:
+- Excludes commands without a Run or PreRun function
 - Excludes hidden, "mcp", "help", and "completion" commands
 - Returns command output as plain text
 - Logs at info level

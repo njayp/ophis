@@ -26,6 +26,7 @@ import (
 type Config struct {
 	// Generator controls how Cobra commands are converted to MCP tools.
 	// Optional: If nil, a default generator will be used that:
+	//   - Excludes commands without a Run or PreRun function
 	//   - Excludes hidden commands
 	//   - Excludes "mcp", "help", and "completion" commands
 	//   - Returns command output as plain text

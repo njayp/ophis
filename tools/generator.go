@@ -20,6 +20,7 @@ type GeneratorOption func(*Generator)
 // NewGenerator creates a new Generator with the specified options.
 //
 // By default, the Generator:
+//   - Excludes commands without a Run or PreRun function
 //   - Excludes hidden commands
 //   - Excludes "mcp", "help", and "completion" commands
 //   - Uses DefaultHandler() which returns command output as plain text

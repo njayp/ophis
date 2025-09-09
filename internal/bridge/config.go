@@ -30,43 +30,16 @@ type Config struct {
 	RootCmd *cobra.Command
 
 	// Generator controls how Cobra commands are converted to MCP tools.
-	// Optional: If nil, a default generator will be used that:
-	//   - Excludes hidden commands
-	//   - Excludes "mcp", "help", and "completion" commands
-	//   - Returns command output as plain text
-	//
-	// Example:
-	//   config.Generator = tools.NewGenerator(
-	//       tools.WithFilters(tools.Allow([]string{"get", "list"})),
-	//       tools.WithHandler(customHandler),
-	//   )
 	GeneratorOptions []tools.GeneratorOption
 
 	// SloggerOptions configures the structured logger used by the MCP server.
-	// Optional: If nil, default options will be used.
-	// The logger always writes to stderr to avoid interfering with stdio transport.
-	//
-	// Example:
-	//   config.SloggerOptions = &slog.HandlerOptions{
-	//       Level: slog.LevelDebug,  // Enable debug logging
-	//   }
 	SloggerOptions *slog.HandlerOptions
 
 	// ServerOptions provides additional options for the underlying MCP server.
-	// Optional: These are passed directly to the mark3labs/mcp-go server.
-	// The bridge always adds server.WithRecovery() to handle panics gracefully.
-	//
-	// Consult the mark3labs/mcp-go documentation for available server options.
 	ServerOptions []server.ServerOption
 }
 
 // Tools returns the list of MCP tools generated from the root command.
-//
-// If a custom Generator is configured, it uses that to convert commands.
-// Otherwise, it falls back to the default generator which:
-//   - Excludes hidden commands
-//   - Excludes "mcp", "help", and "completion" commands
-//   - Returns command output as plain text
 func (c *Config) Tools() []tools.Controller {
 	return tools.NewGenerator(c.GeneratorOptions...).FromRootCmd(c.RootCmd)
 }
