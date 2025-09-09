@@ -3,14 +3,21 @@ package ophis
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/spf13/cobra"
 )
 
+// ToolCommandFlags holds configuration flags for the tools command.
+type ToolCommandFlags struct {
+	LogLevel string
+}
+
 // toolCommand creates a command that outputs available tools to a file
 func toolCommand(config *Config) *cobra.Command {
+	toolFlags := &ToolCommandFlags{}
 	cmd := &cobra.Command{
 		Use:   "tools",
 		Short: "Export tools as JSON",
@@ -20,7 +27,19 @@ func toolCommand(config *Config) *cobra.Command {
 				config = &Config{}
 			}
 
-			tools := config.bridgeConfig(cmd).Tools()
+			if toolFlags.LogLevel != "" {
+				level := parseLogLevel(toolFlags.LogLevel)
+				// Ensure SloggerOptions is initialized
+				if config.SloggerOptions == nil {
+					config.SloggerOptions = &slog.HandlerOptions{}
+				}
+				// Set the log level based on the flag
+				config.SloggerOptions.Level = level
+			}
+
+			bridgeConfig := config.bridgeConfig(cmd)
+			bridgeConfig.SetupSlogger()
+			tools := bridgeConfig.Tools()
 			mcpTools := make([]mcp.Tool, len(tools))
 			for i, tool := range tools {
 				mcpTools[i] = tool.Tool
@@ -48,5 +67,8 @@ func toolCommand(config *Config) *cobra.Command {
 		},
 	}
 
+	// Add flags
+	flags := cmd.Flags()
+	flags.StringVar(&toolFlags.LogLevel, "log-level", "", "Log level (debug, info, warn, error)")
 	return cmd
 }

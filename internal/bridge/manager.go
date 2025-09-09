@@ -32,7 +32,7 @@ func Run(config *Config) error {
 		return fmt.Errorf("root command cannot be nil: config.RootCmd is required to register tools")
 	}
 
-	config.setupSlogger()
+	config.SetupSlogger()
 
 	appName := config.RootCmd.Name()
 	version := config.RootCmd.Version

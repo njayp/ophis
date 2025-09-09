@@ -44,12 +44,12 @@ func (c *Config) Tools() []tools.Controller {
 	return tools.NewGenerator(c.GeneratorOptions...).FromRootCmd(c.RootCmd)
 }
 
-// setupSlogger configures the structured logger for the MCP server.
+// SetupSlogger configures the structured logger for the MCP server.
 //
 // The logger always writes to stderr to avoid interfering with the stdio
 // transport used for MCP communication. Writing logs to stdout would corrupt
 // the MCP protocol messages.
-func (c *Config) setupSlogger() {
+func (c *Config) SetupSlogger() {
 	handler := slog.NewTextHandler(os.Stderr, c.SloggerOptions)
 	slog.SetDefault(slog.New(handler))
 }
