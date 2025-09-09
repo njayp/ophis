@@ -25,20 +25,13 @@ func AddFilter(filter Filter) GeneratorOption {
 	}
 }
 
-// pathContains returns true if the command path contains all words in the phrase.
-func pathContains(cmdPath, phrase string) bool {
-	words := strings.Fields(phrase) // splits on any whitespace
-	path := strings.Join(words, "_")
-	return strings.Contains(cmdPath, path)
-}
-
 // Exclude adds a filter to exclude listed command names from the generated tools.
 // E.g., Exclude([]string{"delete", "user test"}) will exclude any command whose
 // path contains "delete" or "user test".
 func Exclude(list []string) Filter {
 	return func(cmd *cobra.Command) bool {
 		for _, phrase := range list {
-			if pathContains(cmd.CommandPath(), phrase) {
+			if strings.Contains(cmd.CommandPath(), phrase) {
 				slog.Debug("excluding command by exclude list", "command_path", cmd.CommandPath(), "phrase", phrase)
 				return false
 			}
@@ -54,7 +47,7 @@ func Exclude(list []string) Filter {
 func Allow(list []string) Filter {
 	return func(cmd *cobra.Command) bool {
 		for _, phrase := range list {
-			if pathContains(cmd.CommandPath(), phrase) {
+			if strings.Contains(cmd.CommandPath(), phrase) {
 				return true
 			}
 		}
