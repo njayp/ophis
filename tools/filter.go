@@ -66,3 +66,14 @@ func Hidden() Filter {
 		return !cmd.Hidden
 	}
 }
+
+// Runs returns a filter that excludes commands without a Run or PreRun function.
+func Runs() Filter {
+	return func(cmd *cobra.Command) bool {
+		noop := cmd.Run == nil && cmd.RunE == nil && cmd.PreRun == nil && cmd.PreRunE == nil
+		if noop {
+			slog.Debug("excluding command without run or pre-run function", "command", cmd.CommandPath())
+		}
+		return !noop
+	}
+}

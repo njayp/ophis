@@ -37,6 +37,7 @@ type GeneratorOption func(*Generator)
 //
 // Common filter functions:
 //
+//	Runs() - Excludes commands without a Run or PreRun function
 //	Hidden() - Excludes hidden commands (applied by default)
 //	Exclude([]string) - Excludes commands by name
 //	Allow([]string) - Only includes commands whose path contains these names
@@ -44,6 +45,7 @@ func NewGenerator(opts ...GeneratorOption) *Generator {
 	g := &Generator{
 		// default filters
 		filters: []Filter{
+			Runs(),
 			Hidden(),
 			Exclude([]string{cfgmgr.MCPCommandName, "help", "completion"}),
 		},
@@ -80,12 +82,6 @@ func (g *Generator) fromCmd(cmd *cobra.Command, parentPath string, tools []Contr
 	// Register all subcommands
 	for _, subCmd := range cmd.Commands() {
 		tools = g.fromCmd(subCmd, toolName, tools)
-	}
-
-	// Skip if the command has no runnable function
-	if cmd.Run == nil && cmd.RunE == nil {
-		slog.Debug("skipping command without run function", "command", toolName)
-		return tools
 	}
 
 	// Apply all filters

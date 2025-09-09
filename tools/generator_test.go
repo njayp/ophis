@@ -15,7 +15,7 @@ func TestGeneratorOptions(t *testing.T) {
 		gen := NewGenerator()
 
 		// Should have default filters
-		assert.Len(t, gen.filters, 2) // Hidden() and Exclude(mcp, help, completion)
+		assert.Len(t, gen.filters, 3) // Runs(), Hidden(), and Exclude(mcp, help, completion)
 	})
 
 	t.Run("generator with custom filters", func(t *testing.T) {
@@ -41,7 +41,7 @@ func TestGeneratorOptions(t *testing.T) {
 		)
 
 		// Should add to default filters
-		assert.Len(t, gen.filters, 3) // 2 defaults + 1 custom
+		assert.Len(t, gen.filters, 4) // 3 defaults + 1 custom
 	})
 
 	t.Run("multiple options", func(t *testing.T) {

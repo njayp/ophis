@@ -158,7 +158,7 @@ func TestAddFilter(t *testing.T) {
 	gen := NewGenerator(AddFilter(customFilter))
 
 	// Should have default filters plus the custom one
-	assert.Len(t, gen.filters, 3) // 2 defaults + 1 custom
+	assert.Len(t, gen.filters, 4) // 3 defaults + 1 custom
 
 	// Test that all filters are applied
 	blockedCmd := &cobra.Command{Use: "blocked"}
@@ -179,4 +179,27 @@ func TestAddFilter(t *testing.T) {
 	// Should only have the normal command
 	assert.Len(t, tools, 1)
 	assert.Equal(t, "root_normal", tools[0].Tool.Name)
+}
+
+func TestRunsFilter(t *testing.T) {
+	filter := Runs()
+
+	tests := []struct {
+		name     string
+		cmd      *cobra.Command
+		expected bool
+	}{
+		{"filters command without Run", &cobra.Command{Use: "no-run"}, false},
+		{"allows command with Run", &cobra.Command{Use: "has-run", Run: func(*cobra.Command, []string) {}}, true},
+		{"allows command with RunE", &cobra.Command{Use: "has-runE", RunE: func(*cobra.Command, []string) error { return nil }}, true},
+		{"allows command with PreRun", &cobra.Command{Use: "has-preRun", PreRun: func(*cobra.Command, []string) {}}, true},
+		{"allows command with PreRunE", &cobra.Command{Use: "has-preRunE", PreRunE: func(*cobra.Command, []string) error { return nil }}, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := filter(tt.cmd)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
 }
