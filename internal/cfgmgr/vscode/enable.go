@@ -47,12 +47,6 @@ func enableMCPServer(cmd *cobra.Command, flags *enableCommandFlags) error {
 		return fmt.Errorf("failed to get executable path for MCP server registration: %w", err)
 	}
 
-	// Validate the executable
-	executablePath, err = cfgmgr.ValidateExecutable(executablePath)
-	if err != nil {
-		return err
-	}
-
 	// Determine configuration type
 	configType := config.UserConfig
 	if flags.workspace || flags.configType == "workspace" {

@@ -19,31 +19,6 @@ const (
 	FlagsParam          = "flags"
 )
 
-// ValidateExecutable validates that the given path is an executable file.
-// It resolves symlinks and checks file permissions.
-func ValidateExecutable(executablePath string) (string, error) {
-	// Resolve any symlinks to get the actual path
-	resolvedPath, err := filepath.EvalSymlinks(executablePath)
-	if err != nil {
-		return "", fmt.Errorf("failed to resolve executable symlinks at '%s': %w", executablePath, err)
-	}
-
-	// Validate that the executable exists and is executable
-	stat, err := os.Stat(resolvedPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return "", fmt.Errorf("executable not found at path '%s': ensure the binary is built and accessible", resolvedPath)
-		}
-		return "", fmt.Errorf("failed to access executable at '%s': %w", resolvedPath, err)
-	}
-
-	if stat.Mode()&0o111 == 0 {
-		return "", fmt.Errorf("file at '%s' is not executable: check file permissions", resolvedPath)
-	}
-
-	return resolvedPath, nil
-}
-
 // DeriveServerName derives a server name from an executable path.
 // It uses the base name without extension.
 func DeriveServerName(executablePath string) string {
