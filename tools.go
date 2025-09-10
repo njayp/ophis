@@ -42,6 +42,7 @@ func toolCommand(config *Config) *cobra.Command {
 			controllers := bridgeConfig.Tools()
 			mcpTools := make([]mcp.Tool, len(controllers))
 			for i, c := range controllers {
+				slog.Debug("MCP tool", "name", c.Tool.Name, "description", c.Tool.Description)
 				mcpTools[i] = c.Tool
 			}
 
