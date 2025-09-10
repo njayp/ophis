@@ -2,7 +2,7 @@
 
 **Transform any Cobra CLI into an MCP server**
 
-Ophis automatically converts your existing Cobra commands into MCP tools that Claude can use.
+Ophis automatically converts your existing Cobra commands into MCP tools, and provides CLI commands for integration with Claude and VSCode.
 
 ## Import
 
@@ -93,13 +93,15 @@ When called with `nil` config, the MCP server:
 Control which commands are exposed as MCP tools:
 
 ```go
-// Only expose specific commands
-tools.WithFilters(tools.Allow([]string{"get", "list", "describe"}))
+// tools.WithFilters sets the filter list
+// tools.Allow only exposes listed commands
+tools.WithFilters(tools.Allow([]string{"get", "list", "helm repo list"}))
 ```
 
 ```go
-// Or exclude specific commands (in addition to defaults)
-tools.AddFilter(tools.Exclude([]string{"delete", "destroy"}))
+// tools.AddFilter adds a filter (in addition to defaults)
+// tools.Exclude prevents listed commands from being exposed
+tools.AddFilter(tools.Exclude([]string{"delete", "destroy", "helm repo remove"}))
 ```
 
 ```go
@@ -131,7 +133,7 @@ tools.WithHandler(func(ctx context.Context, request mcp.CallToolRequest, data []
 
 ## Ophis Commands
 
-`ophis.Command` returns the following tree of commands:
+`ophis.Command` returns the following commands:
 
 ```
 mcp

@@ -39,10 +39,10 @@ func toolCommand(config *Config) *cobra.Command {
 
 			bridgeConfig := config.bridgeConfig(cmd)
 			bridgeConfig.SetupSlogger()
-			tools := bridgeConfig.Tools()
-			mcpTools := make([]mcp.Tool, len(tools))
-			for i, tool := range tools {
-				mcpTools[i] = tool.Tool
+			controllers := bridgeConfig.Tools()
+			mcpTools := make([]mcp.Tool, len(controllers))
+			for i, c := range controllers {
+				mcpTools[i] = c.Tool
 			}
 
 			file, err := os.OpenFile("mcp-tools.json", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
@@ -62,7 +62,7 @@ func toolCommand(config *Config) *cobra.Command {
 				return fmt.Errorf("failed to encode MCP tools to JSON: %w", err)
 			}
 
-			cmd.Printf("Successfully exported %d tools to mcp-tools.json\n", len(tools))
+			cmd.Printf("Successfully exported %d tools to mcp-tools.json\n", len(controllers))
 			return nil
 		},
 	}
