@@ -34,6 +34,7 @@ go.work.sum
 # build output
 bin/
 output/
+*.pem
 
 # log files
 *.log
