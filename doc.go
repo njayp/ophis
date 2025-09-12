@@ -28,7 +28,8 @@
 //	}
 //
 // This adds the following subcommands to your CLI:
-//   - mcp start: Start the MCP server
+//   - mcp start: Start the MCP server on stdio
+//   - mcp stream: Start the MCP server in HTTP streaming mode
 //   - mcp tools: List available tools
 //   - mcp claude enable/disable/list: Manage Claude Desktop integration
 //   - mcp vscode enable/disable/list: Manage VSCode integration
@@ -39,10 +40,10 @@
 //
 //	config := &ophis.Config{
 //	    // Control which commands are exposed
-//	    Generator: tools.NewGenerator(
+//	    Generator: []tools.GeneratorOption{
 //	        tools.WithFilters(tools.Allow([]string{"get", "list"})),
 //	        tools.WithHandler(customHandler),
-//	    ),
+//	    },
 //
 //	    // Configure logging
 //	    SloggerOptions: &slog.HandlerOptions{

@@ -2,7 +2,6 @@ package bridge
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -23,31 +22,27 @@ type manager struct {
 // Returns an error if:
 //   - config is nil
 //   - config.RootCmd is nil
-func Run(config *Config) error {
-	if config == nil {
-		return fmt.Errorf("configuration cannot be nil: must provide a Config struct with a RootCmd")
+func (c *Config) newManager() *manager {
+	if c.RootCmd == nil {
+		panic("bridge config RootCmd cannot be nil")
 	}
 
-	if config.RootCmd == nil {
-		return fmt.Errorf("root command cannot be nil: config.RootCmd is required to register tools")
-	}
+	c.SetupSlogger()
 
-	config.SetupSlogger()
-
-	appName := config.RootCmd.Name()
-	version := config.RootCmd.Version
+	appName := c.RootCmd.Name()
+	version := c.RootCmd.Version
 	slog.Info("creating MCP server", "app_name", appName, "app_version", version)
 
-	b := &manager{
+	m := &manager{
 		server: server.NewMCPServer(
 			appName,
 			version,
-			config.ServerOptions...,
+			c.ServerOptions...,
 		),
 	}
 
-	b.registerTools(config.Tools())
-	return server.ServeStdio(b.server)
+	m.registerTools(c.Tools())
+	return m
 }
 
 // registerTools recursively registers all Cobra commands as MCP tools

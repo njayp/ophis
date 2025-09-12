@@ -3,7 +3,6 @@ package ophis
 import (
 	"log/slog"
 
-	"github.com/njayp/ophis/internal/bridge"
 	"github.com/njayp/ophis/internal/cfgmgr"
 	"github.com/spf13/cobra"
 )
@@ -36,7 +35,7 @@ func startCommand(config *Config) *cobra.Command {
 			}
 
 			// Create and start the bridge
-			return bridge.Run(config.bridgeConfig(cmd))
+			return config.bridgeConfig(cmd).ServeIO()
 		},
 	}
 

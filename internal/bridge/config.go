@@ -11,19 +11,6 @@ import (
 
 // Config holds configuration for creating an MCP server bridge from a Cobra CLI application.
 // It defines how the CLI commands are exposed as MCP tools and how the server behaves.
-//
-// Example usage:
-//
-//	config := &bridge.Config{
-//		RootCmd:    rootCmd,
-//		Generator: tools.NewGenerator(
-//			tools.WithFilters(tools.Allow([]string{"get", "list"})),
-//			tools.WithHandler(customHandler),
-//		),
-//		SloggerOptions: &slog.HandlerOptions{
-//			Level: slog.LevelDebug,
-//		},
-//	}
 type Config struct {
 	// RootCmd is the root Cobra command whose subcommands will be exposed as MCP tools.
 	// Required: This is the entry point for discovering available commands.
@@ -37,6 +24,9 @@ type Config struct {
 
 	// ServerOptions provides additional options for the underlying MCP server.
 	ServerOptions []server.ServerOption
+
+	// StreamOptions provides options for the HTTP stream transport.
+	StreamOptions []server.StreamableHTTPOption
 }
 
 // Tools returns the list of MCP tools generated from the root command.

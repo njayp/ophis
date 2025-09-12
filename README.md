@@ -138,6 +138,7 @@ tools.WithHandler(func(ctx context.Context, request mcp.CallToolRequest, data []
 ```
 mcp
 ├── start            # Start MCP server on stdio
+├── stream           # Start MCP server in HTTP streaming mode
 ├── tools            # Export available MCP tools as JSON
 ├── claude
 │   ├── enable       # Enable Helm MCP in Claude Desktop

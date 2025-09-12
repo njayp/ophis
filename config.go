@@ -44,11 +44,10 @@ type Config struct {
 	SloggerOptions *slog.HandlerOptions
 
 	// ServerOptions provides additional options for the underlying MCP server.
-	// Optional: These are passed directly to the mark3labs/mcp-go server.
-	// The bridge always adds server.WithRecovery() to handle panics gracefully.
-	//
-	// Consult the mark3labs/mcp-go documentation for available server options.
 	ServerOptions []server.ServerOption
+
+	// StreamOptions provides options for the HTTP stream transport.
+	StreamOptions []server.StreamableHTTPOption
 }
 
 func (c *Config) bridgeConfig(cmd *cobra.Command) *bridge.Config {
@@ -62,6 +61,7 @@ func (c *Config) bridgeConfig(cmd *cobra.Command) *bridge.Config {
 		GeneratorOptions: c.GeneratorOptions,
 		SloggerOptions:   c.SloggerOptions,
 		ServerOptions:    c.ServerOptions,
+		StreamOptions:    c.StreamOptions,
 	}
 }
 
