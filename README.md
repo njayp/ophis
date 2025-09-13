@@ -151,8 +151,12 @@ mcp
 
 ## Examples
 
+- [kubectl](./examples/kubectl/main.go)
+- [make](./examples/make/)
+
+### External Examples
+
 - [helm](https://github.com/njayp/helm)
-- [kubectl](https://github.com/njayp/kubectl)
 
 ## Contributing
 
