@@ -33,7 +33,7 @@ func rootCmd() *cobra.Command {
 	return command
 }
 
-// main taken from k8s.io/kubectl main.go
+// main taken from https://github.com/kubernetes/kubernetes/blob/master/cmd/kubectl/kubectl.go
 func main() {
 	logs.GlogSetter(cmd.GetLogVerbosity(os.Args)) // nolint:errcheck
 

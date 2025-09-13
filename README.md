@@ -151,6 +151,8 @@ mcp
 
 ## Examples
 
+Run `make build` to build all examples to `ophis/bin`.
+
 - [kubectl](./examples/kubectl/main.go)
 - [make](./examples/make/)
 

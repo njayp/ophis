@@ -1,5 +1,7 @@
 # Examples
 
+Run `make build` to build all examples to `ophis/bin`.
+
 ### kubectl
 
 The `kubectl` example shows how easy it is to turn a complex CLI into an MCP server using njayp/ophis.
