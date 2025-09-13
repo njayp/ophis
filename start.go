@@ -3,19 +3,18 @@ package ophis
 import (
 	"log/slog"
 
-	"github.com/njayp/ophis/internal/bridge"
 	"github.com/njayp/ophis/internal/cfgmgr"
 	"github.com/spf13/cobra"
 )
 
-// StartCommandFlags holds configuration flags for the start command.
-type StartCommandFlags struct {
-	LogLevel string
+// startCommandFlags holds configuration flags for the start command.
+type startCommandFlags struct {
+	logLevel string
 }
 
 // startCommand creates a Cobra command for starting the MCP server.
 func startCommand(config *Config) *cobra.Command {
-	mcpFlags := &StartCommandFlags{}
+	mcpFlags := &startCommandFlags{}
 	cmd := &cobra.Command{
 		Use:   cfgmgr.StartCommandName,
 		Short: "Start the MCP server",
@@ -25,8 +24,8 @@ func startCommand(config *Config) *cobra.Command {
 				config = &Config{}
 			}
 
-			if mcpFlags.LogLevel != "" {
-				level := parseLogLevel(mcpFlags.LogLevel)
+			if mcpFlags.logLevel != "" {
+				level := parseLogLevel(mcpFlags.logLevel)
 				// Ensure SloggerOptions is initialized
 				if config.SloggerOptions == nil {
 					config.SloggerOptions = &slog.HandlerOptions{}
@@ -36,12 +35,12 @@ func startCommand(config *Config) *cobra.Command {
 			}
 
 			// Create and start the bridge
-			return bridge.Run(config.bridgeConfig(cmd))
+			return config.serveStdio(cmd)
 		},
 	}
 
 	// Add flags
 	flags := cmd.Flags()
-	flags.StringVar(&mcpFlags.LogLevel, "log-level", "", "Log level (debug, info, warn, error)")
+	flags.StringVar(&mcpFlags.logLevel, "log-level", "", "Log level (debug, info, warn, error)")
 	return cmd
 }
