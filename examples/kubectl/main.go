@@ -5,15 +5,15 @@ import (
 
 	"github.com/njayp/ophis"
 	"github.com/njayp/ophis/tools"
+	"github.com/spf13/cobra"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/component-base/cli"
 	"k8s.io/component-base/logs"
 	"k8s.io/kubectl/pkg/cmd"
 	"k8s.io/kubectl/pkg/cmd/util"
 )
 
-// main taken from k8s.io/kubectl main.go
-func main() {
-	logs.GlogSetter(cmd.GetLogVerbosity(os.Args)) // nolint:errcheck
+func rootCmd() *cobra.Command {
 	command := cmd.NewDefaultKubectlCommand()
 
 	// Add MCP server commands
@@ -23,12 +23,21 @@ func main() {
 				"kubectl get",
 				"kubectl describe",
 				"kubectl logs",
-				"kubectl top",
+				"kubectl top pod",
+				"kubectl top node",
 				"kubectl explain",
 			})),
 		},
 	}))
 
+	return command
+}
+
+// main taken from k8s.io/kubectl main.go
+func main() {
+	logs.GlogSetter(cmd.GetLogVerbosity(os.Args)) // nolint:errcheck
+
+	command := rootCmd()
 	if err := cli.RunNoErrOutput(command); err != nil {
 		util.CheckErr(err)
 	}

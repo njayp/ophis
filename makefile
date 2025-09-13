@@ -1,14 +1,10 @@
 .PHONY: all
-all: up gen lint test build
+all: up lint test build
 
 .PHONY: up
 up:
 	go get -u ./...
 	go mod tidy
-
-.PHONY: gen
-gen:
-	go generate ./...
 
 .PHONY: lint
 lint: 
@@ -21,7 +17,7 @@ test:
 
 .PHONY: build
 build:
-	go build -o bin/ ./...
+	make all -C examples
 
 .PHONY: release
 release: all
