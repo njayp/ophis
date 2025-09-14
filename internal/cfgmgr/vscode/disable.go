@@ -45,7 +45,7 @@ func disableMCPServer(flags *disableCommandFlags) error {
 	} else if flags.configType == "user" {
 		configType = config.UserConfig
 	} else if flags.configType != "" {
-		return fmt.Errorf("invalid config type '%s': must be 'workspace' or 'user'", flags.configType)
+		return fmt.Errorf("invalid config type %q: must be 'workspace' or 'user'", flags.configType)
 	}
 
 	// Create config manager
@@ -60,10 +60,10 @@ func disableMCPServer(flags *disableCommandFlags) error {
 	// Check if server exists
 	exists, err := configManager.HasServer(serverName)
 	if err != nil {
-		return fmt.Errorf("failed to check if MCP server '%s' exists in VSCode configuration: %w", serverName, err)
+		return fmt.Errorf("failed to check if MCP server %q exists in VSCode configuration: %w", serverName, err)
 	}
 	if !exists {
-		fmt.Printf("MCP server '%s' is not currently enabled in VSCode\n", serverName)
+		fmt.Printf("MCP server %q is not currently enabled in VSCode\n", serverName)
 		return nil
 	}
 
@@ -73,7 +73,7 @@ func disableMCPServer(flags *disableCommandFlags) error {
 	}
 
 	if err := configManager.RemoveServer(serverName); err != nil {
-		return fmt.Errorf("failed to remove MCP server '%s' from VSCode configuration: %w", serverName, err)
+		return fmt.Errorf("failed to remove MCP server %q from VSCode configuration: %w", serverName, err)
 	}
 
 	configTypeStr := "user"
@@ -81,7 +81,7 @@ func disableMCPServer(flags *disableCommandFlags) error {
 		configTypeStr = "workspace"
 	}
 
-	fmt.Printf("Successfully disabled MCP server '%s' from VSCode (%s configuration)\n", serverName, configTypeStr)
+	fmt.Printf("Successfully disabled MCP server %q from VSCode (%s configuration)\n", serverName, configTypeStr)
 	fmt.Printf("Configuration file: %s\n", configManager.GetConfigPath())
 	fmt.Printf("\nTo apply changes, restart VSCode or reload the window.\n")
 	return nil

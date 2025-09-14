@@ -50,17 +50,17 @@ func enableMCPServer(cmd *cobra.Command, flags *enableCommandFlags) error {
 	if serverName == "" {
 		serverName = cfgmgr.DeriveServerName(executablePath)
 		if serverName == "" {
-			return fmt.Errorf("MCP server name cannot be empty: unable to derive name from executable path '%s'", executablePath)
+			return fmt.Errorf("MCP server name cannot be empty: unable to derive name from executable path %q", executablePath)
 		}
 	}
 
 	// Check if server already exists
 	exists, err := configManager.HasServer(serverName)
 	if err != nil {
-		return fmt.Errorf("failed to check if MCP server '%s' exists in Claude configuration: %w", serverName, err)
+		return fmt.Errorf("failed to check if MCP server %q exists in Claude configuration: %w", serverName, err)
 	}
 	if exists {
-		fmt.Printf("MCP server '%s' is already enabled\n", serverName)
+		fmt.Printf("MCP server %q is already enabled\n", serverName)
 		return nil
 	}
 
@@ -81,10 +81,10 @@ func enableMCPServer(cmd *cobra.Command, flags *enableCommandFlags) error {
 	}
 
 	if err := configManager.AddServer(serverName, server); err != nil {
-		return fmt.Errorf("failed to add MCP server '%s' to Claude configuration: %w", serverName, err)
+		return fmt.Errorf("failed to add MCP server %q to Claude configuration: %w", serverName, err)
 	}
 
-	fmt.Printf("Successfully enabled MCP server '%s'\n", serverName)
+	fmt.Printf("Successfully enabled MCP server %q\n", serverName)
 	fmt.Printf("Executable: %s\n", executablePath)
 	fmt.Printf("Args: %v\n", server.Args)
 	fmt.Printf("\nTo use this server, restart Claude Desktop.\n")

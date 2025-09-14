@@ -41,7 +41,7 @@ func GetExecutableServerName(serverName string) (string, error) {
 
 	derivedName := DeriveServerName(executablePath)
 	if derivedName == "" {
-		return "", fmt.Errorf("MCP server name cannot be empty: unable to derive name from executable path '%s'", executablePath)
+		return "", fmt.Errorf("MCP server name cannot be empty: unable to derive name from executable path %q", executablePath)
 	}
 
 	return derivedName, nil
@@ -85,11 +85,11 @@ func BackupConfigFile(configPath string) error {
 	backupPath := configPath + ".backup"
 	data, err := os.ReadFile(configPath)
 	if err != nil {
-		return fmt.Errorf("failed to read configuration file for backup at '%s': %w", configPath, err)
+		return fmt.Errorf("failed to read configuration file for backup at %q: %w", configPath, err)
 	}
 
 	if err := os.WriteFile(backupPath, data, 0o644); err != nil {
-		return fmt.Errorf("failed to write backup configuration file at '%s': %w", backupPath, err)
+		return fmt.Errorf("failed to write backup configuration file at %q: %w", backupPath, err)
 	}
 
 	return nil
@@ -105,11 +105,11 @@ func LoadJSONConfig(configPath string, config interface{}) error {
 
 	data, err := os.ReadFile(configPath)
 	if err != nil {
-		return fmt.Errorf("failed to read configuration file at '%s': %w", configPath, err)
+		return fmt.Errorf("failed to read configuration file at %q: %w", configPath, err)
 	}
 
 	if err := json.Unmarshal(data, config); err != nil {
-		return fmt.Errorf("failed to parse configuration file at '%s': invalid JSON format: %w", configPath, err)
+		return fmt.Errorf("failed to parse configuration file at %q: invalid JSON format: %w", configPath, err)
 	}
 
 	return nil
@@ -119,7 +119,7 @@ func LoadJSONConfig(configPath string, config interface{}) error {
 func SaveJSONConfig(configPath string, config interface{}) error {
 	// Ensure the directory exists
 	if err := os.MkdirAll(filepath.Dir(configPath), 0o755); err != nil {
-		return fmt.Errorf("failed to create configuration directory at '%s': %w", filepath.Dir(configPath), err)
+		return fmt.Errorf("failed to create configuration directory at %q: %w", filepath.Dir(configPath), err)
 	}
 
 	data, err := json.MarshalIndent(config, "", "  ")
@@ -128,7 +128,7 @@ func SaveJSONConfig(configPath string, config interface{}) error {
 	}
 
 	if err := os.WriteFile(configPath, data, 0o644); err != nil {
-		return fmt.Errorf("failed to write configuration file at '%s': %w", configPath, err)
+		return fmt.Errorf("failed to write configuration file at %q: %w", configPath, err)
 	}
 
 	return nil

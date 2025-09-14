@@ -45,10 +45,10 @@ func disableMCPServer(flags *disableCommandFlags) error {
 	// Check if server exists
 	exists, err := configManager.HasServer(serverName)
 	if err != nil {
-		return fmt.Errorf("failed to check if MCP server '%s' exists in Claude configuration: %w", serverName, err)
+		return fmt.Errorf("failed to check if MCP server %q exists in Claude configuration: %w", serverName, err)
 	}
 	if !exists {
-		fmt.Printf("MCP server '%s' is not currently enabled\n", serverName)
+		fmt.Printf("MCP server %q is not currently enabled\n", serverName)
 		return nil
 	}
 
@@ -58,10 +58,10 @@ func disableMCPServer(flags *disableCommandFlags) error {
 	}
 
 	if err := configManager.RemoveServer(serverName); err != nil {
-		return fmt.Errorf("failed to remove MCP server '%s' from Claude configuration: %w", serverName, err)
+		return fmt.Errorf("failed to remove MCP server %q from Claude configuration: %w", serverName, err)
 	}
 
-	fmt.Printf("Successfully disabled MCP server '%s'\n", serverName)
+	fmt.Printf("Successfully disabled MCP server %q\n", serverName)
 	fmt.Printf("\nTo apply changes, restart Claude Desktop.\n")
 	return nil
 }

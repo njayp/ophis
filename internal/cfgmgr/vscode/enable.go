@@ -54,7 +54,7 @@ func enableMCPServer(cmd *cobra.Command, flags *enableCommandFlags) error {
 	} else if flags.configType == "user" {
 		configType = config.UserConfig
 	} else if flags.configType != "" {
-		return fmt.Errorf("invalid config type '%s': must be 'workspace' or 'user'", flags.configType)
+		return fmt.Errorf("invalid config type %q: must be 'workspace' or 'user'", flags.configType)
 	}
 
 	// Create config manager
@@ -65,17 +65,17 @@ func enableMCPServer(cmd *cobra.Command, flags *enableCommandFlags) error {
 	if serverName == "" {
 		serverName = cfgmgr.DeriveServerName(executablePath)
 		if serverName == "" {
-			return fmt.Errorf("MCP server name cannot be empty: unable to derive name from executable path '%s'", executablePath)
+			return fmt.Errorf("MCP server name cannot be empty: unable to derive name from executable path %q", executablePath)
 		}
 	}
 
 	// Check if server already exists
 	exists, err := configManager.HasServer(serverName)
 	if err != nil {
-		return fmt.Errorf("failed to check if MCP server '%s' exists in VSCode configuration: %w", serverName, err)
+		return fmt.Errorf("failed to check if MCP server %q exists in VSCode configuration: %w", serverName, err)
 	}
 	if exists {
-		fmt.Printf("MCP server '%s' is already enabled in VSCode\n", serverName)
+		fmt.Printf("MCP server %q is already enabled in VSCode\n", serverName)
 		return nil
 	}
 
@@ -97,7 +97,7 @@ func enableMCPServer(cmd *cobra.Command, flags *enableCommandFlags) error {
 	}
 
 	if err := configManager.AddServer(serverName, server); err != nil {
-		return fmt.Errorf("failed to add MCP server '%s' to VSCode configuration: %w", serverName, err)
+		return fmt.Errorf("failed to add MCP server %q to VSCode configuration: %w", serverName, err)
 	}
 
 	configTypeStr := "user"
@@ -105,7 +105,7 @@ func enableMCPServer(cmd *cobra.Command, flags *enableCommandFlags) error {
 		configTypeStr = "workspace"
 	}
 
-	fmt.Printf("Successfully enabled MCP server '%s' in VSCode (%s configuration)\n", serverName, configTypeStr)
+	fmt.Printf("Successfully enabled MCP server %q in VSCode (%s configuration)\n", serverName, configTypeStr)
 	fmt.Printf("Executable: %s\n", executablePath)
 	fmt.Printf("Args: %v\n", server.Args)
 	fmt.Printf("Configuration file: %s\n", configManager.GetConfigPath())
