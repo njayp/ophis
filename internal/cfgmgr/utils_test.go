@@ -131,19 +131,6 @@ func TestSaveJSONConfig(t *testing.T) {
 	}
 }
 
-func TestCheckExecutableExists(t *testing.T) {
-	// Test with non-existent file
-	if CheckExecutableExists("/non/existent/file") {
-		t.Error("CheckExecutableExists should return false for non-existent file")
-	}
-
-	// Test with existing file (use the test binary itself)
-	execPath, err := os.Executable()
-	if err == nil && CheckExecutableExists(execPath) != true {
-		t.Error("CheckExecutableExists should return true for existing executable")
-	}
-}
-
 func TestGetExecutableServerName(t *testing.T) {
 	// Test with provided name
 	name, err := GetExecutableServerName("custom-name")

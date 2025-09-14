@@ -10,16 +10,15 @@ import (
 
 	sq "github.com/kballard/go-shellquote"
 	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/njayp/ophis/internal/cfgmgr"
 )
 
-// Controller represents an MCP tool with its associated logic for execution and output handling.
+// Controller executes a Cobra command as an MCP tool.
 type Controller struct {
 	Tool    mcp.Tool `json:"tool"`
 	handler Handler
 }
 
-// Handle processes the result of a tool execution into an MCP response.
+// Handle processes execution results using the configured handler.
 func (c *Controller) Handle(ctx context.Context, request mcp.CallToolRequest, data []byte, err error) (*mcp.CallToolResult, error) {
 	if c.handler != nil {
 		// Use custom handler if provided
@@ -30,7 +29,7 @@ func (c *Controller) Handle(ctx context.Context, request mcp.CallToolRequest, da
 	return DefaultHandler(ctx, request, data, err)
 }
 
-// Execute runs the tool command with the provided request.
+// Execute runs the underlying CLI command.
 func (c *Controller) Execute(ctx context.Context, request mcp.CallToolRequest) ([]byte, error) {
 	// Get the executable path
 	executablePath, err := os.Executable()
@@ -53,7 +52,7 @@ func (c *Controller) Execute(ctx context.Context, request mcp.CallToolRequest) (
 	return cmd.CombinedOutput()
 }
 
-// buildCommandArgs builds the command line arguments from the tool and request.
+// buildCommandArgs constructs CLI arguments from the MCP request.
 func (c *Controller) buildCommandArgs(request mcp.CallToolRequest) []string {
 	message := request.GetArguments()
 
@@ -63,7 +62,7 @@ func (c *Controller) buildCommandArgs(request mcp.CallToolRequest) []string {
 	slog.Debug("initial command arguments", "args", args)
 
 	// Add flags
-	if flagsValue, ok := message[cfgmgr.FlagsParam]; ok {
+	if flagsValue, ok := message[flagsParam]; ok {
 		if flagMap, ok := flagsValue.(map[string]any); ok {
 			flagArgs := buildFlagArgs(flagMap)
 			args = append(args, flagArgs...)
@@ -71,7 +70,7 @@ func (c *Controller) buildCommandArgs(request mcp.CallToolRequest) []string {
 	}
 
 	// Add positional arguments
-	if argsValue, ok := message[cfgmgr.PositionalArgsParam]; ok {
+	if argsValue, ok := message[argsParam]; ok {
 		if argsStr, ok := argsValue.(string); ok && argsStr != "" {
 			parsedArgs := parseArgumentString(argsStr)
 			args = append(args, parsedArgs...)
@@ -81,7 +80,7 @@ func (c *Controller) buildCommandArgs(request mcp.CallToolRequest) []string {
 	return args
 }
 
-// buildFlagArgs converts a flag map to command line flag arguments.
+// buildFlagArgs converts MCP flags to CLI flag arguments.
 func buildFlagArgs(flagMap map[string]any) []string {
 	var args []string
 
@@ -122,21 +121,9 @@ func parseFlagArgValue(name string, value any) (retVal []string) {
 	return retVal
 }
 
-// parseArgumentString provides shell-like argument parsing with proper quote handling.
-// It supports single quotes, double quotes, and backslash escaping.
-//
-// The parsing is done using the github.com/kballard/go-shellquote library which
-// follows /bin/sh word-splitting rules. This allows MCP clients to pass complex
-// arguments containing spaces, quotes, and special characters.
-//
-// Examples:
-//   - `foo bar baz` -> ["foo", "bar", "baz"]
-//   - `foo "bar baz"` -> ["foo", "bar baz"]
-//   - `foo 'bar baz'` -> ["foo", "bar baz"]
-//   - `foo bar\ baz` -> ["foo", "bar baz"]
-//
-// If parsing fails due to malformed input (e.g., unterminated quotes), the function
-// falls back to simple space-based splitting to ensure robustness.
+// parseArgumentString parses shell-like arguments with quote handling.
+// Supports single quotes, double quotes, and backslash escaping.
+// Falls back to space splitting on parse errors.
 func parseArgumentString(argsStr string) []string {
 	// Trim whitespace and handle empty string
 	argsStr = strings.TrimSpace(argsStr)

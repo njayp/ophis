@@ -10,12 +10,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// toolCommandFlags holds configuration flags for the tools command.
+// toolCommandFlags holds flags for the tools command.
 type toolCommandFlags struct {
 	logLevel string
 }
 
-// toolCommand creates a command that outputs available tools to a file
+// toolCommand creates the 'mcp tools' command to export tool definitions.
 func toolCommand(config *Config) *cobra.Command {
 	toolFlags := &toolCommandFlags{}
 	cmd := &cobra.Command{

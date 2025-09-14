@@ -8,40 +8,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Generator converts Cobra commands into MCP tools with configurable exclusions.
+// Generator converts Cobra commands into MCP tools with configurable filtering and output handling.
 type Generator struct {
 	filters []Filter
 	handler Handler
 }
 
-// GeneratorOption is a function type for configuring Generator instances.
+// GeneratorOption configures a Generator instance.
 type GeneratorOption func(*Generator)
 
-// NewGenerator creates a new Generator with the specified options.
+// NewGenerator creates a Generator with custom options.
 //
-// By default, the Generator:
-//   - Excludes commands without a Run or PreRun function
-//   - Excludes hidden commands
+// Default behavior:
+//   - Excludes non-runnable commands (Runs filter)
+//   - Excludes hidden commands (Hidden filter)
 //   - Excludes "mcp", "help", and "completion" commands
-//   - Uses DefaultHandler() which returns command output as plain text
-//
-// Available options:
-//
-//	WithFilters(filters ...Filter) - Replace all filters with custom ones
-//	  Example: NewGenerator(WithFilters(Allow([]string{"get", "list"})))
-//
-//	AddFilter(filter Filter) - Add an additional filter to the existing ones
-//	  Example: NewGenerator(AddFilter(Exclude([]string{"dangerous-cmd"})))
-//
-//	WithHandler(handler Handler) - Set a custom handler for processing command output
-//	  Example: NewGenerator(WithHandler(myCustomHandler))
-//
-// Common filter functions:
-//
-//	Runs() - Excludes commands without a Run or PreRun function
-//	Hidden() - Excludes hidden commands (applied by default)
-//	Exclude([]string) - Excludes commands by name
-//	Allow([]string) - Only includes commands whose path contains these names
+//   - Returns command output as plain text (DefaultHandler)
 func NewGenerator(opts ...GeneratorOption) *Generator {
 	g := &Generator{
 		// default filters
@@ -59,7 +41,7 @@ func NewGenerator(opts ...GeneratorOption) *Generator {
 	return g
 }
 
-// FromRootCmd recursively converts a Cobra command tree into MCP tools.
+// FromRootCmd converts a Cobra command tree into MCP tools.
 func (g *Generator) FromRootCmd(cmd *cobra.Command) []Controller {
 	slog.Debug("starting tool generation from root command", "root_cmd", cmd.Name())
 	tools := g.fromCmd(cmd, "", []Controller{})

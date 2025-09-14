@@ -10,17 +10,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Constants for MCP parameter names and error messages
 const (
-	MCPCommandName   = "mcp"
+	// MCPCommandName is the command name for MCP functionality.
+	MCPCommandName = "mcp"
+	// StartCommandName is the subcommand to start the MCP server.
 	StartCommandName = "start"
-	// PositionalArgsParam is the parameter name for positional arguments
-	PositionalArgsParam = "args"
-	FlagsParam          = "flags"
 )
 
-// DeriveServerName derives a server name from an executable path.
-// It uses the base name without extension.
+// DeriveServerName extracts the server name from an executable path.
 func DeriveServerName(executablePath string) string {
 	serverName := filepath.Base(executablePath)
 	// Remove extension if present
@@ -30,9 +27,7 @@ func DeriveServerName(executablePath string) string {
 	return serverName
 }
 
-// GetExecutableServerName gets the server name for the current executable.
-// If serverName is provided, it returns that. Otherwise, it derives the name
-// from the current executable path.
+// GetExecutableServerName returns the provided name or derives it from the executable.
 func GetExecutableServerName(serverName string) (string, error) {
 	if serverName != "" {
 		return serverName, nil
@@ -52,9 +47,8 @@ func GetExecutableServerName(serverName string) (string, error) {
 	return derivedName, nil
 }
 
-// GetMCPCommandPath constructs the command path for invoking the MCP server. It searches for the MCP command up the
-// tree and builds the path to execute it from that point up. For example if the command path was
-// `<command> alpha mcp start` then this will return `alpha mcp`.
+// GetMCPCommandPath builds the command path to the MCP command.
+// Example: for "cli alpha mcp start", returns ["alpha", "mcp"].
 func GetMCPCommandPath(cmd *cobra.Command) []string {
 	args := []string{}
 	foundMCP := false
@@ -81,9 +75,7 @@ func GetMCPCommandPath(cmd *cobra.Command) []string {
 	return args[1:]
 }
 
-// BackupConfigFile creates a backup of a configuration file.
-// If the file doesn't exist, it returns nil (no error).
-// The backup is created with a .backup extension.
+// BackupConfigFile creates a .backup copy of the configuration file.
 func BackupConfigFile(configPath string) error {
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		// No config file to backup
@@ -103,8 +95,7 @@ func BackupConfigFile(configPath string) error {
 	return nil
 }
 
-// LoadJSONConfig loads a JSON configuration file into the provided interface.
-// If the file doesn't exist, it returns nil error and leaves the config unchanged.
+// LoadJSONConfig unmarshals a JSON file into the provided interface.
 func LoadJSONConfig(configPath string, config interface{}) error {
 	// Check if config file exists
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
@@ -124,8 +115,7 @@ func LoadJSONConfig(configPath string, config interface{}) error {
 	return nil
 }
 
-// SaveJSONConfig saves a configuration to a JSON file with proper formatting.
-// It ensures the directory exists before writing.
+// SaveJSONConfig marshals and saves configuration as formatted JSON.
 func SaveJSONConfig(configPath string, config interface{}) error {
 	// Ensure the directory exists
 	if err := os.MkdirAll(filepath.Dir(configPath), 0o755); err != nil {
@@ -142,11 +132,4 @@ func SaveJSONConfig(configPath string, config interface{}) error {
 	}
 
 	return nil
-}
-
-// CheckExecutableExists checks if an executable file exists at the given path.
-// Returns true if the file exists, false otherwise.
-func CheckExecutableExists(executablePath string) bool {
-	_, err := os.Stat(executablePath)
-	return err == nil
 }

@@ -7,12 +7,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// startCommandFlags holds configuration flags for the start command.
+// startCommandFlags holds flags for the start command.
 type startCommandFlags struct {
 	logLevel string
 }
 
-// startCommand creates a Cobra command for starting the MCP server.
+// startCommand creates the 'mcp start' command.
 func startCommand(config *Config) *cobra.Command {
 	mcpFlags := &startCommandFlags{}
 	cmd := &cobra.Command{

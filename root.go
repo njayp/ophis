@@ -7,8 +7,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Command creates a new Cobra command that starts an MCP server
-// This command can be added as a subcommand to any Cobra-based application
+// Command creates MCP server management commands for a Cobra CLI.
+// Pass nil for default configuration or provide a Config for customization.
 func Command(config *Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   cfgmgr.MCPCommandName,

@@ -11,51 +11,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Config provides user options for creating MCP commands for the MCP server bridge.
-// It defines how the CLI commands are exposed as MCP tools and how the server behaves.
-//
-// Example usage:
-//
-//	config := &bridge.Config{
-//		GeneratorOptions: []tools.GeneratorOption{
-//			tools.WithFilters(tools.Allow([]string{"get", "list"})),
-//			tools.WithHandler(customHandler),
-//		},
-//		SloggerOptions: &slog.HandlerOptions{
-//			Level: slog.LevelDebug,
-//		},
-//	}
+// Config customizes MCP server behavior and command-to-tool conversion.
 type Config struct {
-	// Generator controls how Cobra commands are converted to MCP tools.
-	// Optional: If nil, a default generator will be used that:
-	//   - Excludes commands without a Run or PreRun function
-	//   - Excludes hidden commands
-	//   - Excludes "mcp", "help", and "completion" commands
-	//   - Returns command output as plain text
+	// GeneratorOptions controls command-to-tool conversion.
+	// Default: Excludes non-runnable, hidden, and utility commands.
 	GeneratorOptions []tools.GeneratorOption
 
-	// SloggerOptions configures the structured logger used by the MCP server.
-	// Optional: If nil, default options will be used.
-	// The logger always writes to stderr to avoid interfering with stdio transport.
-	//
-	// Example:
-	//   config.SloggerOptions = &slog.HandlerOptions{
-	//       Level: slog.LevelDebug,  // Enable debug logging
-	//   }
+	// SloggerOptions configures logging to stderr.
+	// Default: Info level logging.
 	SloggerOptions *slog.HandlerOptions
 
-	// ServerOptions provides additional options for the underlying MCP server.
-	// Optional: These are passed directly to the mark3labs/mcp-go server.
-	// The bridge always adds server.WithRecovery() to handle panics gracefully.
-	//
-	// Consult the mark3labs/mcp-go documentation for available server options.
+	// ServerOptions for the underlying MCP server.
+	// See mark3labs/mcp-go documentation.
 	ServerOptions []server.ServerOption
 
-	// StdioOptions provides additional options for stdio transport.
-	// Optional: These are passed directly to server.ServeStdio.
-	// The bridge always adds server.WithStdioLogging() to log stdio transport events.
-	//
-	// Consult the mark3labs/mcp-go documentation for available stdio options.
+	// StdioOptions for stdio transport configuration.
+	// See mark3labs/mcp-go documentation.
 	StdioOptions []server.StdioOption
 }
 
@@ -64,20 +35,13 @@ func (c *Config) tools(rootCmd *cobra.Command) []tools.Controller {
 	return tools.NewGenerator(c.GeneratorOptions...).FromRootCmd(rootCmd)
 }
 
-// setupSlogger configures the structured logger for the MCP server.
-//
-// The logger always writes to stderr to avoid interfering with the stdio
-// transport used for MCP communication. Writing logs to stdout would corrupt
-// the MCP protocol messages.
+// setupSlogger configures logging to stderr to avoid corrupting stdio transport.
 func (c *Config) setupSlogger() {
 	handler := slog.NewTextHandler(os.Stderr, c.SloggerOptions)
 	slog.SetDefault(slog.New(handler))
 }
 
-// serveStdio creates and starts an MCP server using stdio transport.
-//
-// It sets up the logger, registers tools generated from the provided Cobra
-// command, and starts serving requests over stdio.
+// serveStdio starts the MCP server with stdio transport.
 func (c *Config) serveStdio(cmd *cobra.Command) error {
 	c.setupSlogger()
 

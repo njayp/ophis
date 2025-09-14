@@ -8,21 +8,19 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-// Handler defines a function type for handling tool execution results.
-// It takes the context, request, output data, and any error that occurred during execution,
-// and returns an MCP CallToolResult or an error. Errors should be returned only if there is
-// an issue with the handler itself, not with the tool execution.
+// Handler processes tool execution results into MCP responses.
+// Returns an error only for handler failures, not tool execution errors.
 type Handler func(context.Context, mcp.CallToolRequest, []byte, error) (*mcp.CallToolResult, error)
 
-// WithHandler returns a GeneratorOption that sets a custom handler for processing command output.
-// By default, the generator uses DefaultHandler which returns output as plain text.
+// WithHandler sets a custom output handler.
+// Default: Returns output as plain text.
 func WithHandler(handler Handler) GeneratorOption {
 	return func(g *Generator) {
 		g.handler = handler
 	}
 }
 
-// DefaultHandler is the default handler that processes command output as plain text.
+// DefaultHandler returns command output as plain text with error details.
 func DefaultHandler(_ context.Context, request mcp.CallToolRequest, data []byte, err error) (*mcp.CallToolResult, error) {
 	output := string(data)
 	if err != nil {

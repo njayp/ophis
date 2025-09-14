@@ -7,27 +7,26 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Filter is a function type used by the Generator to filter commands.
-// It returns true if the command should be included in the generated tools.
+// Filter determines if a command should become an MCP tool.
+// Returns true to include the command.
 type Filter func(*cobra.Command) bool
 
-// WithFilters sets custom filters for the generator.
+// WithFilters replaces all filters with the provided set.
 func WithFilters(filters ...Filter) GeneratorOption {
 	return func(g *Generator) {
 		g.filters = filters
 	}
 }
 
-// AddFilter adds a custom filter function to the generator.
+// AddFilter appends a filter to the existing set.
 func AddFilter(filter Filter) GeneratorOption {
 	return func(g *Generator) {
 		g.filters = append(g.filters, filter)
 	}
 }
 
-// Exclude adds a filter to exclude listed command names from the generated tools.
-// E.g., Exclude([]string{"delete", "user test"}) will exclude any command whose
-// path contains "delete" or "user test".
+// Exclude creates a filter that rejects commands whose path contains any listed phrase.
+// Example: Exclude([]string{"delete", "admin"}) excludes "kubectl delete" and "cli admin user".
 func Exclude(list []string) Filter {
 	return func(cmd *cobra.Command) bool {
 		for _, phrase := range list {
@@ -41,9 +40,8 @@ func Exclude(list []string) Filter {
 	}
 }
 
-// Allow adds a filter to include only subcommands that match the provided list.
-// E.g., Allow([]string{"get", "user info"}) will only include any command whose
-// path contains "get" or "user info".
+// Allow creates a filter that only accepts commands whose path contains a listed phrase.
+// Example: Allow([]string{"get", "list"}) includes "kubectl get pods" and "helm list".
 func Allow(list []string) Filter {
 	return func(cmd *cobra.Command) bool {
 		for _, phrase := range list {
@@ -57,7 +55,7 @@ func Allow(list []string) Filter {
 	}
 }
 
-// Hidden returns a filter that excludes hidden commands from the generated tools.
+// Hidden creates a filter that excludes hidden commands.
 func Hidden() Filter {
 	return func(cmd *cobra.Command) bool {
 		if cmd.Hidden {
@@ -67,7 +65,7 @@ func Hidden() Filter {
 	}
 }
 
-// Runs returns a filter that excludes commands without a Run or PreRun function.
+// Runs creates a filter that excludes non-runnable commands.
 func Runs() Filter {
 	return func(cmd *cobra.Command) bool {
 		noop := cmd.Run == nil && cmd.RunE == nil && cmd.PreRun == nil && cmd.PreRunE == nil

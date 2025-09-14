@@ -6,9 +6,13 @@ import (
 	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/njayp/ophis/internal/cfgmgr"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+)
+
+const (
+	argsParam  = "args"
+	flagsParam = "flags"
 )
 
 func toolOptsFromCmd(cmd *cobra.Command) []mcp.ToolOption {
@@ -18,7 +22,7 @@ func toolOptsFromCmd(cmd *cobra.Command) []mcp.ToolOption {
 
 	// add flags to tool
 	flagMap := flagMapFromCmd(cmd)
-	toolOptions = append(toolOptions, mcp.WithObject(cfgmgr.FlagsParam,
+	toolOptions = append(toolOptions, mcp.WithObject(flagsParam,
 		mcp.Description("Flag options"),
 		mcp.Properties(flagMap),
 		mcp.Required(),
@@ -26,7 +30,7 @@ func toolOptsFromCmd(cmd *cobra.Command) []mcp.ToolOption {
 
 	// Add an "args" parameter for positional arguments
 	argsDescription := argsDescFromCmd(cmd)
-	toolOptions = append(toolOptions, mcp.WithString(cfgmgr.PositionalArgsParam,
+	toolOptions = append(toolOptions, mcp.WithString(argsParam,
 		mcp.Description(argsDescription),
 		mcp.Required(),
 	))
@@ -90,7 +94,7 @@ func flagMapFromCmd(cmd *cobra.Command) map[string]any {
 	return flagMap
 }
 
-// descFromCmd creates a description for the MCP tool from the Cobra command
+// descFromCmd builds an MCP tool description from command metadata.
 func descFromCmd(cmd *cobra.Command) string {
 	desc := cmd.Long
 	if desc == "" {

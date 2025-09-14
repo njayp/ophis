@@ -1,9 +1,8 @@
 // Package ophis transforms Cobra CLI applications into MCP (Model Context Protocol) servers,
-// enabling AI assistants like Claude to interact with your command-line tools.
+// enabling AI assistants to interact with command-line tools.
 //
-// Ophis provides a simple way to expose your existing Cobra commands as MCP tools that can be
-// called by AI assistants and other MCP-compatible clients. It handles all the complexity of
-// the MCP protocol, command execution, and tool registration.
+// Ophis automatically converts existing Cobra commands into MCP tools, handling
+// protocol complexity, command execution, and tool registration.
 //
 // # Basic Usage
 //
@@ -39,10 +38,10 @@
 //
 //	config := &ophis.Config{
 //	    // Control which commands are exposed
-//	    Generator: tools.NewGenerator(
+//	    GeneratorOptions: []tools.GeneratorOption{
 //	        tools.WithFilters(tools.Allow([]string{"get", "list"})),
 //	        tools.WithHandler(customHandler),
-//	    ),
+//	    },
 //
 //	    // Configure logging
 //	    SloggerOptions: &slog.HandlerOptions{
@@ -52,25 +51,23 @@
 //
 //	rootCmd.AddCommand(ophis.Command(config))
 //
-// # Integration with AI Assistants
+// # Integration
 //
-// After adding MCP support to your CLI, you can enable it in Claude Desktop or VSCode:
+// Enable MCP support in Claude Desktop or VSCode:
 //
-//	# Enable in Claude Desktop
+//	# Claude Desktop
 //	./my-cli mcp claude enable
 //
-//	# Enable in VSCode
+//	# VSCode (requires Copilot in Agent Mode)
 //	./my-cli mcp vscode enable
 //
-// Then restart the application to load the MCP server configuration.
+// Restart the application to load the configuration.
 //
 // # Architecture
 //
-// Ophis consists of two main public packages:
-//   - ophis: The main package providing the Command() function and Config struct
-//   - ophis/tools: Utilities for filtering and customizing command-to-tool conversion
+// Ophis provides two public packages:
+//   - ophis: Main package with Command() function and Config struct
+//   - ophis/tools: Filtering and customization utilities
 //
-// All other implementation details are contained in internal packages and are not
-// part of the public API. This design ensures API stability while allowing internal
-// refactoring and improvements.
+// Internal packages contain implementation details and are not part of the public API.
 package ophis
