@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/njayp/ophis/examples"
 )
 
 func TestTools(t *testing.T) {
@@ -22,34 +23,51 @@ func TestTools(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to read mcp-tools.json: %v", err)
 	}
-	var tools []mcp.Tool
-	if err := json.Unmarshal(data, &tools); err != nil {
-		t.Fatalf("Failed to unmarshal mcp-tools.json: %v", err)
-	}
-	if len(tools) != 6 {
-		t.Fatalf("Expected 6 tools, got %d", len(tools))
-	}
 
-	// Check that the tools have the expected names
-	names := []string{}
-	for _, tool := range tools {
-		names = append(names, tool.Name)
-	}
-
-	expectedNames := []string{
-		"kubectl_get",
-		"kubectl_describe",
-		"kubectl_logs",
-		"kubectl_top_pod",
-		"kubectl_top_node",
-		"kubectl_explain",
-	}
-
-	for _, expectedName := range expectedNames {
-		if !slices.Contains(names, expectedName) {
-			t.Fatalf("Expected tool name %q not found in generated tools: %v", expectedName, names)
+	t.Run("Expected Tools", func(t *testing.T) {
+		var tools []mcp.Tool
+		if err := json.Unmarshal(data, &tools); err != nil {
+			t.Fatalf("Failed to unmarshal mcp-tools.json: %v", err)
 		}
-	}
+		if len(tools) != 6 {
+			t.Fatalf("Expected 6 tools, got %d", len(tools))
+		}
+
+		// Check that the tools have the expected names
+		names := []string{}
+		for _, tool := range tools {
+			names = append(names, tool.Name)
+		}
+
+		expectedNames := []string{
+			"kubectl_get",
+			"kubectl_describe",
+			"kubectl_logs",
+			"kubectl_top_pod",
+			"kubectl_top_node",
+			"kubectl_explain",
+		}
+
+		for _, expectedName := range expectedNames {
+			if !slices.Contains(names, expectedName) {
+				t.Fatalf("Expected tool name %q not found in generated tools: %v", expectedName, names)
+			}
+		}
+	})
+
+	t.Run("Schema Validation", func(t *testing.T) {
+		var tools []map[string]any
+		if err := json.Unmarshal(data, &tools); err != nil {
+			t.Fatalf("Failed to unmarshal mcp-tools.json: %v", err)
+		}
+
+		// Validate each tool against the MCP schema
+		for _, tool := range tools {
+			if err := examples.ValidateToolAgainstMCP(tool); err != nil {
+				t.Fatalf("Tool validation failed: %v", err)
+			}
+		}
+	})
 
 	// Clean up
 	if err := os.Remove("mcp-tools.json"); err != nil {

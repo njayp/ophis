@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/njayp/ophis/examples"
 )
 
 func TestTools(t *testing.T) {
@@ -22,19 +23,36 @@ func TestTools(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to read mcp-tools.json: %v", err)
 	}
-	var tools []mcp.Tool
-	if err := json.Unmarshal(data, &tools); err != nil {
-		t.Fatalf("Failed to unmarshal mcp-tools.json: %v", err)
-	}
-	if len(tools) != 2 {
-		t.Fatalf("Expected 2 tools, got %d", len(tools))
-	}
 
-	// Check that the tools have the expected names
-	names := []string{tools[0].Name, tools[1].Name}
-	if !slices.Contains(names, "make_test") || !slices.Contains(names, "make_lint") {
-		t.Fatalf("Unexpected tool names: %v", names)
-	}
+	t.Run("Expected Tools", func(t *testing.T) {
+		var tools []mcp.Tool
+		if err := json.Unmarshal(data, &tools); err != nil {
+			t.Fatalf("Failed to unmarshal mcp-tools.json: %v", err)
+		}
+		if len(tools) != 2 {
+			t.Fatalf("Expected 2 tools, got %d", len(tools))
+		}
+
+		// Check that the tools have the expected names
+		names := []string{tools[0].Name, tools[1].Name}
+		if !slices.Contains(names, "make_test") || !slices.Contains(names, "make_lint") {
+			t.Fatalf("Unexpected tool names: %v", names)
+		}
+	})
+
+	t.Run("Schema Validation", func(t *testing.T) {
+		var tools []map[string]any
+		if err := json.Unmarshal(data, &tools); err != nil {
+			t.Fatalf("Failed to unmarshal mcp-tools.json: %v", err)
+		}
+
+		// Validate each tool against the MCP schema
+		for _, tool := range tools {
+			if err := examples.ValidateToolAgainstMCP(tool); err != nil {
+				t.Fatalf("Tool validation failed: %v", err)
+			}
+		}
+	})
 
 	// Clean up
 	if err := os.Remove("mcp-tools.json"); err != nil {
