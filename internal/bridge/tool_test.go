@@ -61,3 +61,20 @@ func TestCreateToolFromCmd_Basic(t *testing.T) {
 	assert.NotNil(t, includeSchema.Items)
 	assert.Equal(t, "string", includeSchema.Items.Type)
 }
+
+func TestGenerateToolName(t *testing.T) {
+	root := &cobra.Command{
+		Use: "root",
+	}
+	child := &cobra.Command{
+		Use: "child",
+	}
+	grandchild := &cobra.Command{
+		Use: "grandchild",
+	}
+
+	root.AddCommand(child)
+	child.AddCommand(grandchild)
+	name := generateToolName(grandchild)
+	assert.Equal(t, "root_child_grandchild", name)
+}

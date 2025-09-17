@@ -3,6 +3,7 @@ package bridge
 import (
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 
 	"github.com/google/jsonschema-go/jsonschema"
@@ -37,49 +38,15 @@ func CreateToolFromCmd(cmd *cobra.Command, opts *jsonschema.ForOptions) *mcp.Too
 // generateToolName creates a tool name from the command path.
 func generateToolName(cmd *cobra.Command) string {
 	// Count depth for capacity hint
-	depth := 0
+	var names []string
 	current := cmd
-	for current != nil && current.Name() != "" {
-		depth++
-		current = current.Parent()
-	}
-
-	// Build names with pre-allocated slice
-	names := make([]string, 0, depth)
-	current = cmd
 	for current != nil && current.Name() != "" {
 		names = append(names, current.Name())
 		current = current.Parent()
 	}
 
-	// Reverse the slice in-place
-	for i, j := 0, len(names)-1; i < j; i, j = i+1, j-1 {
-		names[i], names[j] = names[j], names[i]
-	}
-
-	// Use strings.Builder for efficient concatenation
-	if len(names) == 0 {
-		return ""
-	}
-	if len(names) == 1 {
-		return names[0]
-	}
-
-	var builder strings.Builder
-	// Pre-calculate capacity
-	capacity := 0
-	for _, name := range names {
-		capacity += len(name) + 1 // +1 for underscore
-	}
-	builder.Grow(capacity)
-
-	builder.WriteString(names[0])
-	for i := 1; i < len(names); i++ {
-		builder.WriteByte('_')
-		builder.WriteString(names[i])
-	}
-
-	return builder.String()
+	slices.Reverse(names)
+	return strings.Join(names, "_")
 }
 
 // buildToolDescription creates a comprehensive tool description.
