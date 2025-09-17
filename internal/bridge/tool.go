@@ -36,16 +36,50 @@ func CreateToolFromCmd(cmd *cobra.Command, opts *jsonschema.ForOptions) *mcp.Too
 
 // generateToolName creates a tool name from the command path.
 func generateToolName(cmd *cobra.Command) string {
-	var names []string
+	// Count depth for capacity hint
+	depth := 0
 	current := cmd
-
-	// Walk up the command tree to build the full path
 	for current != nil && current.Name() != "" {
-		names = append([]string{current.Name()}, names...)
+		depth++
 		current = current.Parent()
 	}
 
-	return strings.Join(names, "_")
+	// Build names with pre-allocated slice
+	names := make([]string, 0, depth)
+	current = cmd
+	for current != nil && current.Name() != "" {
+		names = append(names, current.Name())
+		current = current.Parent()
+	}
+
+	// Reverse the slice in-place
+	for i, j := 0, len(names)-1; i < j; i, j = i+1, j-1 {
+		names[i], names[j] = names[j], names[i]
+	}
+
+	// Use strings.Builder for efficient concatenation
+	if len(names) == 0 {
+		return ""
+	}
+	if len(names) == 1 {
+		return names[0]
+	}
+
+	var builder strings.Builder
+	// Pre-calculate capacity
+	capacity := 0
+	for _, name := range names {
+		capacity += len(name) + 1 // +1 for underscore
+	}
+	builder.Grow(capacity)
+
+	builder.WriteString(names[0])
+	for i := 1; i < len(names); i++ {
+		builder.WriteByte('_')
+		builder.WriteString(names[i])
+	}
+
+	return builder.String()
 }
 
 // buildToolDescription creates a comprehensive tool description.
@@ -128,18 +162,50 @@ func addFlagToSchema(schema *jsonschema.Schema, flag *pflag.Flag) {
 	switch flag.Value.Type() {
 	case "bool":
 		flagSchema.Type = "boolean"
-	case "int", "int8", "int16", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64":
+	case "int", "int8", "int16", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64", "count":
 		flagSchema.Type = "integer"
 	case "float32", "float64":
 		flagSchema.Type = "number"
 	case "stringSlice", "stringArray":
 		flagSchema.Type = "array"
 		flagSchema.Items = &jsonschema.Schema{Type: "string"}
-	case "intSlice":
+	case "intSlice", "int32Slice", "int64Slice", "uintSlice":
 		flagSchema.Type = "array"
 		flagSchema.Items = &jsonschema.Schema{Type: "integer"}
-	default:
+	case "float32Slice", "float64Slice":
+		flagSchema.Type = "array"
+		flagSchema.Items = &jsonschema.Schema{Type: "number"}
+	case "boolSlice":
+		flagSchema.Type = "array"
+		flagSchema.Items = &jsonschema.Schema{Type: "boolean"}
+	case "duration":
+		// Duration is represented as a string in Go's duration format
 		flagSchema.Type = "string"
+		flagSchema.Description += " (format: Go duration string, e.g., '10s', '2h45m')"
+		flagSchema.Pattern = `^-?([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$`
+	case "ip":
+		flagSchema.Type = "string"
+		flagSchema.Description += " (format: IPv4 or IPv6 address)"
+		flagSchema.Pattern = `^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.){3}(25[0-5]|(2[0-4]|1\d|[1-9]|)\d)$|^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4})$`
+	case "ipMask":
+		flagSchema.Type = "string"
+		flagSchema.Description += " (format: IP mask, e.g., '255.255.255.0')"
+	case "ipNet":
+		flagSchema.Type = "string"
+		flagSchema.Description += " (format: CIDR notation, e.g., '192.168.1.0/24')"
+		flagSchema.Pattern = `^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.){3}(25[0-5]|(2[0-4]|1\d|[1-9]|)\d)/([0-9]|[1-2][0-9]|3[0-2])$`
+	case "bytesHex":
+		flagSchema.Type = "string"
+		flagSchema.Description += " (format: hexadecimal string)"
+		flagSchema.Pattern = `^[0-9a-fA-F]*$`
+	case "bytesBase64":
+		flagSchema.Type = "string"
+		flagSchema.Description += " (format: base64 encoded string)"
+		flagSchema.Pattern = `^[A-Za-z0-9+/]*={0,2}$`
+	default:
+		// Default to string for unknown types
+		flagSchema.Type = "string"
+		slog.Debug("unknown flag type, defaulting to string", "flag", flag.Name, "type", flag.Value.Type())
 	}
 
 	schema.Properties[flag.Name] = flagSchema
