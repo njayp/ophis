@@ -22,7 +22,7 @@ func DefaultFilters() []Filter {
 }
 
 // ExcludeFilter creates a filter that rejects commands whose path contains any listed phrase.
-// Example: ExcludeFilter([]string{"delete", "admin"}) excludes "kubectl delete" and "cli admin user".
+// Example: ExcludeFilter([]string{"kubectl delete", "admin"}) excludes "kubectl delete" and "cli admin user".
 func ExcludeFilter(list []string) Filter {
 	return func(cmd *cobra.Command) bool {
 		for _, phrase := range list {
@@ -37,7 +37,7 @@ func ExcludeFilter(list []string) Filter {
 }
 
 // AllowFilter creates a filter that only accepts commands whose path contains a listed phrase.
-// Example: AllowFilter([]string{"get", "list"}) includes "kubectl get pods" and "helm list".
+// Example: AllowFilter([]string{"get", "helm list"}) includes "kubectl get pods" and "helm list".
 func AllowFilter(list []string) Filter {
 	return func(cmd *cobra.Command) bool {
 		for _, phrase := range list {

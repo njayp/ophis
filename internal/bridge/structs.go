@@ -10,5 +10,5 @@ type CmdToolInput struct {
 type CmdToolOutput struct {
 	StdOut   string `json:"stdout" jsonschema:"Standard output"`
 	StdErr   string `json:"stderr,omitempty" jsonschema:"Standard error"`
-	ExitCode int    `json:"exitCode" jsonschema:"Command exit code"`
+	ExitCode int    `json:"exitCode" jsonschema:"Exit code"`
 }

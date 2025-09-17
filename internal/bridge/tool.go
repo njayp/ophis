@@ -172,7 +172,7 @@ func addFlagToSchema(schema *jsonschema.Schema, flag *pflag.Flag) {
 	default:
 		// Default to string for unknown types
 		flagSchema.Type = "string"
-		slog.Debug("unknown flag type, defaulting to string", "flag", flag.Name, "type", flag.Value.Type())
+		slog.Warn("unknown flag type, defaulting to string", "flag", flag.Name, "type", flag.Value.Type())
 	}
 
 	schema.Properties[flag.Name] = flagSchema

@@ -58,7 +58,6 @@ The `ophis.Command()` function accepts an optional `*ophis.Config` parameter to 
 config := &ophis.Config{
     // Customize command filtering
     Filters: []ophis.Filter{
-        // Command filtering
         ophis.ExcludeFilter([]string{"dangerous"}),
     },
     
@@ -86,7 +85,6 @@ ophis.ExcludeFilter([]string{"delete", "destroy", "helm repo remove"})
 ```go
 // Custom filter function
 func(cmd *cobra.Command) bool {
-    // Exclude admin commands
     return !strings.HasPrefix(cmd.Name(), "admin-")
 }
 ```
