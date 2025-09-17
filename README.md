@@ -59,7 +59,7 @@ config := &ophis.Config{
     // Customize command filtering
     Filters: []ophis.Filter{
         // Command filtering
-        tools.Exclude([]string{"dangerous"}),
+        ophis.ExcludeFilter([]string{"dangerous"}),
     },
     
     // Configure logging (logs to stderr)
@@ -74,13 +74,13 @@ config := &ophis.Config{
 Control which commands are exposed as MCP tools:
 
 ```go
-// tools.Allow only exposes listed commands
-tools.Allow([]string{"get", "list", "helm repo list"})
+// only exposes listed commands
+ophis.AllowFilter([]string{"get", "list", "helm repo list"})
 ```
 
 ```go
-// tools.Exclude prevents listed commands from being exposed
-tools.Exclude([]string{"delete", "destroy", "helm repo remove"})
+// prevents listed commands from being exposed
+ophis.ExcludeFilter([]string{"delete", "destroy", "helm repo remove"})
 ```
 
 ```go

@@ -38,9 +38,8 @@
 //
 //	config := &ophis.Config{
 //	    // Control which commands are exposed
-//	    GeneratorOptions: []tools.GeneratorOption{
-//	        tools.WithFilters(tools.Allow([]string{"get", "list"})),
-//	        tools.WithHandler(customHandler),
+//	    Filters: []ophis.Filter{
+//	        ophis.AllowFilter([]string{"get", "helm repo remove"}),
 //	    },
 //
 //	    // Configure logging
@@ -48,8 +47,6 @@
 //	        Level: slog.LevelDebug,
 //	    },
 //	}
-//
-//	rootCmd.AddCommand(ophis.Command(config))
 //
 // # Integration
 //
@@ -60,14 +57,4 @@
 //
 //	# VSCode (requires Copilot in Agent Mode)
 //	./my-cli mcp vscode enable
-//
-// Restart the application to load the configuration.
-//
-// # Architecture
-//
-// Ophis provides two public packages:
-//   - ophis: Main package with Command() function and Config struct
-//   - ophis/tools: Filtering and customization utilities
-//
-// Internal packages contain implementation details and are not part of the public API.
 package ophis
