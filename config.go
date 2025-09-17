@@ -36,21 +36,21 @@ func (c *Config) serveStdio(cmd *cobra.Command) error {
 	version := rootCmd.Version
 	slog.Info("creating MCP server", "app_name", appName, "app_version", version)
 
-	srv := mcp.NewServer(&mcp.Implementation{
+	server := mcp.NewServer(&mcp.Implementation{
 		Name:    appName,
 		Version: version,
 	}, c.ServerOptions)
 
 	for _, tool := range c.tools(rootCmd) {
 		slog.Debug("registering MCP tool", "tool_name", tool.Name)
-		mcp.AddTool(srv, tool, bridge.Execute)
+		mcp.AddTool(server, tool, bridge.Execute)
 	}
 
 	if c.Transport == nil {
 		c.Transport = &mcp.StdioTransport{}
 	}
 
-	return srv.Run(cmd.Context(), c.Transport)
+	return server.Run(cmd.Context(), c.Transport)
 }
 
 func (c *Config) tools(rootCmd *cobra.Command) []*mcp.Tool {

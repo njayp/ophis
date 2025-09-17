@@ -62,11 +62,6 @@ func buildToolDescription(cmd *cobra.Command) string {
 		parts = append(parts, fmt.Sprintf("Execute the %s command", cmd.Name()))
 	}
 
-	// Add usage information
-	if cmd.Use != "" {
-		parts = append(parts, fmt.Sprintf("\nUsage: %s", cmd.Use))
-	}
-
 	// Add examples if available
 	if cmd.Example != "" {
 		parts = append(parts, fmt.Sprintf("\nExamples:\n%s", cmd.Example))
@@ -133,6 +128,8 @@ func addFlagToSchema(schema *jsonschema.Schema, flag *pflag.Flag) {
 		flagSchema.Type = "integer"
 	case "float32", "float64":
 		flagSchema.Type = "number"
+	case "string":
+		flagSchema.Type = "string"
 	case "stringSlice", "stringArray":
 		flagSchema.Type = "array"
 		flagSchema.Items = &jsonschema.Schema{Type: "string"}
@@ -181,11 +178,15 @@ func addFlagToSchema(schema *jsonschema.Schema, flag *pflag.Flag) {
 // enhanceArgsSchema adds detailed argument information to the args property.
 func enhanceArgsSchema(schema *jsonschema.Schema, cmd *cobra.Command) {
 	description := "Positional command line arguments"
+	use := cmd.Use
+
+	// remove "[flags]" from usage
+	use = strings.Replace(use, " [flags]", "", 1)
 
 	// Extract argument pattern from cmd.Use
-	if cmd.Use != "" {
-		if spaceIdx := strings.IndexByte(cmd.Use, ' '); spaceIdx != -1 {
-			argsPattern := cmd.Use[spaceIdx+1:]
+	if use != "" {
+		if spaceIdx := strings.IndexByte(use, ' '); spaceIdx != -1 {
+			argsPattern := use[spaceIdx+1:]
 			if argsPattern != "" {
 				description += fmt.Sprintf("\n\nUsage pattern: %s", argsPattern)
 			}
