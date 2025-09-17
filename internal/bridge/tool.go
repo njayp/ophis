@@ -83,13 +83,11 @@ func enhanceInputSchema(schema *jsonschema.Schema, cmd *cobra.Command) {
 	// Enhance flags property
 	if flagsSchema, exists := schema.Properties["flags"]; exists {
 		enhanceFlagsSchema(flagsSchema, cmd)
-		schema.Required = append(schema.Required, "flags")
 	}
 
 	// Enhance args property
 	if argsSchema, exists := schema.Properties["args"]; exists {
 		enhanceArgsSchema(argsSchema, cmd)
-		schema.Required = append(schema.Required, "args")
 	}
 }
 
@@ -122,26 +120,24 @@ func enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Command) {
 
 // addFlagToSchema adds a single flag to the schema properties.
 func addFlagToSchema(schema *jsonschema.Schema, flag *pflag.Flag) {
-	flagType := flag.Value.Type()
 	flagSchema := &jsonschema.Schema{
 		Description: flag.Usage,
 	}
 
 	// Set appropriate JSON schema type based on flag type
-	switch flagType {
+	switch flag.Value.Type() {
 	case "bool":
 		flagSchema.Type = "boolean"
 	case "int", "int8", "int16", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64":
 		flagSchema.Type = "integer"
 	case "float32", "float64":
 		flagSchema.Type = "number"
-	case "stringSlice", "stringArray", "intSlice":
+	case "stringSlice", "stringArray":
 		flagSchema.Type = "array"
-		if strings.Contains(flagType, "int") {
-			flagSchema.Items = &jsonschema.Schema{Type: "integer"}
-		} else {
-			flagSchema.Items = &jsonschema.Schema{Type: "string"}
-		}
+		flagSchema.Items = &jsonschema.Schema{Type: "string"}
+	case "intSlice":
+		flagSchema.Type = "array"
+		flagSchema.Items = &jsonschema.Schema{Type: "integer"}
 	default:
 		flagSchema.Type = "string"
 	}

@@ -28,15 +28,10 @@ func toolCommand(config *Config) *cobra.Command {
 
 			if toolFlags.logLevel != "" {
 				level := parseLogLevel(toolFlags.logLevel)
-				// Ensure SloggerOptions is initialized
-				if config.SloggerOptions == nil {
-					config.SloggerOptions = &slog.HandlerOptions{}
-				}
 				// Set the log level based on the flag
-				config.SloggerOptions.Level = level
+				slog.SetLogLoggerLevel(level)
 			}
 
-			config.setupSlogger()
 			tools := config.tools(getRootCmd(cmd))
 
 			file, err := os.OpenFile("mcp-tools.json", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)

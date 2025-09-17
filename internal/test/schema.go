@@ -24,6 +24,7 @@ func ValidateToolSchema(tool any) error {
 	if !result.Valid() {
 		return fmt.Errorf("validation failed: %v", result.Errors())
 	}
+
 	return nil
 }
 

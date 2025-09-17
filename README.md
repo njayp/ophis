@@ -91,10 +91,10 @@ func(cmd *cobra.Command) bool {
 }
 ```
 
-When `Config.Filters` is `nil`, the MCP server uses these default filters:
-- Excludes commands without a Run or PreRun function
+When `Config.Filters` is `nil`, ophis uses these default filters:
+- Excludes commands without a `Run` or `PreRun` function
 - Excludes hidden commands
-- Excludes "mcp", "help", and "completion" commands
+- Excludes `mcp`, `help`, and `completion` commands
 
 ## Ophis Commands
 
