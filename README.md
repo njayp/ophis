@@ -55,20 +55,11 @@ Your CLI commands are now available as mcp server tools!
 The `ophis.Command()` function accepts an optional `*ophis.Config` parameter to customize the MCP server behavior:
 
 ```go
-import (
-    "log/slog"
-    "github.com/njayp/ophis"
-    "github.com/njayp/ophis/tools"
-)
-
 config := &ophis.Config{
-    // Customize command filtering and output handling
-    GeneratorOptions: []tools.GeneratorOption{
+    // Customize command filtering
+    Filters: []ophis.Filter{
         // Command filtering
-        tools.AddFilter(tools.Exclude([]string{"dangerous"})),
-        
-        // Custom output handler
-        tools.WithHandler(myCustomHandler),
+        tools.Exclude([]string{"dangerous"}),
     },
     
     // Configure logging (logs to stderr)
@@ -76,60 +67,34 @@ config := &ophis.Config{
         Level: slog.LevelDebug,
     },
 }
-
-rootCmd.AddCommand(ophis.Command(config))
 ```
-
-### Default Behavior
-
-When called with `nil` config, the MCP server:
-- Excludes commands without a Run or PreRun function
-- Excludes hidden, "mcp", "help", and "completion" commands
-- Returns command output as plain text
-- Logs at info level
 
 ### Command Filtering
 
 Control which commands are exposed as MCP tools:
 
 ```go
-// tools.WithFilters sets the filter list
 // tools.Allow only exposes listed commands
-tools.WithFilters(tools.Allow([]string{"get", "list", "helm repo list"}))
+tools.Allow([]string{"get", "list", "helm repo list"})
 ```
 
 ```go
-// tools.AddFilter adds a filter (in addition to defaults)
 // tools.Exclude prevents listed commands from being exposed
-tools.AddFilter(tools.Exclude([]string{"delete", "destroy", "helm repo remove"}))
+tools.Exclude([]string{"delete", "destroy", "helm repo remove"})
 ```
 
 ```go
 // Custom filter function
-tools.AddFilter(func(cmd *cobra.Command) bool {
+func(cmd *cobra.Command) bool {
     // Exclude admin commands
     return !strings.HasPrefix(cmd.Name(), "admin-")
-})
+}
 ```
 
-### Custom Output Handler
-
-The output handler will be applied to all tools. See proposal [#9](https://github.com/njayp/ophis/issues/9).
-
-```go
-// Return the data as an image instead of as text
-tools.WithHandler(func(ctx context.Context, request mcp.CallToolRequest, data []byte, err error) *mcp.CallToolResult {
-    return mcp.NewToolResultImage(data)
-})
-```
-
-```go
-// Or add middleware
-tools.WithHandler(func(ctx context.Context, request mcp.CallToolRequest, data []byte, err error) *mcp.CallToolResult {
-    // Your middleware here
-    return tools.DefaultHandler(ctx, request, data, err)
-})
-```
+When `Config.Filters` is `nil`, the MCP server uses these default filters:
+- Excludes commands without a Run or PreRun function
+- Excludes hidden commands
+- Excludes "mcp", "help", and "completion" commands
 
 ## Ophis Commands
 
