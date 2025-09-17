@@ -33,6 +33,7 @@ func TestCreateToolFromCmd_Basic(t *testing.T) {
 	assert.NotNil(t, tool.InputSchema)
 
 	// Verify schema structure
+	assert.Equal(t, "object", tool.InputSchema.Type)
 	require.NotNil(t, tool.InputSchema.Properties)
 	assert.Contains(t, tool.InputSchema.Properties, "flags")
 	assert.Contains(t, tool.InputSchema.Properties, "args")

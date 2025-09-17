@@ -14,15 +14,15 @@ import (
 
 // CreateToolFromCmd creates an MCP tool from a Cobra command.
 func CreateToolFromCmd(cmd *cobra.Command) *mcp.Tool {
-	inputSchema := newInputSchema()
-	enhanceInputSchema(inputSchema, cmd)
+	schema := inputSchema.copy()
+	enhanceInputSchema(schema, cmd)
 
 	// Create the tool
 	return &mcp.Tool{
 		Name:         generateToolName(cmd),
 		Description:  buildToolDescription(cmd),
-		InputSchema:  inputSchema,
-		OutputSchema: outputSchema,
+		InputSchema:  schema,
+		OutputSchema: outputSchema.copy(),
 	}
 }
 

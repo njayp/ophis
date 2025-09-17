@@ -8,37 +8,35 @@ import (
 )
 
 var (
-	inputSchemaBytes []byte
-	outputSchema     *jsonschema.Schema
+	inputSchema  = newSchemaCache[CmdToolInput]()
+	outputSchema = newSchemaCache[CmdToolOutput]()
 )
 
-func initInputSchemaBytes() {
-	schema, err := jsonschema.For[CmdToolInput](nil)
+func newSchemaCache[T any]() *schemaCache {
+	schema, err := jsonschema.For[T](nil)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to generate input schema: %v", err))
+		panic(fmt.Sprintf("Failed to generate schema: %v", err))
 	}
 
 	data, err := json.Marshal(schema)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to marshal input schema: %v", err))
+		panic(fmt.Sprintf("Failed to marshal schema: %v", err))
 	}
 
-	inputSchemaBytes = data
-}
-
-func initOutputSchema() {
-	schema, err := jsonschema.For[CmdToolOutput](nil)
-	if err != nil {
-		panic(fmt.Sprintf("Failed to generate output schema: %v", err))
+	return &schemaCache{
+		data: data,
 	}
-	outputSchema = schema
 }
 
-func newInputSchema() *jsonschema.Schema {
+type schemaCache struct {
+	data []byte
+}
+
+func (s *schemaCache) copy() *jsonschema.Schema {
 	schema := &jsonschema.Schema{}
-	err := json.Unmarshal(inputSchemaBytes, schema)
+	err := json.Unmarshal(s.data, schema)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to unmarshal input schema: %v", err))
+		panic(fmt.Sprintf("Failed to unmarshal schema: %v", err))
 	}
 
 	return schema

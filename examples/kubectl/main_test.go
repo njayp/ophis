@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 func TestTools(t *testing.T) {

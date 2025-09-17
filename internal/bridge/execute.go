@@ -12,19 +12,19 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-var executablePath string
+var executablePath = initExecPath()
 
-func initExecPath() {
+func initExecPath() string {
 	path, err := os.Executable()
 	if err != nil {
 		panic(fmt.Sprintf("Failed to get executable path: %v", err))
 	}
 
-	executablePath = path
+	return path
 }
 
 // Execute runs the underlying CLI command.
-func Execute(ctx context.Context, request *mcp.CallToolRequest, input *CmdToolInput) (*mcp.CallToolResult, *CmdToolOutput, error) {
+func Execute(ctx context.Context, request *mcp.CallToolRequest, input CmdToolInput) (*mcp.CallToolResult, CmdToolOutput, error) {
 	slog.Info("MCP tool request received", "request", request.Params.Name)
 	// Build command arguments
 	name := request.Params.Name
@@ -42,7 +42,7 @@ func Execute(ctx context.Context, request *mcp.CallToolRequest, input *CmdToolIn
 }
 
 // execute runs the given exec.Cmd and returns stdout, stderr, and exit code.
-func execute(cmd *exec.Cmd) (*mcp.CallToolResult, *CmdToolOutput, error) {
+func execute(cmd *exec.Cmd) (*mcp.CallToolResult, CmdToolOutput, error) {
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -56,7 +56,7 @@ func execute(cmd *exec.Cmd) (*mcp.CallToolResult, *CmdToolOutput, error) {
 			exitCode = exitErr.ExitCode()
 		} else {
 			// Non-exit errors (like command not found)
-			return nil, &CmdToolOutput{
+			return nil, CmdToolOutput{
 				StdOut:   stdout.String(),
 				StdErr:   stderr.String(),
 				ExitCode: -1,
@@ -69,7 +69,7 @@ func execute(cmd *exec.Cmd) (*mcp.CallToolResult, *CmdToolOutput, error) {
 		}
 	}
 
-	return nil, &CmdToolOutput{
+	return nil, CmdToolOutput{
 		StdOut:   stdout.String(),
 		StdErr:   stderr.String(),
 		ExitCode: exitCode,
@@ -77,15 +77,10 @@ func execute(cmd *exec.Cmd) (*mcp.CallToolResult, *CmdToolOutput, error) {
 }
 
 // buildCommandArgs constructs CLI arguments from the MCP request.
-func buildCommandArgs(name string, input *CmdToolInput) []string {
+func buildCommandArgs(name string, input CmdToolInput) []string {
 	// Start with the command path (e.g., "root_sub_command" -> ["root", "sub", "command"])
 	// And remove the root command prefix
 	args := strings.Split(name, "_")[1:]
-
-	// if no input flags or args, return args
-	if input == nil {
-		return args
-	}
 
 	// Add flags
 	flagArgs := buildFlagArgs(input.Flags)
