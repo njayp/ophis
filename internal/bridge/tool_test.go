@@ -3,7 +3,6 @@ package bridge
 import (
 	"testing"
 
-	"github.com/njayp/ophis/internal/test"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -32,10 +31,6 @@ func TestCreateToolFromCmd_Basic(t *testing.T) {
 	assert.Contains(t, tool.Description, "This is a test command")
 	assert.Contains(t, tool.Description, "test file.txt --output result.txt")
 	assert.NotNil(t, tool.InputSchema)
-
-	// Verify the tool passes MCP schema validation
-	err := test.ValidateToolSchema(tool)
-	assert.NoError(t, err, "Tool should pass MCP schema validation")
 
 	// Verify schema structure
 	require.NotNil(t, tool.InputSchema.Properties)

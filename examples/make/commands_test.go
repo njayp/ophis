@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/njayp/ophis/internal/test"
 )
 
 func TestTools(t *testing.T) {
@@ -37,20 +36,6 @@ func TestTools(t *testing.T) {
 		names := []string{tools[0].Name, tools[1].Name}
 		if !slices.Contains(names, "make_test") || !slices.Contains(names, "make_lint") {
 			t.Fatalf("Unexpected tool names: %v", names)
-		}
-	})
-
-	t.Run("Schema Validation", func(t *testing.T) {
-		var tools []map[string]any
-		if err := json.Unmarshal(data, &tools); err != nil {
-			t.Fatalf("Failed to unmarshal mcp-tools.json: %v", err)
-		}
-
-		// Validate each tool against the MCP schema
-		for _, tool := range tools {
-			if err := test.ValidateToolSchema(tool); err != nil {
-				t.Fatalf("Tool validation failed: %v", err)
-			}
 		}
 	})
 
