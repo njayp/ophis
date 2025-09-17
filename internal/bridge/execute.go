@@ -1,6 +1,7 @@
-package tools
+package bridge
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log/slog"
@@ -9,75 +10,85 @@ import (
 	"strings"
 
 	sq "github.com/kballard/go-shellquote"
-	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-// Controller executes a Cobra command as an MCP tool.
-type Controller struct {
-	Tool    mcp.Tool `json:"tool"`
-	handler Handler
-}
-
-// Handle processes execution results using the configured handler.
-func (c *Controller) Handle(ctx context.Context, request mcp.CallToolRequest, data []byte, err error) (*mcp.CallToolResult, error) {
-	if c.handler != nil {
-		// Use custom handler if provided
-		return c.handler(ctx, request, data, err)
-	}
-
-	// Default handling: return output as plain text
-	return DefaultHandler(ctx, request, data, err)
-}
-
 // Execute runs the underlying CLI command.
-func (c *Controller) Execute(ctx context.Context, request mcp.CallToolRequest) ([]byte, error) {
-	// Get the executable path
-	executablePath, err := os.Executable()
+func Execute() mcp.ToolHandlerFor[*CmdToolInput, *CmdToolOutput] {
+	return func(ctx context.Context, request *mcp.CallToolRequest, input *CmdToolInput) (result *mcp.CallToolResult, output *CmdToolOutput, _ error) {
+		slog.Info("MCP tool request received", "request", request.Params.Name)
+		// Get the executable path
+		executablePath, err := os.Executable()
+		if err != nil {
+			slog.Error("failed to get executable path", "error", err)
+			return nil, nil, fmt.Errorf("failed to get executable path: %w", err)
+		}
+
+		// Build command arguments
+		name := request.Params.Name
+		cmdArgs := buildCommandArgs(name, input)
+
+		slog.Debug("executing command",
+			"tool", name,
+			"executable", executablePath,
+			"args", cmdArgs,
+		)
+
+		// Create exec.Cmd and run it
+		cmd := exec.CommandContext(ctx, executablePath, cmdArgs...)
+		return execute(cmd)
+	}
+}
+
+// execute runs the given exec.Cmd and returns stdout, stderr, and exit code.
+func execute(cmd *exec.Cmd) (*mcp.CallToolResult, *CmdToolOutput, error) {
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+
+	exitCode := 0
 	if err != nil {
-		slog.Error("failed to get executable path", "error", err)
-		return nil, fmt.Errorf("failed to get executable path: %w", err)
+		// Check if it's an ExitError to get the exit code
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			exitCode = exitErr.ExitCode()
+		} else {
+			// Non-exit errors (like command not found)
+			return nil, &CmdToolOutput{
+				StdOut:   stdout.String(),
+				StdErr:   stderr.String(),
+				ExitCode: -1,
+			}, err
+		}
+	} else {
+		// Successful run
+		if cmd.ProcessState != nil {
+			exitCode = cmd.ProcessState.ExitCode()
+		}
 	}
 
-	// Build command arguments
-	cmdArgs := c.buildCommandArgs(request)
-
-	slog.Debug("executing command",
-		"tool", c.Tool.Name,
-		"executable", executablePath,
-		"args", cmdArgs,
-	)
-
-	// Create exec.Cmd and run it
-	cmd := exec.CommandContext(ctx, executablePath, cmdArgs...)
-	return cmd.CombinedOutput()
+	return nil, &CmdToolOutput{
+		StdOut:   stdout.String(),
+		StdErr:   stderr.String(),
+		ExitCode: exitCode,
+	}, nil
 }
 
 // buildCommandArgs constructs CLI arguments from the MCP request.
-func (c *Controller) buildCommandArgs(request mcp.CallToolRequest) []string {
-	message := request.GetArguments()
-
+func buildCommandArgs(name string, input *CmdToolInput) []string {
 	// Start with the command path (e.g., "root_sub_command" -> ["root", "sub", "command"])
 	// And remove the root command prefix
-	args := strings.Split(c.Tool.Name, "_")[1:]
+	args := strings.Split(name, "_")[1:]
 	slog.Debug("initial command arguments", "args", args)
 
 	// Add flags
-	if flagsValue, ok := message[flagsParam]; ok {
-		if flagMap, ok := flagsValue.(map[string]any); ok {
-			flagArgs := buildFlagArgs(flagMap)
-			args = append(args, flagArgs...)
-		}
-	}
+	flagArgs := buildFlagArgs(input.Flags)
+	args = append(args, flagArgs...)
 
 	// Add positional arguments
-	if argsValue, ok := message[argsParam]; ok {
-		if argsStr, ok := argsValue.(string); ok && argsStr != "" {
-			parsedArgs := parseArgumentString(argsStr)
-			args = append(args, parsedArgs...)
-		}
-	}
-
-	return args
+	parsedArgs := parseArgumentString(input.Args)
+	return append(args, parsedArgs...)
 }
 
 // buildFlagArgs converts MCP flags to CLI flag arguments.

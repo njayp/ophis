@@ -1,9 +1,10 @@
-package tools
+package ophis
 
 import (
 	"log/slog"
 	"strings"
 
+	"github.com/njayp/ophis/internal/cfgmgr"
 	"github.com/spf13/cobra"
 )
 
@@ -11,17 +12,12 @@ import (
 // Returns true to include the command.
 type Filter func(*cobra.Command) bool
 
-// WithFilters replaces all filters with the provided set.
-func WithFilters(filters ...Filter) GeneratorOption {
-	return func(g *Generator) {
-		g.filters = filters
-	}
-}
-
-// AddFilter appends a filter to the existing set.
-func AddFilter(filter Filter) GeneratorOption {
-	return func(g *Generator) {
-		g.filters = append(g.filters, filter)
+// DefaultFilters provides default filters
+func DefaultFilters() []Filter {
+	return []Filter{
+		Runs(),
+		Hidden(),
+		Exclude([]string{cfgmgr.MCPCommandName, "help", "completion"}),
 	}
 }
 

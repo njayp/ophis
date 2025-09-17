@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/njayp/ophis/examples"
+	"github.com/njayp/ophis/internal/test"
 )
 
 func TestTools(t *testing.T) {
@@ -63,7 +63,7 @@ func TestTools(t *testing.T) {
 
 		// Validate each tool against the MCP schema
 		for _, tool := range tools {
-			if err := examples.ValidateToolAgainstMCP(tool); err != nil {
+			if err := test.ValidateToolSchema(tool); err != nil {
 				t.Fatalf("Tool validation failed: %v", err)
 			}
 		}

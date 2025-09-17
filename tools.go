@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/spf13/cobra"
 )
 
@@ -38,12 +37,7 @@ func toolCommand(config *Config) *cobra.Command {
 			}
 
 			config.setupSlogger()
-			controllers := config.tools(getRootCmd(cmd))
-			mcpTools := make([]mcp.Tool, len(controllers))
-			for i, c := range controllers {
-				slog.Debug("MCP tool", "name", c.Tool.Name, "description", c.Tool.Description)
-				mcpTools[i] = c.Tool
-			}
+			tools := config.tools(getRootCmd(cmd))
 
 			file, err := os.OpenFile("mcp-tools.json", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
 			if err != nil {
@@ -57,12 +51,12 @@ func toolCommand(config *Config) *cobra.Command {
 
 			encoder := json.NewEncoder(file)
 			encoder.SetIndent("", "  ")
-			err = encoder.Encode(mcpTools)
+			err = encoder.Encode(tools)
 			if err != nil {
 				return fmt.Errorf("failed to encode MCP tools to JSON: %w", err)
 			}
 
-			cmd.Printf("Successfully exported %d tools to mcp-tools.json\n", len(controllers))
+			cmd.Printf("Successfully exported %d tools to mcp-tools.json\n", len(tools))
 			return nil
 		},
 	}

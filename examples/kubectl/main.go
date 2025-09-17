@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/njayp/ophis"
-	"github.com/njayp/ophis/tools"
 	"github.com/spf13/cobra"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/component-base/cli"
@@ -18,16 +17,14 @@ func rootCmd() *cobra.Command {
 
 	// Add MCP server commands
 	command.AddCommand(ophis.Command(&ophis.Config{
-		GeneratorOptions: []tools.GeneratorOption{
-			tools.WithFilters(tools.Allow([]string{
-				"kubectl get",
-				"kubectl describe",
-				"kubectl logs",
-				"kubectl top pod",
-				"kubectl top node",
-				"kubectl explain",
-			})),
-		},
+		Filters: []ophis.Filter{ophis.Allow([]string{
+			"kubectl get",
+			"kubectl describe",
+			"kubectl logs",
+			"kubectl top pod",
+			"kubectl top node",
+			"kubectl explain",
+		})},
 	}))
 
 	return command

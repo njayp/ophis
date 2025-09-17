@@ -23,8 +23,8 @@ func createMakeCommands() *cobra.Command {
 	rootCmd.PersistentFlags().StringP("directory", "C", "", "Change to directory before doing anything")
 
 	// Add make target commands
-	testCmd := createMakeTargetCommand("test", "Run tests", "Run the test suite using 'make test'")
-	lintCmd := createMakeTargetCommand("lint", "Run linter", "Run 'golangci-lint run' using 'make lint'")
+	testCmd := createMakeTargetCommand("test", "Run tests", "Run the test suite")
+	lintCmd := createMakeTargetCommand("lint", "Run linter", "Run 'golangci-lint run'")
 
 	// Add subcommands
 	rootCmd.AddCommand(mcpCmd, testCmd, lintCmd)
@@ -40,9 +40,10 @@ func createMakeTargetCommand(target, short, long string) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			execArgs := []string{target}
 			execArgs = append(execArgs, buildArgs(cmd, args)...)
-			data, err := exec.CommandContext(cmd.Context(), "make", execArgs...).CombinedOutput()
-			cmd.Print(string(data))
-			return err
+			subCmd := exec.CommandContext(cmd.Context(), "make", execArgs...)
+			subCmd.Stdout = cmd.OutOrStdout()
+			subCmd.Stderr = cmd.ErrOrStderr()
+			return subCmd.Run()
 		},
 	}
 }

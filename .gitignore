@@ -38,6 +38,6 @@ output/
 
 # log files
 *.log
-mcp-tools.json
+*mcp-tools.json
 *.backup
 .DS_Store

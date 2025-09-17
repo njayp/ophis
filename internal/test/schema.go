@@ -1,4 +1,4 @@
-package examples
+package test
 
 import (
 	_ "embed"
@@ -11,11 +11,26 @@ import (
 //go:embed schema.json
 var schemaData []byte
 
-// ValidateToolAgainstMCP validates a tool definition against the MCP schema.
-func ValidateToolAgainstMCP(tool map[string]any) error {
+// ValidateToolSchema validates a tool definition against the MCP schema.
+func ValidateToolSchema(tool any) error {
+	schemaLoader := gojsonschema.NewGoLoader(toolSchema())
+	toolLoader := gojsonschema.NewGoLoader(tool)
+
+	result, err := gojsonschema.Validate(schemaLoader, toolLoader)
+	if err != nil {
+		return err
+	}
+
+	if !result.Valid() {
+		return fmt.Errorf("validation failed: %v", result.Errors())
+	}
+	return nil
+}
+
+func toolSchema() map[string]interface{} {
 	var schema map[string]interface{}
 	if err := json.Unmarshal(schemaData, &schema); err != nil {
-		return err
+		panic(err)
 	}
 
 	// Extract Tool definition and create validator
@@ -28,16 +43,5 @@ func ValidateToolAgainstMCP(tool map[string]any) error {
 		toolSchema[k] = v
 	}
 
-	schemaLoader := gojsonschema.NewGoLoader(toolSchema)
-	toolLoader := gojsonschema.NewGoLoader(tool)
-
-	result, err := gojsonschema.Validate(schemaLoader, toolLoader)
-	if err != nil {
-		return err
-	}
-
-	if !result.Valid() {
-		return fmt.Errorf("validation failed: %v", result.Errors())
-	}
-	return nil
+	return toolSchema
 }
