@@ -17,7 +17,7 @@ func rootCmd() *cobra.Command {
 
 	// Add MCP server commands
 	command.AddCommand(ophis.Command(&ophis.Config{
-		Filters: []ophis.Filter{ophis.Allow([]string{
+		Filters: []ophis.Filter{ophis.AllowFilter([]string{
 			"kubectl get",
 			"kubectl describe",
 			"kubectl logs",

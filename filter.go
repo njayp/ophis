@@ -15,15 +15,15 @@ type Filter func(*cobra.Command) bool
 // DefaultFilters provides default filters
 func DefaultFilters() []Filter {
 	return []Filter{
-		Runs(),
-		Hidden(),
-		Exclude([]string{cfgmgr.MCPCommandName, "help", "completion"}),
+		RunsFilter(),
+		HiddenFilter(),
+		ExcludeFilter([]string{cfgmgr.MCPCommandName, "help", "completion"}),
 	}
 }
 
-// Exclude creates a filter that rejects commands whose path contains any listed phrase.
-// Example: Exclude([]string{"delete", "admin"}) excludes "kubectl delete" and "cli admin user".
-func Exclude(list []string) Filter {
+// ExcludeFilter creates a filter that rejects commands whose path contains any listed phrase.
+// Example: ExcludeFilter([]string{"delete", "admin"}) excludes "kubectl delete" and "cli admin user".
+func ExcludeFilter(list []string) Filter {
 	return func(cmd *cobra.Command) bool {
 		for _, phrase := range list {
 			if strings.Contains(cmd.CommandPath(), phrase) {
@@ -36,9 +36,9 @@ func Exclude(list []string) Filter {
 	}
 }
 
-// Allow creates a filter that only accepts commands whose path contains a listed phrase.
-// Example: Allow([]string{"get", "list"}) includes "kubectl get pods" and "helm list".
-func Allow(list []string) Filter {
+// AllowFilter creates a filter that only accepts commands whose path contains a listed phrase.
+// Example: AllowFilter([]string{"get", "list"}) includes "kubectl get pods" and "helm list".
+func AllowFilter(list []string) Filter {
 	return func(cmd *cobra.Command) bool {
 		for _, phrase := range list {
 			if strings.Contains(cmd.CommandPath(), phrase) {
@@ -51,8 +51,8 @@ func Allow(list []string) Filter {
 	}
 }
 
-// Hidden creates a filter that excludes hidden commands.
-func Hidden() Filter {
+// HiddenFilter creates a filter that excludes hidden commands.
+func HiddenFilter() Filter {
 	return func(cmd *cobra.Command) bool {
 		if cmd.Hidden {
 			slog.Debug("excluding hidden command", "command", cmd.Name())
@@ -61,8 +61,8 @@ func Hidden() Filter {
 	}
 }
 
-// Runs creates a filter that excludes non-runnable commands.
-func Runs() Filter {
+// RunsFilter creates a filter that excludes non-runnable commands.
+func RunsFilter() Filter {
 	return func(cmd *cobra.Command) bool {
 		noop := cmd.Run == nil && cmd.RunE == nil && cmd.PreRun == nil && cmd.PreRunE == nil
 		if noop {

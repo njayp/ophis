@@ -26,7 +26,7 @@ type Config struct {
 	// ServerOptions for the underlying MCP server.
 	ServerOptions *mcp.ServerOptions
 
-	// StdioOptions for stdio transport configuration.
+	// Transport for stdio transport configuration.
 	Transport mcp.Transport
 }
 
@@ -52,7 +52,7 @@ func (c *Config) serveStdio(cmd *cobra.Command) error {
 
 	for _, tool := range c.tools(rootCmd) {
 		slog.Debug("registering MCP tool", "tool_name", tool.Name)
-		mcp.AddTool(srv, tool, bridge.Execute())
+		mcp.AddTool(srv, tool, bridge.Execute)
 	}
 
 	if c.Transport == nil {

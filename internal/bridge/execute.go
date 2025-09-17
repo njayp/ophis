@@ -13,30 +13,28 @@ import (
 )
 
 // Execute runs the underlying CLI command.
-func Execute() mcp.ToolHandlerFor[*CmdToolInput, *CmdToolOutput] {
-	return func(ctx context.Context, request *mcp.CallToolRequest, input *CmdToolInput) (result *mcp.CallToolResult, output *CmdToolOutput, _ error) {
-		slog.Info("MCP tool request received", "request", request.Params.Name)
-		// Get the executable path
-		executablePath, err := os.Executable()
-		if err != nil {
-			slog.Error("failed to get executable path", "error", err)
-			return nil, nil, fmt.Errorf("failed to get executable path: %w", err)
-		}
-
-		// Build command arguments
-		name := request.Params.Name
-		cmdArgs := buildCommandArgs(name, input)
-
-		slog.Debug("executing command",
-			"tool", name,
-			"executable", executablePath,
-			"args", cmdArgs,
-		)
-
-		// Create exec.Cmd and run it
-		cmd := exec.CommandContext(ctx, executablePath, cmdArgs...)
-		return execute(cmd)
+func Execute(ctx context.Context, request *mcp.CallToolRequest, input *CmdToolInput) (*mcp.CallToolResult, *CmdToolOutput, error) {
+	slog.Info("MCP tool request received", "request", request.Params.Name)
+	// Get the executable path
+	executablePath, err := os.Executable()
+	if err != nil {
+		slog.Error("failed to get executable path", "error", err)
+		return nil, nil, fmt.Errorf("failed to get executable path: %w", err)
 	}
+
+	// Build command arguments
+	name := request.Params.Name
+	cmdArgs := buildCommandArgs(name, input)
+
+	slog.Debug("executing command",
+		"tool", name,
+		"executable", executablePath,
+		"args", cmdArgs,
+	)
+
+	// Create exec.Cmd and run it
+	cmd := exec.CommandContext(ctx, executablePath, cmdArgs...)
+	return execute(cmd)
 }
 
 // execute runs the given exec.Cmd and returns stdout, stderr, and exit code.

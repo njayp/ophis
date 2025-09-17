@@ -15,8 +15,6 @@ func createMakeCommands() *cobra.Command {
 		Long:  `Execute make targets and build commands`,
 	}
 
-	mcpCmd := ophis.Command(nil)
-
 	// Add some common flags that make commands might use as persistent flags
 	// These will be available to all subcommands
 	rootCmd.PersistentFlags().StringP("file", "f", "", "Use FILE as a makefile")
@@ -27,7 +25,7 @@ func createMakeCommands() *cobra.Command {
 	lintCmd := createMakeTargetCommand("lint", "Run linter", "Run 'golangci-lint run'")
 
 	// Add subcommands
-	rootCmd.AddCommand(mcpCmd, testCmd, lintCmd)
+	rootCmd.AddCommand(ophis.Command(nil), testCmd, lintCmd)
 	return rootCmd
 }
 
