@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"strings"
 
-	sq "github.com/kballard/go-shellquote"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -87,8 +86,7 @@ func buildCommandArgs(name string, input *CmdToolInput) []string {
 	args = append(args, flagArgs...)
 
 	// Add positional arguments
-	parsedArgs := parseArgumentString(input.Args)
-	return append(args, parsedArgs...)
+	return append(args, input.Args...)
 }
 
 // buildFlagArgs converts MCP flags to CLI flag arguments.
@@ -130,26 +128,4 @@ func parseFlagArgValue(name string, value any) (retVal []string) {
 	}
 
 	return retVal
-}
-
-// parseArgumentString parses shell-like arguments with quote handling.
-// Supports single quotes, double quotes, and backslash escaping.
-// Falls back to space splitting on parse errors.
-func parseArgumentString(argsStr string) []string {
-	// Trim whitespace and handle empty string
-	argsStr = strings.TrimSpace(argsStr)
-	if argsStr == "" {
-		return nil
-	}
-
-	// Use shellquote to properly parse the arguments
-	args, err := sq.Split(argsStr)
-	if err != nil {
-		slog.Error("failed to parse argument string", "input", argsStr, "error", err)
-		// If parsing fails, fall back to simple splitting
-		// This ensures we don't completely fail on malformed input
-		return strings.Fields(argsStr)
-	}
-
-	return args
 }

@@ -4,7 +4,6 @@ go 1.24
 
 require (
 	github.com/google/jsonschema-go v0.2.3
-	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/modelcontextprotocol/go-sdk v0.5.0
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/pflag v1.0.10
