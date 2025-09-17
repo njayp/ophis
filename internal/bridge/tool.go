@@ -13,25 +13,16 @@ import (
 )
 
 // CreateToolFromCmd creates an MCP tool from a Cobra command.
-func CreateToolFromCmd(cmd *cobra.Command, opts *jsonschema.ForOptions) *mcp.Tool {
-	// Generate the tool name from command path
-	toolName := generateToolName(cmd)
-
-	// Generate base input schema
-	inputSchema, err := jsonschema.For[CmdToolInput](opts)
-	if err != nil {
-		slog.Error("failed to generate input schema", "tool", toolName, "error", err)
-		panic(fmt.Sprintf("Failed to generate input schema for %s: %v", toolName, err))
-	}
-
-	// Enhance the schema with command-specific information
+func CreateToolFromCmd(cmd *cobra.Command) *mcp.Tool {
+	inputSchema := newInputSchema()
 	enhanceInputSchema(inputSchema, cmd)
 
 	// Create the tool
 	return &mcp.Tool{
-		Name:        toolName,
-		Description: buildToolDescription(cmd),
-		InputSchema: inputSchema,
+		Name:         generateToolName(cmd),
+		Description:  buildToolDescription(cmd),
+		InputSchema:  inputSchema,
+		OutputSchema: outputSchema,
 	}
 }
 
@@ -64,7 +55,7 @@ func buildToolDescription(cmd *cobra.Command) string {
 
 	// Add examples if available
 	if cmd.Example != "" {
-		parts = append(parts, fmt.Sprintf("\nExamples:\n%s", cmd.Example))
+		parts = append(parts, fmt.Sprintf("Examples:\n%s", cmd.Example))
 	}
 
 	return strings.Join(parts, "\n")

@@ -12,28 +12,32 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
+var executablePath string
+
+func initExecPath() {
+	path, err := os.Executable()
+	if err != nil {
+		panic(fmt.Sprintf("Failed to get executable path: %v", err))
+	}
+
+	executablePath = path
+}
+
 // Execute runs the underlying CLI command.
 func Execute(ctx context.Context, request *mcp.CallToolRequest, input *CmdToolInput) (*mcp.CallToolResult, *CmdToolOutput, error) {
 	slog.Info("MCP tool request received", "request", request.Params.Name)
-	// Get the executable path
-	executablePath, err := os.Executable()
-	if err != nil {
-		slog.Error("failed to get executable path", "error", err)
-		return nil, nil, fmt.Errorf("failed to get executable path: %w", err)
-	}
-
 	// Build command arguments
 	name := request.Params.Name
-	cmdArgs := buildCommandArgs(name, input)
+	args := buildCommandArgs(name, input)
 
 	slog.Debug("executing command",
 		"tool", name,
-		"executable", executablePath,
-		"args", cmdArgs,
+		"input", input,
+		"args", args,
 	)
 
 	// Create exec.Cmd and run it
-	cmd := exec.CommandContext(ctx, executablePath, cmdArgs...)
+	cmd := exec.CommandContext(ctx, executablePath, args...)
 	return execute(cmd)
 }
 
@@ -77,7 +81,11 @@ func buildCommandArgs(name string, input *CmdToolInput) []string {
 	// Start with the command path (e.g., "root_sub_command" -> ["root", "sub", "command"])
 	// And remove the root command prefix
 	args := strings.Split(name, "_")[1:]
-	slog.Debug("initial command arguments", "args", args)
+
+	// if no input flags or args, return args
+	if input == nil {
+		return args
+	}
 
 	// Add flags
 	flagArgs := buildFlagArgs(input.Flags)
@@ -98,7 +106,6 @@ func buildFlagArgs(flagMap map[string]any) []string {
 
 		if items, ok := value.([]any); ok {
 			for _, item := range items {
-				slog.Debug("adding flag slice argument", "flag_name", name, "input", value, "value", item)
 				args = append(args, parseFlagArgValue(name, item)...)
 			}
 
@@ -116,11 +123,9 @@ func parseFlagArgValue(name string, value any) (retVal []string) {
 		switch v := value.(type) {
 		case bool:
 			if v {
-				slog.Debug("adding boolean flag argument", "flag_name", name, "value", v)
 				retVal = append(retVal, fmt.Sprintf("--%s", name))
 			}
 		default:
-			slog.Debug("adding flag argument", "flag_name", name, "value", value)
 			retVal = append(retVal, fmt.Sprintf("--%s", name), fmt.Sprintf("%v", value))
 		}
 	}

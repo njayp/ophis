@@ -82,7 +82,7 @@ func (c *Config) toolsRecursive(cmd *cobra.Command, tools []*mcp.Tool) []*mcp.To
 		}
 	}
 
-	tool := bridge.CreateToolFromCmd(cmd, nil)
+	tool := bridge.CreateToolFromCmd(cmd)
 	slog.Debug("created tool", "tool_name", tool.Name, "description", tool.Description)
 	return append(tools, tool)
 }
