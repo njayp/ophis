@@ -94,7 +94,6 @@ func (c *Config) addTools(cmd *cobra.Command, tools []*mcp.Tool) []*mcp.Tool {
 	}
 
 	tool := bridge.CreateToolFromCmd(cmd, c.ForOptions)
-
 	slog.Debug("created tool", "tool_name", tool.Name, "description", tool.Description)
 	return append(tools, tool)
 }
