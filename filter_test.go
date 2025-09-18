@@ -63,7 +63,7 @@ func TestAllowFilter(t *testing.T) {
 
 // TestHiddenFilter tests the Hidden filter function
 func TestHiddenFilter(t *testing.T) {
-	filter := HiddenFilter()
+	filter := hiddenFilter()
 
 	tests := []struct {
 		name     string
@@ -87,7 +87,7 @@ func TestHiddenFilter(t *testing.T) {
 }
 
 func TestRunsFilter(t *testing.T) {
-	filter := RunsFilter()
+	filter := runsFilter()
 
 	tests := []struct {
 		name     string

@@ -12,11 +12,11 @@ import (
 // Returns true to include the command.
 type Filter func(*cobra.Command) bool
 
-// DefaultFilters provides default filters
-func DefaultFilters() []Filter {
+// defaultFilters provides default filters
+func defaultFilters() []Filter {
 	return []Filter{
-		RunsFilter(),
-		HiddenFilter(),
+		runsFilter(),
+		hiddenFilter(),
 		ExcludeFilter([]string{cfgmgr.MCPCommandName, "help", "completion"}),
 	}
 }
@@ -51,8 +51,8 @@ func AllowFilter(list []string) Filter {
 	}
 }
 
-// HiddenFilter creates a filter that excludes hidden commands.
-func HiddenFilter() Filter {
+// hiddenFilter creates a filter that excludes hidden commands.
+func hiddenFilter() Filter {
 	return func(cmd *cobra.Command) bool {
 		if cmd.Hidden {
 			slog.Debug("excluding hidden command", "command", cmd.Name())
@@ -61,8 +61,8 @@ func HiddenFilter() Filter {
 	}
 }
 
-// RunsFilter creates a filter that excludes non-runnable commands.
-func RunsFilter() Filter {
+// runsFilter creates a filter that excludes non-runnable commands.
+func runsFilter() Filter {
 	return func(cmd *cobra.Command) bool {
 		noop := cmd.Run == nil && cmd.RunE == nil && cmd.PreRun == nil && cmd.PreRunE == nil
 		if noop {

@@ -42,7 +42,6 @@ func (c *Config) serveStdio(cmd *cobra.Command) error {
 	}, c.ServerOptions)
 
 	for _, tool := range c.tools(rootCmd) {
-		slog.Debug("registering MCP tool", "tool_name", tool.Name)
 		mcp.AddTool(server, tool, bridge.Execute)
 	}
 
@@ -54,12 +53,7 @@ func (c *Config) serveStdio(cmd *cobra.Command) error {
 }
 
 func (c *Config) tools(rootCmd *cobra.Command) []*mcp.Tool {
-	if c.Filters == nil {
-		slog.Debug("using default filters")
-		c.Filters = DefaultFilters()
-	}
-
-	slog.Debug("starting tool generation from root command", "root_cmd", rootCmd.Name())
+	c.Filters = append(c.Filters, defaultFilters()...)
 	tools := c.toolsRecursive(rootCmd, nil)
 	slog.Info("tool generation completed", "total_tools", len(tools))
 	return tools
@@ -83,6 +77,6 @@ func (c *Config) toolsRecursive(cmd *cobra.Command, tools []*mcp.Tool) []*mcp.To
 	}
 
 	tool := bridge.CreateToolFromCmd(cmd)
-	slog.Debug("created tool", "tool_name", tool.Name, "description", tool.Description)
+	slog.Debug("created tool", "tool_name", tool.Name)
 	return append(tools, tool)
 }

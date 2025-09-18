@@ -179,7 +179,7 @@ func enhanceArgsSchema(schema *jsonschema.Schema, cmd *cobra.Command) {
 		if spaceIdx := strings.IndexByte(use, ' '); spaceIdx != -1 {
 			argsPattern := use[spaceIdx+1:]
 			if argsPattern != "" {
-				description += fmt.Sprintf("\n\nUsage pattern: %s", argsPattern)
+				description += fmt.Sprintf("\nUsage pattern: %s", argsPattern)
 			}
 		}
 	}
