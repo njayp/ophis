@@ -12,8 +12,11 @@ import (
 // Config customizes MCP server behavior and command-to-tool conversion.
 type Config struct {
 	// Filters sets the filter for commands
-	// Default: Excludes non-runnable, hidden, and utility commands.
+	// Non-runnable, hidden, and utility commands are always excluded.
 	Filters []Filter
+
+	// Middleware gives the user flexibility to send metrics, timeouts, output, etc.
+	Middleware *Middleware
 
 	// SloggerOptions configures logging to stderr.
 	// Default: Info level logging.
@@ -37,7 +40,7 @@ func (c *Config) serveStdio(cmd *cobra.Command) error {
 	}, c.ServerOptions)
 
 	for _, tool := range c.tools(rootCmd) {
-		mcp.AddTool(server, tool, bridge.Execute)
+		mcp.AddTool(server, tool, c.execute)
 	}
 
 	if c.Transport == nil {
