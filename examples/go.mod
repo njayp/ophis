@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/modelcontextprotocol/go-sdk v0.5.0
-	github.com/njayp/ophis v0.5.4
+	github.com/njayp/ophis v0.5.5
 	github.com/spf13/cobra v1.10.1
 	k8s.io/client-go v0.34.1
 	k8s.io/component-base v0.34.1

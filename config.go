@@ -1,6 +1,7 @@
 package ophis
 
 import (
+	"context"
 	"log/slog"
 	"os"
 
@@ -15,8 +16,14 @@ type Config struct {
 	// Non-runnable, hidden, and utility commands are always excluded.
 	Filters []Filter
 
-	// Middleware gives the user flexibility to send metrics, timeouts, output, etc.
-	Middleware *Middleware
+	// PreRun is middleware that runs before each tool call
+	// Return a cancelled context to prevent execution.
+	// Common uses: add timeouts, rate limiting, auth checks, metrics.
+	PreRun func(context.Context, *mcp.CallToolRequest, bridge.CmdToolInput) (context.Context, *mcp.CallToolRequest, bridge.CmdToolInput)
+
+	// PostRun is middleware that runs after each tool call
+	// Common uses: error handling, response filtering, metrics collection.
+	PostRun func(context.Context, *mcp.CallToolRequest, bridge.CmdToolInput, *mcp.CallToolResult, bridge.CmdToolOutput, error) (*mcp.CallToolResult, bridge.CmdToolOutput, error)
 
 	// SloggerOptions configures logging to stderr.
 	// Default: Info level logging.
