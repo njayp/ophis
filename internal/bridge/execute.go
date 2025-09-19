@@ -25,7 +25,7 @@ func initExecPath() string {
 
 // Execute runs the underlying CLI command.
 func Execute(ctx context.Context, request *mcp.CallToolRequest, input CmdToolInput) (*mcp.CallToolResult, CmdToolOutput, error) {
-	slog.Info("MCP tool request received", "request", request.Params.Name)
+	slog.Info("mcp tool request received", "request", request.Params.Name)
 	// Build command arguments
 	name := request.Params.Name
 	args := buildCommandArgs(name, input)
@@ -54,8 +54,10 @@ func execute(cmd *exec.Cmd) (*mcp.CallToolResult, CmdToolOutput, error) {
 		// Check if it's an ExitError to get the exit code
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			exitCode = exitErr.ExitCode()
+			slog.Debug("command failed with exit code", "code", exitCode)
 		} else {
 			// Non-exit errors (like command not found)
+			slog.Error("command failed to run", "error", err)
 			return nil, CmdToolOutput{
 				StdOut:   stdout.String(),
 				StdErr:   stderr.String(),
