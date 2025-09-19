@@ -61,7 +61,7 @@ config := &ophis.Config{
         ophis.ExcludeFilter([]string{"dangerous"}),
     },
 
-    // Send metrics or limit resources
+    // Send metrics or set timeouts
     PreRun: // your middleware here
     
     // Configure logging (logs to stderr)

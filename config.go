@@ -2,6 +2,7 @@ package ophis
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 
@@ -16,12 +17,12 @@ type Config struct {
 	// Non-runnable, hidden, and utility commands are always excluded.
 	Filters []Filter
 
-	// PreRun is middleware that runs before each tool call
+	// PreRun is middleware hook that runs before each tool call
 	// Return a cancelled context to prevent execution.
 	// Common uses: add timeouts, rate limiting, auth checks, metrics.
 	PreRun func(context.Context, *mcp.CallToolRequest, bridge.CmdToolInput) (context.Context, *mcp.CallToolRequest, bridge.CmdToolInput)
 
-	// PostRun is middleware that runs after each tool call
+	// PostRun is middleware hook that runs after each tool call
 	// Common uses: error handling, response filtering, metrics collection.
 	PostRun func(context.Context, *mcp.CallToolRequest, bridge.CmdToolInput, *mcp.CallToolResult, bridge.CmdToolOutput, error) (*mcp.CallToolResult, bridge.CmdToolOutput, error)
 
@@ -93,4 +94,24 @@ func (c *Config) toolsRecursive(cmd *cobra.Command, tools []*mcp.Tool) []*mcp.To
 	tool := bridge.CreateToolFromCmd(cmd)
 	slog.Debug("created tool", "tool_name", tool.Name)
 	return append(tools, tool)
+}
+
+func (c *Config) execute(ctx context.Context, request *mcp.CallToolRequest, input bridge.CmdToolInput) (result *mcp.CallToolResult, output bridge.CmdToolOutput, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic: %v", r)
+		}
+	}()
+
+	if c.PreRun != nil {
+		ctx, request, input = c.PreRun(ctx, request, input)
+	}
+
+	result, output, err = bridge.Execute(ctx, request, input)
+
+	if c.PostRun != nil {
+		result, output, err = c.PostRun(ctx, request, input, result, output, err)
+	}
+
+	return
 }
