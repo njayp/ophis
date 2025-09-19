@@ -19,15 +19,15 @@ func CreateToolFromCmd(cmd *cobra.Command) *mcp.Tool {
 
 	// Create the tool
 	return &mcp.Tool{
-		Name:         generateToolName(cmd),
-		Description:  buildToolDescription(cmd),
+		Name:         toolName(cmd),
+		Description:  toolDescription(cmd),
 		InputSchema:  schema,
 		OutputSchema: outputSchema.copy(),
 	}
 }
 
-// generateToolName creates a tool name from the command path.
-func generateToolName(cmd *cobra.Command) string {
+// toolName creates a tool name from the command path.
+func toolName(cmd *cobra.Command) string {
 	// Count depth for capacity hint
 	var names []string
 	current := cmd
@@ -40,8 +40,8 @@ func generateToolName(cmd *cobra.Command) string {
 	return strings.Join(names, "_")
 }
 
-// buildToolDescription creates a comprehensive tool description.
-func buildToolDescription(cmd *cobra.Command) string {
+// toolDescription creates a comprehensive tool description.
+func toolDescription(cmd *cobra.Command) string {
 	var parts []string
 
 	// Use Long description if available, otherwise Short

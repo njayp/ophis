@@ -123,7 +123,8 @@ mcp
 
 Run `make build` to build all examples to `ophis/bin`.
 
-- [kubectl](./examples/kubectl/main.go)
+- [kubectl](./examples/kubectl/)
+- [helm](./examples/helm/)
 - [make](./examples/make/)
 
 ### External Examples

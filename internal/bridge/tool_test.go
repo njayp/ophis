@@ -71,6 +71,6 @@ func TestGenerateToolName(t *testing.T) {
 
 	root.AddCommand(child)
 	child.AddCommand(grandchild)
-	name := generateToolName(grandchild)
+	name := toolName(grandchild)
 	assert.Equal(t, "root_child_grandchild", name)
 }
