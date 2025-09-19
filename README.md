@@ -62,9 +62,7 @@ config := &ophis.Config{
     },
 
     // Send metrics or limit resources
-    Middleware: &ophis.Middleware{
-        PreRun: // your middleware here
-    }
+    PreRun: // your middleware here
     
     // Configure logging (logs to stderr)
     SloggerOptions: &slog.HandlerOptions{
