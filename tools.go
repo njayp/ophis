@@ -27,9 +27,11 @@ func toolCommand(config *Config) *cobra.Command {
 			}
 
 			if toolFlags.logLevel != "" {
-				level := parseLogLevel(toolFlags.logLevel)
-				// Set the log level based on the flag
-				slog.SetLogLoggerLevel(level)
+				if config.SloggerOptions == nil {
+					config.SloggerOptions = &slog.HandlerOptions{}
+				}
+
+				config.SloggerOptions.Level = parseLogLevel(toolFlags.logLevel)
 			}
 
 			tools := config.tools(getRootCmd(cmd))

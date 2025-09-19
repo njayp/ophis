@@ -12,7 +12,6 @@ import (
 // Returns true to include the command.
 type Filter func(*cobra.Command) bool
 
-// defaultFilters provides default filters
 func defaultFilters() []Filter {
 	return []Filter{
 		runsFilter(),

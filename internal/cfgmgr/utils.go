@@ -96,7 +96,7 @@ func BackupConfigFile(configPath string) error {
 }
 
 // LoadJSONConfig unmarshals a JSON file into the provided interface.
-func LoadJSONConfig(configPath string, config interface{}) error {
+func LoadJSONConfig(configPath string, config any) error {
 	// Check if config file exists
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		// File doesn't exist - caller should handle initialization
@@ -116,7 +116,7 @@ func LoadJSONConfig(configPath string, config interface{}) error {
 }
 
 // SaveJSONConfig marshals and saves configuration as formatted JSON.
-func SaveJSONConfig(configPath string, config interface{}) error {
+func SaveJSONConfig(configPath string, config any) error {
 	// Ensure the directory exists
 	if err := os.MkdirAll(filepath.Dir(configPath), 0o755); err != nil {
 		return fmt.Errorf("failed to create configuration directory at %q: %w", filepath.Dir(configPath), err)

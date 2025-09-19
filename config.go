@@ -27,17 +27,12 @@ type Config struct {
 }
 
 func (c *Config) serveStdio(cmd *cobra.Command) error {
-	// slog to stderr
-	handler := slog.NewTextHandler(os.Stderr, c.SloggerOptions)
-	slog.SetDefault(slog.New(handler))
-
 	rootCmd := getRootCmd(cmd)
-	appName := rootCmd.Name()
+	name := rootCmd.Name()
 	version := rootCmd.Version
-	slog.Info("creating MCP server", "app_name", appName, "app_version", version)
 
 	server := mcp.NewServer(&mcp.Implementation{
-		Name:    appName,
+		Name:    name,
 		Version: version,
 	}, c.ServerOptions)
 
@@ -49,11 +44,20 @@ func (c *Config) serveStdio(cmd *cobra.Command) error {
 		c.Transport = &mcp.StdioTransport{}
 	}
 
+	slog.Info("running MCP server", "name", name, "version", version)
 	return server.Run(cmd.Context(), c.Transport)
 }
 
+// tools takes care of setup, and calls toolsRecursive
 func (c *Config) tools(rootCmd *cobra.Command) []*mcp.Tool {
+	// slog to stderr
+	handler := slog.NewTextHandler(os.Stderr, c.SloggerOptions)
+	slog.SetDefault(slog.New(handler))
+
+	// add default filters
 	c.Filters = append(c.Filters, defaultFilters()...)
+
+	// get tools recursively
 	tools := c.toolsRecursive(rootCmd, nil)
 	slog.Info("tool generation completed", "total_tools", len(tools))
 	return tools

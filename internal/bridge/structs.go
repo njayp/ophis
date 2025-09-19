@@ -2,8 +2,8 @@ package bridge
 
 // CmdToolInput represents the input structure for command tools.
 type CmdToolInput struct {
-	Flags map[string]interface{} `json:"flags,omitempty" jsonschema:"Command line flags"`
-	Args  []string               `json:"args,omitempty" jsonschema:"Positional command line arguments"`
+	Flags map[string]any `json:"flags,omitempty" jsonschema:"Command line flags"`
+	Args  []string       `json:"args,omitempty" jsonschema:"Positional command line arguments"`
 }
 
 // CmdToolOutput represents the output structure for command tools.
