@@ -62,7 +62,7 @@ config := &ophis.Config{
     },
 
     // Send metrics or set timeouts
-    PreRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.CmdToolInput) (...) {
+    PreRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.CmdToolInput) (context.Context, *mcp.CallToolRequest, bridge.CmdToolInput) {
         // your middleware here
         ctx, _ = context.WithTimeout(ctx, time.Minute)
         return ctx, req, in
