@@ -36,6 +36,10 @@ func TestTools(t *testing.T, cmd *cobra.Command, expectedNames []string) {
 			names = append(names, tool.Name)
 		}
 
+		if len(names) != len(expectedNames) {
+			t.Errorf("expected %v tools, got %v", len(expectedNames), len(names))
+		}
+
 		for _, expectedName := range expectedNames {
 			if !slices.Contains(names, expectedName) {
 				t.Fatalf("Expected tool name %q not found in generated tools: %v", expectedName, names)
