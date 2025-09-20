@@ -92,6 +92,7 @@ func BackupConfigFile(configPath string) error {
 		return fmt.Errorf("failed to write backup configuration file at %q: %w", backupPath, err)
 	}
 
+	fmt.Printf("Backup config file created at %q\n", backupPath)
 	return nil
 }
 

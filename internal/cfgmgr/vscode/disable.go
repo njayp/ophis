@@ -69,7 +69,7 @@ func disableMCPServer(flags *disableCommandFlags) error {
 
 	// Remove server from config (with backup)
 	if err := configManager.BackupConfig(); err != nil {
-		fmt.Printf("Warning: failed to create backup: %v\n", err)
+		return fmt.Errorf("failed to create backup: %v", err)
 	}
 
 	if err := configManager.RemoveServer(serverName); err != nil {

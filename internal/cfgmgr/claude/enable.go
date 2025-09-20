@@ -59,10 +59,6 @@ func enableMCPServer(cmd *cobra.Command, flags *enableCommandFlags) error {
 	if err != nil {
 		return fmt.Errorf("failed to check if MCP server %q exists in Claude configuration: %w", serverName, err)
 	}
-	if exists {
-		fmt.Printf("MCP server %q is already enabled\n", serverName)
-		return nil
-	}
 
 	// Build server configuration
 	server := config.MCPServer{
@@ -77,7 +73,12 @@ func enableMCPServer(cmd *cobra.Command, flags *enableCommandFlags) error {
 
 	// Add server to config (with backup)
 	if err := configManager.BackupConfig(); err != nil {
-		fmt.Printf("Warning: failed to create backup: %v\n", err)
+		return fmt.Errorf("failed to create backup: %v", err)
+	}
+
+	// Show warning if overwriting existing server
+	if exists {
+		fmt.Printf("⚠️  MCP server %q already exists and will be overwritten\n", serverName)
 	}
 
 	if err := configManager.AddServer(serverName, server); err != nil {
