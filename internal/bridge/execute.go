@@ -46,15 +46,13 @@ func execute(cmd *exec.Cmd) (*mcp.CallToolResult, CmdToolOutput, error) {
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
+	exitCode := 0
 
 	err := cmd.Run()
-
-	exitCode := 0
 	if err != nil {
 		// Check if it's an ExitError to get the exit code
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			exitCode = exitErr.ExitCode()
-			slog.Debug("command failed with exit code", "code", exitCode)
 		} else {
 			// Non-exit errors (like command not found)
 			slog.Error("command failed to run", "error", err)
@@ -63,11 +61,6 @@ func execute(cmd *exec.Cmd) (*mcp.CallToolResult, CmdToolOutput, error) {
 				StdErr:   stderr.String(),
 				ExitCode: -1,
 			}, err
-		}
-	} else {
-		// Successful run
-		if cmd.ProcessState != nil {
-			exitCode = cmd.ProcessState.ExitCode()
 		}
 	}
 

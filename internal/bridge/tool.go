@@ -112,7 +112,8 @@ func addFlagToSchema(schema *jsonschema.Schema, flag *pflag.Flag) {
 	}
 
 	// Set appropriate JSON schema type based on flag type
-	switch flag.Value.Type() {
+	t := flag.Value.Type()
+	switch t {
 	case "bool":
 		flagSchema.Type = "boolean"
 	case "int", "int8", "int16", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64", "count":
@@ -160,7 +161,8 @@ func addFlagToSchema(schema *jsonschema.Schema, flag *pflag.Flag) {
 	default:
 		// Default to string for unknown types
 		flagSchema.Type = "string"
-		slog.Warn("unknown flag type, defaulting to string", "flag", flag.Name, "type", flag.Value.Type())
+		flagSchema.Description += fmt.Sprintf(" (type: %s)", t)
+		slog.Debug("unknown flag type, defaulting to string", "flag", flag.Name, "type", t)
 	}
 
 	schema.Properties[flag.Name] = flagSchema

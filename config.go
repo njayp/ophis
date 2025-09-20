@@ -70,7 +70,6 @@ func (c *Config) tools(rootCmd *cobra.Command) []*mcp.Tool {
 
 	// get tools recursively
 	tools := c.toolsRecursive(rootCmd, nil)
-	slog.Info("tool generation completed", "total_tools", len(tools))
 	return tools
 }
 
