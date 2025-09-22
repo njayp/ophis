@@ -22,9 +22,9 @@ func defaultFilters() []Filter {
 
 // ExcludeFilter creates a filter that rejects commands whose path contains any listed phrase.
 // Example: ExcludeFilter("kubectl delete", "admin") excludes "kubectl delete" and "cli admin user".
-func ExcludeFilter(names ...string) Filter {
+func ExcludeFilter(cmds ...string) Filter {
 	return func(cmd *cobra.Command) bool {
-		for _, phrase := range names {
+		for _, phrase := range cmds {
 			if strings.Contains(cmd.CommandPath(), phrase) {
 				slog.Debug("excluding command by exclude list", "command_path", cmd.CommandPath(), "phrase", phrase)
 				return false
@@ -37,15 +37,15 @@ func ExcludeFilter(names ...string) Filter {
 
 // AllowFilter creates a filter that only accepts commands whose path contains a listed phrase.
 // Example: AllowFilter("get", "helm list") includes "kubectl get pods" and "helm list".
-func AllowFilter(names ...string) Filter {
+func AllowFilter(cmds ...string) Filter {
 	return func(cmd *cobra.Command) bool {
-		for _, phrase := range names {
+		for _, phrase := range cmds {
 			if strings.Contains(cmd.CommandPath(), phrase) {
 				return true
 			}
 		}
 
-		slog.Debug("excluding command by allow list", "command_path", cmd.CommandPath(), "allow_list", names)
+		slog.Debug("excluding command by allow list", "command_path", cmd.CommandPath(), "allow_list", cmds)
 		return false
 	}
 }
