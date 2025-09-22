@@ -3,7 +3,7 @@ module github.com/njayp/ophis
 go 1.24
 
 require (
-	github.com/google/jsonschema-go v0.2.3
+	github.com/google/jsonschema-go v0.3.0
 	github.com/modelcontextprotocol/go-sdk v0.6.0
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/pflag v1.0.10

@@ -5,7 +5,7 @@ go 1.25.0
 replace github.com/njayp/ophis => ../../
 
 require (
-	github.com/njayp/ophis v0.5.6
+	github.com/njayp/ophis v0.5.7
 	github.com/spf13/cobra v1.10.1
 	helm.sh/helm/v4 v4.0.0-alpha.1
 	k8s.io/client-go v0.34.1
@@ -58,7 +58,7 @@ require (
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/gnostic-models v0.7.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/jsonschema-go v0.2.3 // indirect
+	github.com/google/jsonschema-go v0.3.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674 // indirect
 	github.com/gosuri/uitable v0.0.4 // indirect
