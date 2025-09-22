@@ -58,7 +58,7 @@ The `ophis.Command()` function accepts an optional `*ophis.Config` parameter to 
 config := &ophis.Config{
     // Customize command filtering
     Filters: []ophis.Filter{
-        ophis.ExcludeFilter([]string{"dangerous"}),
+        ophis.ExcludeFilter("dangerous"),
     },
 
     // Send metrics or set timeouts
@@ -81,12 +81,12 @@ Control which commands are exposed as MCP tools:
 
 ```go
 // only exposes listed commands
-ophis.AllowFilter([]string{"get", "list", "helm repo list"})
+ophis.AllowFilter("get", "list", "helm repo list")
 ```
 
 ```go
 // prevents listed commands from being exposed
-ophis.ExcludeFilter([]string{"delete", "destroy", "helm repo remove"})
+ophis.ExcludeFilter("delete", "destroy", "helm repo remove")
 ```
 
 ```go

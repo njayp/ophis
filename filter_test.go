@@ -8,7 +8,7 @@ import (
 )
 
 func TestExcludeFilter(t *testing.T) {
-	filter := ExcludeFilter([]string{"root mcp", "admin"})
+	filter := ExcludeFilter("root mcp", "admin")
 
 	tests := []struct {
 		name     string
@@ -35,7 +35,7 @@ func TestExcludeFilter(t *testing.T) {
 }
 
 func TestAllowFilter(t *testing.T) {
-	filter := AllowFilter([]string{"root get", "admin"})
+	filter := AllowFilter("root get", "admin")
 
 	tests := []struct {
 		name     string

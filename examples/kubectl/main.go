@@ -17,14 +17,14 @@ func rootCmd() *cobra.Command {
 
 	// Add MCP server commands
 	command.AddCommand(ophis.Command(&ophis.Config{
-		Filters: []ophis.Filter{ophis.AllowFilter([]string{
+		Filters: []ophis.Filter{ophis.AllowFilter(
 			"kubectl get",
 			"kubectl describe",
 			"kubectl logs",
 			"kubectl top pod",
 			"kubectl top node",
 			"kubectl explain",
-		})},
+		)},
 	}))
 
 	return command

@@ -22,14 +22,14 @@ func rootCmd() *cobra.Command {
 	// add mcp server commands
 	cmd.AddCommand(ophis.Command(&ophis.Config{
 		Filters: []ophis.Filter{
-			ophis.AllowFilter([]string{
+			ophis.AllowFilter(
 				"helm list",
 				"helm status",
 				"helm get",
 				"helm history",
 				"helm show",
 				"helm search",
-			}),
+			),
 		},
 	}))
 
