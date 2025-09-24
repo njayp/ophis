@@ -79,27 +79,23 @@ config := &ophis.Config{
 
 ### Command and Flag Selection
 
-Ophis uses a powerful selector system to give you fine-grained control over which commands and flags are exposed as MCP tools. 
+Ophis uses a powerful selector system to give you fine-grain control over which commands and flags are exposed as MCP tools. 
 
-#### How Selection Works
+**Select Commands:**
+```go
+type Selector struct {
+	// Selects *cobra.Commands to be made into MCP tools
+	CmdSelector CmdSelector
+	// Selects flags for selected *cobra.Commands
+	FlagSelector FlagSelector
+}
+```
 
-**Basic filters are always applied automatically:**
-   - Hidden and deprecated commands/flags are excluded
-   - Commands without executable functions are excluded
-   - Built-in commands (`mcp`, `help`, `completion`) are excluded
+The first selector that matches a command will convert that command into a MCP tool. If no selector matches a command, it will not be made into a tool.
 
-**Your selectors add additional filtering on top:**
-   - Each selector defines which commands to match (`CmdSelector`)
-   - And which flags to include for those commands (`FlagSelector`)
-   - Selectors are evaluated in order; the first match wins
+#### Default
 
-#### Selector Evaluation Order
-
-1. Basic filters are applied (hidden, deprecated, non-runnable commands excluded)
-2. Selectors are evaluated in the order they appear in the slice
-3. The first selector whose `CmdSelector` returns `true` for a command wins
-4. That selector's `FlagSelector` (if provided) determines which flags are included
-5. If no selectors match a command, it's excluded from MCP tools
+If `Config.Selectors` is nil, all valid commands will be converted into MCP tools.
 
 #### Basic Example
 
@@ -136,6 +132,7 @@ ophis.Selector{
     },
 }
 ```
+
 
 ## Ophis Commands
 
