@@ -32,14 +32,24 @@
 //   - mcp claude enable/disable/list: Manage Claude Desktop integration
 //   - mcp vscode enable/disable/list: Manage VSCode integration
 //
+// # Integration
+//
+// Enable MCP support in Claude Desktop or VSCode:
+//
+//	# Claude Desktop
+//	./my-cli mcp claude enable
+//
+//	# VSCode (requires Copilot in Agent Mode)
+//	./my-cli mcp vscode enable
+//
 // # Configuration
 //
 // The Config struct provides fine-grained control over which commands and flags
 // are exposed as MCP tools through a powerful selector system.
 //
-// Basic safety filters are always applied automatically:
+// Basic filters are always applied automatically:
 //   - Hidden and deprecated commands/flags are excluded
-//   - Commands without executable functions are excluded  
+//   - Commands without executable functions are excluded
 //   - Built-in commands (mcp, help, completion) are excluded
 //
 // Your selectors add additional filtering on top:
@@ -67,14 +77,4 @@
 // The selector system allows different commands to have different flag filtering
 // rules, enabling precise control over the exposed tool surface. Each selector
 // defines both which commands to match and which of their flags to include.
-//
-// # Integration
-//
-// Enable MCP support in Claude Desktop or VSCode:
-//
-//	# Claude Desktop
-//	./my-cli mcp claude enable
-//
-//	# VSCode (requires Copilot in Agent Mode)
-//	./my-cli mcp vscode enable
 package ophis
