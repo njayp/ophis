@@ -12,17 +12,14 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// Filter is a filter for flags
+// Selector is a filter for flags
 // Return true to include flag
-type Filter func(*pflag.Flag) bool
-
-// Filters are the flag filters
-var Filters []Filter
+type Selector func(*pflag.Flag) bool
 
 // CreateToolFromCmd creates an MCP tool from a Cobra command.
-func CreateToolFromCmd(cmd *cobra.Command) *mcp.Tool {
+func CreateToolFromCmd(cmd *cobra.Command, selector Selector) *mcp.Tool {
 	schema := inputSchema.copy()
-	enhanceFlagsSchema(schema.Properties["flags"], cmd)
+	enhanceFlagsSchema(schema.Properties["flags"], cmd, selector)
 	enhanceArgsSchema(schema.Properties["args"], cmd)
 
 	// Create the tool
@@ -69,18 +66,8 @@ func toolDescription(cmd *cobra.Command) string {
 	return strings.Join(parts, "\n")
 }
 
-func filter(flag *pflag.Flag) bool {
-	for _, filter := range Filters {
-		if !filter(flag) {
-			return false
-		}
-	}
-
-	return true
-}
-
 // enhanceFlagsSchema adds detailed flag information to the flags property.
-func enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Command) {
+func enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Command, selector Selector) {
 	// Ensure properties map exists
 	if schema.Properties == nil {
 		schema.Properties = make(map[string]*jsonschema.Schema)
@@ -88,7 +75,7 @@ func enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Command) {
 
 	// Process local flags
 	cmd.LocalFlags().VisitAll(func(flag *pflag.Flag) {
-		if !filter(flag) {
+		if !selector(flag) {
 			return
 		}
 
@@ -97,7 +84,7 @@ func enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Command) {
 
 	// Process inherited flags
 	cmd.InheritedFlags().VisitAll(func(flag *pflag.Flag) {
-		if !filter(flag) {
+		if !selector(flag) {
 			return
 		}
 

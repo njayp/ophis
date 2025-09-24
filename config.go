@@ -13,13 +13,9 @@ import (
 
 // Config customizes MCP server behavior and command-to-tool conversion.
 type Config struct {
-	// Filters sets the filter for commands
+	// Selectors sets the filter for commands
 	// Non-runnable, hidden, and deprecated commands are always excluded.
-	Filters []Filter
-
-	// FlagFilters sets the filter for flags
-	// Deprecated and hidden flags are always excluded.
-	FlagFilters []FlagFilter
+	Selectors []Selector
 
 	// PreRun is middleware hook that runs before each tool call
 	// Return a cancelled context to prevent execution.
@@ -69,13 +65,8 @@ func (c *Config) tools(rootCmd *cobra.Command) []*mcp.Tool {
 	handler := slog.NewTextHandler(os.Stderr, c.SloggerOptions)
 	slog.SetDefault(slog.New(handler))
 
-	// add default filters
-	c.Filters = append(c.Filters, defaultFilters()...)
-
-	// set flag filters
-	c.FlagFilters = append(c.FlagFilters, defaultFlagFilters()...)
-	for _, filter := range c.FlagFilters {
-		bridge.Filters = append(bridge.Filters, bridge.Filter(filter))
+	if c.Selectors == nil {
+		c.Selectors = defaultSelect()
 	}
 
 	// get tools recursively
@@ -87,21 +78,31 @@ func (c *Config) toolsRecursive(cmd *cobra.Command, tools []*mcp.Tool) []*mcp.To
 		return tools
 	}
 
-	// Register all subcommands
+	// register all subcommands
 	for _, subCmd := range cmd.Commands() {
 		tools = c.toolsRecursive(subCmd, tools)
 	}
 
-	// Apply all filters
-	for _, filter := range c.Filters {
-		if !filter(cmd) {
-			return tools
+	// cycle through selectors until one matches the cmd
+	for _, s := range c.Selectors {
+		if s.CmdSelect == nil {
+			s.CmdSelect = defaultCmdSelect()
+		}
+
+		if s.CmdSelect(cmd) {
+			if s.FlagSelect == nil {
+				s.FlagSelect = defaultFlagSelect()
+			}
+
+			// create tool with filtered flags
+			tool := bridge.CreateToolFromCmd(cmd, bridge.Selector(s.FlagSelect))
+			slog.Debug("created tool", "tool_name", tool.Name)
+			return append(tools, tool)
 		}
 	}
 
-	tool := bridge.CreateToolFromCmd(cmd)
-	slog.Debug("created tool", "tool_name", tool.Name)
-	return append(tools, tool)
+	// no selectors matched
+	return tools
 }
 
 func (c *Config) execute(ctx context.Context, request *mcp.CallToolRequest, input bridge.CmdToolInput) (result *mcp.CallToolResult, output bridge.CmdToolOutput, err error) {

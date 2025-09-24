@@ -24,7 +24,7 @@ func TestCreateToolFromCmd_Basic(t *testing.T) {
 	cmd.Flags().Int("count", 10, "Number of items")
 
 	// Create tool from command
-	tool := CreateToolFromCmd(cmd)
+	tool := CreateToolFromCmd(cmd, nil)
 
 	// Verify tool properties
 	assert.Equal(t, "test", tool.Name)
