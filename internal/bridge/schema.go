@@ -7,6 +7,11 @@ import (
 	"github.com/google/jsonschema-go/jsonschema"
 )
 
+var (
+	inputSchema  = newSchemaCache[CmdToolInput]()
+	outputSchema = newSchemaCache[CmdToolOutput]()
+)
+
 // CmdToolInput represents the input structure for command tools.
 // Do not omitempty -- or ai will "forget" to send these parameters even if
 // it displays them for the user
@@ -21,11 +26,6 @@ type CmdToolOutput struct {
 	StdErr   string `json:"stderr,omitempty" jsonschema:"Standard error"`
 	ExitCode int    `json:"exitCode" jsonschema:"Exit code"`
 }
-
-var (
-	inputSchema  = newSchemaCache[CmdToolInput]()
-	outputSchema = newSchemaCache[CmdToolOutput]()
-)
 
 func newSchemaCache[T any]() *schemaCache {
 	schema, err := jsonschema.For[T](nil)

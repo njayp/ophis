@@ -14,8 +14,12 @@ import (
 // Config customizes MCP server behavior and command-to-tool conversion.
 type Config struct {
 	// Filters sets the filter for commands
-	// Non-runnable, hidden, and utility commands are always excluded.
+	// Non-runnable, hidden, and deprecated commands are always excluded.
 	Filters []Filter
+
+	// FlagFilters sets the filter for flags
+	// Deprecated and hidden flags are always excluded.
+	FlagFilters []FlagFilter
 
 	// PreRun is middleware hook that runs before each tool call
 	// Return a cancelled context to prevent execution.
@@ -68,9 +72,14 @@ func (c *Config) tools(rootCmd *cobra.Command) []*mcp.Tool {
 	// add default filters
 	c.Filters = append(c.Filters, defaultFilters()...)
 
+	// set flag filters
+	c.FlagFilters = append(c.FlagFilters, defaultFlagFilters()...)
+	for _, filter := range c.FlagFilters {
+		bridge.Filters = append(bridge.Filters, bridge.Filter(filter))
+	}
+
 	// get tools recursively
-	tools := c.toolsRecursive(rootCmd, nil)
-	return tools
+	return c.toolsRecursive(rootCmd, nil)
 }
 
 func (c *Config) toolsRecursive(cmd *cobra.Command, tools []*mcp.Tool) []*mcp.Tool {

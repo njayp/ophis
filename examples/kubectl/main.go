@@ -25,6 +25,10 @@ func rootCmd() *cobra.Command {
 			"kubectl top node",
 			"kubectl explain",
 		)},
+		FlagFilters: []ophis.FlagFilter{ophis.ExcludeFlagFilter(
+			"colo",
+			"kube",
+		)},
 	}))
 
 	return command
