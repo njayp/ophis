@@ -29,12 +29,24 @@ type FlagSelector func(*pflag.Flag) bool
 //   - Applying stricter flag filtering to dangerous commands
 //   - Having a default catch-all selector with common flag exclusions
 type Selector struct {
-	// CmdSelect determines if this selector applies to a command.
+	// CmdSelector determines if this selector applies to a command.
 	// If nil, defaults to accepting commands that are runnable, visible, and not deprecated.
-	CmdSelect CmdSelector
-	// FlagSelect determines which flags to include for commands matched by CmdSelect.
+	CmdSelector CmdSelector
+	// FlagSelector determines which flags to include for commands matched by CmdSelect.
 	// If nil, defaults to including all visible, non-deprecated flags.
-	FlagSelect FlagSelector
+	FlagSelector FlagSelector
+}
+
+func (s *Selector) cmdSelect(cmd *cobra.Command) bool {
+	if !defaultCmdSelect(cmd) {
+		return false
+	}
+
+	if s.CmdSelector != nil && !s.CmdSelector(cmd) {
+		return false
+	}
+
+	return true
 }
 
 // ExcludeCmd creates a selector that rejects commands whose path contains any listed phrase.
@@ -97,41 +109,21 @@ func AllowFlag(names ...string) FlagSelector {
 	}
 }
 
-func defaultSelect() []Selector {
-	return []Selector{
-		{
-			CmdSelect:  defaultCmdSelect(),
-			FlagSelect: defaultFlagSelect(),
-		},
+func defaultCmdSelect(c *cobra.Command) bool {
+	if c.Hidden {
+		slog.Debug("excluding hidden command", "command", c.CommandPath())
+		return false
 	}
-}
 
-func defaultCmdSelect() CmdSelector {
-	return func(c *cobra.Command) bool {
-		if c.Hidden {
-			slog.Debug("excluding hidden command", "command", c.CommandPath())
-			return false
-		}
-		if c.Deprecated != "" {
-			slog.Debug("excluding depreciated command", "command", c.CommandPath())
-			return false
-		}
-
-		if c.Run == nil && c.RunE == nil && c.PreRun == nil && c.PreRunE == nil {
-			slog.Debug("excluding command without run or pre-run function", "command", c.CommandPath())
-			return false
-		}
-
-		if ExcludeCmd(cfgmgr.MCPCommandName, "help", "completion")(c) {
-			return false
-		}
-
-		return true
+	if c.Deprecated != "" {
+		slog.Debug("excluding depreciated command", "command", c.CommandPath())
+		return false
 	}
-}
 
-func defaultFlagSelect() FlagSelector {
-	return func(f *pflag.Flag) bool {
-		return !f.Hidden && f.Deprecated == ""
+	if c.Run == nil && c.RunE == nil && c.PreRun == nil && c.PreRunE == nil {
+		slog.Debug("excluding command without run or pre-run function", "command", c.CommandPath())
+		return false
 	}
+
+	return ExcludeCmd(cfgmgr.MCPCommandName, "help", "completion")(c)
 }

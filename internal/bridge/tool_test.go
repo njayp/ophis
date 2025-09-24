@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -25,7 +24,7 @@ func TestCreateToolFromCmd_Basic(t *testing.T) {
 	cmd.Flags().Int("count", 10, "Number of items")
 
 	// Create tool from command with a selector that accepts all flags
-	tool := CreateToolFromCmd(cmd, func(_ *pflag.Flag) bool { return true })
+	tool := CreateToolFromCmd(cmd, nil)
 
 	// Verify tool properties
 	assert.Equal(t, "test", tool.Name)

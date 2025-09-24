@@ -23,7 +23,7 @@ func rootCmd() *cobra.Command {
 	cmd.AddCommand(ophis.Command(&ophis.Config{
 		Selectors: []ophis.Selector{
 			{
-				CmdSelect: ophis.AllowCmd(
+				CmdSelector: ophis.AllowCmd(
 					"helm list",
 					"helm status",
 					"helm get",

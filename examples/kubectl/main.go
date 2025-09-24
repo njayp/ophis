@@ -19,7 +19,7 @@ func rootCmd() *cobra.Command {
 	command.AddCommand(ophis.Command(&ophis.Config{
 		Selectors: []ophis.Selector{
 			{
-				CmdSelect: ophis.AllowCmd(
+				CmdSelector: ophis.AllowCmd(
 					"kubectl get",
 					"kubectl describe",
 					"kubectl logs",
@@ -27,7 +27,7 @@ func rootCmd() *cobra.Command {
 					"kubectl top node",
 					"kubectl explain",
 				),
-				FlagSelect: ophis.ExcludeFlag(
+				FlagSelector: ophis.ExcludeFlag(
 					"colo",
 					"kube",
 				),

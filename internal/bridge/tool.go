@@ -12,12 +12,20 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// Selector is a selector for flags
+// FlagSelector is a selector for flags
 // Return true to include flag
-type Selector func(*pflag.Flag) bool
+type FlagSelector func(*pflag.Flag) bool
+
+func (s FlagSelector) flagSelect(flag *pflag.Flag) bool {
+	if flag.Hidden || flag.Deprecated != "" {
+		return false
+	}
+
+	return s(flag)
+}
 
 // CreateToolFromCmd creates an MCP tool from a Cobra command.
-func CreateToolFromCmd(cmd *cobra.Command, selector Selector) *mcp.Tool {
+func CreateToolFromCmd(cmd *cobra.Command, selector FlagSelector) *mcp.Tool {
 	schema := inputSchema.copy()
 	enhanceFlagsSchema(schema.Properties["flags"], cmd, selector)
 	enhanceArgsSchema(schema.Properties["args"], cmd)
@@ -67,15 +75,20 @@ func toolDescription(cmd *cobra.Command) string {
 }
 
 // enhanceFlagsSchema adds detailed flag information to the flags property.
-func enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Command, selector Selector) {
+func enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Command, selector FlagSelector) {
 	// Ensure properties map exists
 	if schema.Properties == nil {
 		schema.Properties = make(map[string]*jsonschema.Schema)
 	}
 
+	// Ensure selector exists
+	if selector == nil {
+		selector = func(*pflag.Flag) bool { return true }
+	}
+
 	// Process local flags
 	cmd.LocalFlags().VisitAll(func(flag *pflag.Flag) {
-		if !selector(flag) {
+		if !selector.flagSelect(flag) {
 			return
 		}
 
@@ -84,7 +97,7 @@ func enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Command, selector 
 
 	// Process inherited flags
 	cmd.InheritedFlags().VisitAll(func(flag *pflag.Flag) {
-		if !selector(flag) {
+		if !selector.flagSelect(flag) {
 			return
 		}
 

@@ -74,7 +74,7 @@ func (c *Config) tools(rootCmd *cobra.Command) []*mcp.Tool {
 	slog.SetDefault(slog.New(handler))
 
 	if c.Selectors == nil {
-		c.Selectors = defaultSelect()
+		c.Selectors = []Selector{{}}
 	}
 
 	// get tools recursively
@@ -93,17 +93,9 @@ func (c *Config) toolsRecursive(cmd *cobra.Command, tools []*mcp.Tool) []*mcp.To
 
 	// cycle through selectors until one matches the cmd
 	for _, s := range c.Selectors {
-		if s.CmdSelect == nil {
-			s.CmdSelect = defaultCmdSelect()
-		}
-
-		if s.CmdSelect(cmd) {
-			if s.FlagSelect == nil {
-				s.FlagSelect = defaultFlagSelect()
-			}
-
+		if s.cmdSelect(cmd) {
 			// create tool with selected flags
-			tool := bridge.CreateToolFromCmd(cmd, bridge.Selector(s.FlagSelect))
+			tool := bridge.CreateToolFromCmd(cmd, bridge.FlagSelector(s.FlagSelector))
 			slog.Debug("created tool", "tool_name", tool.Name)
 			return append(tools, tool)
 		}
