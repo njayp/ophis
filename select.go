@@ -10,22 +10,34 @@ import (
 )
 
 // CmdSelector determines if a command should become an MCP tool.
-// Return true to include the command.
+// Return true to include the command as a tool.
+// Commands are tested against selectors in order; the first matching selector wins.
 type CmdSelector func(*cobra.Command) bool
 
 // FlagSelector determines if a flag should be included in an MCP tool.
 // Return true to include the flag.
+// This selector is only applied to commands that match the associated CmdSelector.
 type FlagSelector func(*pflag.Flag) bool
 
-// Selector
+// Selector contains selectors for filtering commands and flags.
+// When multiple selectors are configured, they are evaluated in order.
+// The first selector whose CmdSelect matches a command is used,
+// and its FlagSelect determines which flags are included for that command.
+//
+// This allows fine-grained control, such as:
+//   - Exposing different flags for different command groups
+//   - Applying stricter flag filtering to dangerous commands
+//   - Having a default catch-all selector with common flag exclusions
 type Selector struct {
-	// allowed commands
+	// CmdSelect determines if this selector applies to a command.
+	// If nil, defaults to accepting commands that are runnable, visible, and not deprecated.
 	CmdSelect CmdSelector
-	// allowed flags on these commands
+	// FlagSelect determines which flags to include for commands matched by CmdSelect.
+	// If nil, defaults to including all visible, non-deprecated flags.
 	FlagSelect FlagSelector
 }
 
-// ExcludeCmd creates a filter that rejects commands whose path contains any listed phrase.
+// ExcludeCmd creates a selector that rejects commands whose path contains any listed phrase.
 // Example: ExcludeCmd("kubectl delete", "admin") excludes "kubectl delete" and "cli admin user".
 func ExcludeCmd(cmds ...string) CmdSelector {
 	return func(cmd *cobra.Command) bool {
@@ -40,7 +52,7 @@ func ExcludeCmd(cmds ...string) CmdSelector {
 	}
 }
 
-// AllowCmd creates a filter that only accepts commands whose path contains a listed phrase.
+// AllowCmd creates a selector that only accepts commands whose path contains a listed phrase.
 // Example: AllowCmd("get", "helm list") includes "kubectl get pods" and "helm list".
 func AllowCmd(cmds ...string) CmdSelector {
 	return func(cmd *cobra.Command) bool {
@@ -55,13 +67,13 @@ func AllowCmd(cmds ...string) CmdSelector {
 	}
 }
 
-// ExcludeFlag creates a filter that rejects commands whose path contains any listed phrase.
-// Example: ExcludeFilter("kubectl delete", "admin") excludes "kubectl delete" and "cli admin user".
+// ExcludeFlag creates a selector that rejects flags whose name contains any listed phrase.
+// Example: ExcludeFlag("color", "kubeconfig") excludes flags named "color" and "kubeconfig".
 func ExcludeFlag(names ...string) FlagSelector {
 	return func(flag *pflag.Flag) bool {
 		for _, phrase := range names {
 			if strings.Contains(flag.Name, phrase) {
-				slog.Debug("excluding command by exclude list", "command_path", flag.Name, "phrase", phrase)
+				slog.Debug("excluding flag by exclude list", "flag_name", flag.Name, "phrase", phrase)
 				return false
 			}
 		}
@@ -70,8 +82,8 @@ func ExcludeFlag(names ...string) FlagSelector {
 	}
 }
 
-// AllowFlag creates a filter that only accepts commands whose path contains a listed phrase.
-// Example: AllowFilter("get", "helm list") includes "kubectl get pods" and "helm list".
+// AllowFlag creates a selector that only accepts flags whose name contains a listed phrase.
+// Example: AllowFlag("namespace", "output") includes only flags named "namespace" and "output".
 func AllowFlag(names ...string) FlagSelector {
 	return func(flag *pflag.Flag) bool {
 		for _, phrase := range names {
@@ -80,7 +92,7 @@ func AllowFlag(names ...string) FlagSelector {
 			}
 		}
 
-		slog.Debug("excluding command by allow list", "command_path", flag.Name, "allow_list", names)
+		slog.Debug("excluding flag by allow list", "flag_name", flag.Name, "allow_list", names)
 		return false
 	}
 }

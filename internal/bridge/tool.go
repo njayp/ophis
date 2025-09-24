@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// Selector is a filter for flags
+// Selector is a selector for flags
 // Return true to include flag
 type Selector func(*pflag.Flag) bool
 

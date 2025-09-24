@@ -34,12 +34,23 @@
 //
 // # Configuration
 //
-// You can customize the MCP server behavior using the Config struct:
+// The Config struct provides fine-grained control over which commands and flags
+// are exposed as MCP tools through a powerful selector system:
 //
 //	config := &ophis.Config{
-//	    // Control which commands are exposed
-//	    Filters: []ophis.Filter{
-//	        ophis.AllowFilter("get", "helm repo remove"),
+//	    // Selectors are evaluated in order - first match wins
+//	    Selectors: []ophis.Selector{
+//	        {
+//	            // Match specific commands
+//	            CmdSelect: ophis.AllowCmd("get", "list"),
+//	            // Control which flags are included for matched commands
+//	            FlagSelect: ophis.AllowFlag("namespace", "output"),
+//	        },
+//	        {
+//	            // Different flag rules for different commands
+//	            CmdSelect: ophis.AllowCmd("delete"),
+//	            FlagSelect: ophis.ExcludeFlag("all", "force"),
+//	        },
 //	    },
 //
 //	    // Configure logging
@@ -47,6 +58,10 @@
 //	        Level: slog.LevelDebug,
 //	    },
 //	}
+//
+// The selector system allows different commands to have different flag filtering
+// rules, enabling precise control over the exposed tool surface. Each selector
+// defines both which commands to match and which of their flags to include.
 //
 // # Integration
 //

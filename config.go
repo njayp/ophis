@@ -13,8 +13,16 @@ import (
 
 // Config customizes MCP server behavior and command-to-tool conversion.
 type Config struct {
-	// Selectors sets the filter for commands
-	// Non-runnable, hidden, and deprecated commands are always excluded.
+	// Selectors defines rules for converting commands to MCP tools.
+	// Each selector specifies which commands to match and which flags to include.
+	//
+	// Selectors are evaluated in order for each command:
+	//   1. The first selector whose CmdSelect returns true is used
+	//   2. That selector's FlagSelect determines which flags are included
+	//   3. If no selectors match, the command is not exposed as a tool
+	//
+	// If nil, defaults to exposing all runnable, visible, non-deprecated commands
+	// with all their visible, non-deprecated flags.
 	Selectors []Selector
 
 	// PreRun is middleware hook that runs before each tool call
@@ -94,7 +102,7 @@ func (c *Config) toolsRecursive(cmd *cobra.Command, tools []*mcp.Tool) []*mcp.To
 				s.FlagSelect = defaultFlagSelect()
 			}
 
-			// create tool with filtered flags
+			// create tool with selected flags
 			tool := bridge.CreateToolFromCmd(cmd, bridge.Selector(s.FlagSelect))
 			slog.Debug("created tool", "tool_name", tool.Name)
 			return append(tools, tool)
