@@ -39,7 +39,7 @@
 //	config := &ophis.Config{
 //	    // Control which commands are exposed
 //	    Filters: []ophis.Filter{
-//	        ophis.AllowFilter([]string{"get", "helm repo remove"}),
+//	        ophis.AllowFilter("get", "helm repo remove"),
 //	    },
 //
 //	    // Configure logging
