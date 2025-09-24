@@ -20,20 +20,7 @@ func rootCmd() *cobra.Command {
 	}
 
 	// add mcp server commands
-	cmd.AddCommand(ophis.Command(&ophis.Config{
-		Selectors: []ophis.Selector{
-			{
-				CmdSelector: ophis.AllowCmd(
-					"helm list",
-					"helm status",
-					"helm get",
-					"helm history",
-					"helm show",
-					"helm search",
-				),
-			},
-		},
-	}))
+	cmd.AddCommand(ophis.Command(config()))
 
 	return cmd
 }

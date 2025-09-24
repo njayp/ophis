@@ -16,13 +16,17 @@ type Config struct {
 	// Selectors defines rules for converting commands to MCP tools.
 	// Each selector specifies which commands to match and which flags to include.
 	//
-	// Selectors are evaluated in order for each command:
-	//   1. The first selector whose CmdSelect returns true is used
-	//   2. That selector's FlagSelect determines which flags are included
+	// Basic safety filters are always applied first:
+	//   - Hidden/deprecated commands and flags are excluded
+	//   - Non-runnable commands are excluded
+	//   - Built-in commands (mcp, help, completion) are excluded
+	//
+	// Then selectors are evaluated in order for each command:
+	//   1. The first selector whose CmdSelector returns true is used
+	//   2. That selector's FlagSelector determines which flags are included
 	//   3. If no selectors match, the command is not exposed as a tool
 	//
-	// If nil, defaults to exposing all runnable, visible, non-deprecated commands
-	// with all their visible, non-deprecated flags.
+	// If nil or empty, defaults to exposing all safe commands with all safe flags.
 	Selectors []Selector
 
 	// PreRun is middleware hook that runs before each tool call

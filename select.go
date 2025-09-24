@@ -2,6 +2,7 @@ package ophis
 
 import (
 	"log/slog"
+	"slices"
 	"strings"
 
 	"github.com/njayp/ophis/internal/cfgmgr"
@@ -11,29 +12,38 @@ import (
 
 // CmdSelector determines if a command should become an MCP tool.
 // Return true to include the command as a tool.
+// Note: Basic safety filters (hidden, deprecated, non-runnable) are always applied first.
 // Commands are tested against selectors in order; the first matching selector wins.
 type CmdSelector func(*cobra.Command) bool
 
 // FlagSelector determines if a flag should be included in an MCP tool.
 // Return true to include the flag.
+// Note: Hidden and deprecated flags are always excluded regardless of this selector.
 // This selector is only applied to commands that match the associated CmdSelector.
 type FlagSelector func(*pflag.Flag) bool
 
 // Selector contains selectors for filtering commands and flags.
 // When multiple selectors are configured, they are evaluated in order.
-// The first selector whose CmdSelect matches a command is used,
-// and its FlagSelect determines which flags are included for that command.
+// The first selector whose CmdSelector matches a command is used,
+// and its FlagSelector determines which flags are included for that command.
 //
-// This allows fine-grained control, such as:
+// Basic safety filters are always applied automatically:
+//   - Hidden/deprecated commands and flags are excluded
+//   - Non-runnable commands are excluded
+//   - Built-in commands (mcp, help, completion) are excluded
+//
+// This allows fine-grained control within safe boundaries, such as:
 //   - Exposing different flags for different command groups
 //   - Applying stricter flag filtering to dangerous commands
 //   - Having a default catch-all selector with common flag exclusions
 type Selector struct {
 	// CmdSelector determines if this selector applies to a command.
-	// If nil, defaults to accepting commands that are runnable, visible, and not deprecated.
+	// If nil, accepts all commands that pass basic safety filters.
+	// Cannot be used to bypass safety filters (hidden, deprecated, non-runnable).
 	CmdSelector CmdSelector
-	// FlagSelector determines which flags to include for commands matched by CmdSelect.
-	// If nil, defaults to including all visible, non-deprecated flags.
+	// FlagSelector determines which flags to include for commands matched by CmdSelector.
+	// If nil, includes all flags that pass basic safety filters.
+	// Cannot be used to bypass safety filters (hidden, deprecated flags).
 	FlagSelector FlagSelector
 }
 
@@ -79,29 +89,25 @@ func AllowCmd(cmds ...string) CmdSelector {
 	}
 }
 
-// ExcludeFlag creates a selector that rejects flags whose name contains any listed phrase.
+// ExcludeFlag creates a selector that rejects flags whose name is listed.
 // Example: ExcludeFlag("color", "kubeconfig") excludes flags named "color" and "kubeconfig".
 func ExcludeFlag(names ...string) FlagSelector {
 	return func(flag *pflag.Flag) bool {
-		for _, phrase := range names {
-			if strings.Contains(flag.Name, phrase) {
-				slog.Debug("excluding flag by exclude list", "flag_name", flag.Name, "phrase", phrase)
-				return false
-			}
+		if slices.Contains(names, flag.Name) {
+			slog.Debug("excluding flag by exclude list", "flag_name", flag.Name, "exclude_list", names)
+			return false
 		}
 
 		return true
 	}
 }
 
-// AllowFlag creates a selector that only accepts flags whose name contains a listed phrase.
+// AllowFlag creates a selector that only accepts flags whose name is listed.
 // Example: AllowFlag("namespace", "output") includes only flags named "namespace" and "output".
 func AllowFlag(names ...string) FlagSelector {
 	return func(flag *pflag.Flag) bool {
-		for _, phrase := range names {
-			if strings.Contains(flag.Name, phrase) {
-				return true
-			}
+		if slices.Contains(names, flag.Name) {
+			return true
 		}
 
 		slog.Debug("excluding flag by allow list", "flag_name", flag.Name, "allow_list", names)

@@ -79,62 +79,45 @@ config := &ophis.Config{
 
 ### Command and Flag Selection
 
-Ophis uses a powerful selector system to give you fine-grained control over which commands and flags are exposed as MCP tools. Each selector is a rule that defines:
-- Which commands to match (`CmdSelect`)
-- Which flags to include for those matched commands (`FlagSelect`)
+Ophis uses a powerful selector system to give you fine-grained control over which commands and flags are exposed as MCP tools. 
 
-**How it works:** Selectors are evaluated in order. The first selector whose `CmdSelect` matches a command wins, and its `FlagSelect` determines which flags are included for that command.
+#### How Selection Works
 
-#### Basic Examples
+**Basic filters are always applied automatically:**
+   - Hidden and deprecated commands/flags are excluded
+   - Commands without executable functions are excluded
+   - Built-in commands (`mcp`, `help`, `completion`) are excluded
+
+**Your selectors add additional filtering on top:**
+   - Each selector defines which commands to match (`CmdSelector`)
+   - And which flags to include for those commands (`FlagSelector`)
+   - Selectors are evaluated in order; the first match wins
+
+#### Selector Evaluation Order
+
+1. Basic filters are applied (hidden, deprecated, non-runnable commands excluded)
+2. Selectors are evaluated in the order they appear in the slice
+3. The first selector whose `CmdSelector` returns `true` for a command wins
+4. That selector's `FlagSelector` (if provided) determines which flags are included
+5. If no selectors match a command, it's excluded from MCP tools
+
+#### Basic Example
 
 ```go
-// Expose only safe read operations
-ophis.Selector{
-    CmdSelect: ophis.AllowCmd("get", "list", "describe"),
-    // FlagSelect defaults to including all non-hidden flags
-}
-```
-
-```go
-// Exclude dangerous operations
-ophis.Selector{
-    CmdSelect: ophis.ExcludeCmd("delete", "destroy", "remove"),
-    // Commands that don't match are not exposed at all
+// Expose only specific read operations
+config := &ophis.Config{
+    Selectors: []ophis.Selector{
+        {
+            CmdSelector: ophis.AllowCmd("get", "helm repo list"),
+            // FlagSelector defaults to all non-hidden, non-deprecated flags
+        },
+    },
 }
 ```
 
 #### Advanced: Different Flag Rules for Different Commands
 
-The real power comes from combining multiple selectors with different flag rules:
-
-```go
-config := &ophis.Config{
-    Selectors: []ophis.Selector{
-        {
-            // For 'get' commands: include only output formatting flags
-            CmdSelect: ophis.AllowCmd("get"),
-            FlagSelect: ophis.AllowFlag("output", "namespace", "selector"),
-        },
-        {
-            // For 'delete' commands: exclude dangerous flags
-            CmdSelect: ophis.AllowCmd("delete"),
-            FlagSelect: ophis.ExcludeFlag("all", "force", "grace-period"),
-        },
-        {
-            // For 'create/apply' commands: include most flags but exclude auth-related ones
-            CmdSelect: ophis.AllowCmd("create", "apply"),
-            FlagSelect: ophis.ExcludeFlag("token", "kubeconfig", "context"),
-        },
-        {
-            // Default for all other commands: basic safety exclusions
-            CmdSelect: func(cmd *cobra.Command) bool { 
-                return !strings.Contains(cmd.CommandPath(), "admin")
-            },
-            FlagSelect: ophis.ExcludeFlag("insecure", "tls-skip"),
-        },
-    },
-}
-```
+The real power comes from combining multiple selectors with different flag rules. See the helm example [config](./examples/helm/config.go).
 
 #### Custom Selector Functions
 
@@ -142,32 +125,17 @@ For complex logic, use custom functions:
 
 ```go
 ophis.Selector{
-    // Match commands based on custom logic
-    CmdSelect: func(cmd *cobra.Command) bool {
+    // Match commands based on custom logic (basic exclusions still apply)
+    CmdSelector: func(cmd *cobra.Command) bool {
         // Only expose commands that have been annotated as "safe"
         return cmd.Annotations["mcp-safe"] == "true"
     },
-    // Include only flags that don't modify state
-    FlagSelect: func(flag *pflag.Flag) bool {
-        return !strings.Contains(flag.Usage, "delete") && 
-               !strings.Contains(flag.Usage, "remove") &&
-               flag.Name != "force"
+    // Include only flags that don't modify state (hidden/deprecated still excluded)
+    FlagSelector: func(flag *pflag.Flag) bool {
+        return flag.Annotations["mcp-safe"] == "true"
     },
 }
 ```
-
-#### Selector Evaluation Order
-
-1. Selectors are evaluated in the order they appear in the slice
-2. The first selector whose `CmdSelect` returns `true` for a command wins
-3. That selector's `FlagSelect` (if provided) determines which flags are included
-4. If no selectors match a command, it's excluded from MCP tools
-
-The following commands are always excluded:
-- Commands without a `Run` or `PreRun` function
-- Hidden commands
-- Deprecated commands
-- `mcp`, `help`, and `completion` commands
 
 ## Ophis Commands
 

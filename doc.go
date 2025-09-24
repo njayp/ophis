@@ -35,21 +35,26 @@
 // # Configuration
 //
 // The Config struct provides fine-grained control over which commands and flags
-// are exposed as MCP tools through a powerful selector system:
+// are exposed as MCP tools through a powerful selector system.
+//
+// Basic safety filters are always applied automatically:
+//   - Hidden and deprecated commands/flags are excluded
+//   - Commands without executable functions are excluded  
+//   - Built-in commands (mcp, help, completion) are excluded
+//
+// Your selectors add additional filtering on top:
 //
 //	config := &ophis.Config{
 //	    // Selectors are evaluated in order - first match wins
 //	    Selectors: []ophis.Selector{
 //	        {
-//	            // Match specific commands
-//	            CmdSelect: ophis.AllowCmd("get", "list"),
+//	            CmdSelector: ophis.AllowCmd("get", "list"),
 //	            // Control which flags are included for matched commands
-//	            FlagSelect: ophis.AllowFlag("namespace", "output"),
+//	            FlagSelector: ophis.AllowFlag("namespace", "output"),
 //	        },
 //	        {
-//	            // Different flag rules for different commands
-//	            CmdSelect: ophis.AllowCmd("delete"),
-//	            FlagSelect: ophis.ExcludeFlag("all", "force"),
+//	            CmdSelector: ophis.AllowCmd("delete"),
+//	            FlagSelector: ophis.ExcludeFlag("all", "force"),
 //	        },
 //	    },
 //
