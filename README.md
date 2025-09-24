@@ -99,6 +99,7 @@ func(cmd *cobra.Command) bool {
 The following commands are always filtered out:
 - Commands without a `Run` or `PreRun` function
 - Hidden commands
+- Deprecated commands
 - `mcp`, `help`, and `completion` commands
 
 ## Ophis Commands

@@ -12,10 +12,18 @@ import (
 	"github.com/spf13/pflag"
 )
 
+// Filter is a filter for flags
+// Return true to include flag
+type Filter func(*pflag.Flag) bool
+
+// Filters are the flag filters
+var Filters []Filter
+
 // CreateToolFromCmd creates an MCP tool from a Cobra command.
 func CreateToolFromCmd(cmd *cobra.Command) *mcp.Tool {
 	schema := inputSchema.copy()
-	enhanceInputSchema(schema, cmd)
+	enhanceFlagsSchema(schema.Properties["flags"], cmd)
+	enhanceArgsSchema(schema.Properties["args"], cmd)
 
 	// Create the tool
 	return &mcp.Tool{
@@ -61,21 +69,14 @@ func toolDescription(cmd *cobra.Command) string {
 	return strings.Join(parts, "\n")
 }
 
-// enhanceInputSchema modifies the input schema with command-specific flag information.
-func enhanceInputSchema(schema *jsonschema.Schema, cmd *cobra.Command) {
-	if schema.Properties == nil {
-		return
+func filter(flag *pflag.Flag) bool {
+	for _, filter := range Filters {
+		if !filter(flag) {
+			return false
+		}
 	}
 
-	// Enhance flags property
-	if flagsSchema, exists := schema.Properties["flags"]; exists {
-		enhanceFlagsSchema(flagsSchema, cmd)
-	}
-
-	// Enhance args property
-	if argsSchema, exists := schema.Properties["args"]; exists {
-		enhanceArgsSchema(argsSchema, cmd)
-	}
+	return true
 }
 
 // enhanceFlagsSchema adds detailed flag information to the flags property.
@@ -87,17 +88,19 @@ func enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Command) {
 
 	// Process local flags
 	cmd.LocalFlags().VisitAll(func(flag *pflag.Flag) {
-		if flag.Hidden {
+		if !filter(flag) {
 			return
 		}
+
 		addFlagToSchema(schema, flag)
 	})
 
 	// Process inherited flags
 	cmd.InheritedFlags().VisitAll(func(flag *pflag.Flag) {
-		if flag.Hidden {
+		if !filter(flag) {
 			return
 		}
+
 		// Skip if already added as local flag
 		if _, exists := schema.Properties[flag.Name]; !exists {
 			addFlagToSchema(schema, flag)
@@ -171,15 +174,14 @@ func addFlagToSchema(schema *jsonschema.Schema, flag *pflag.Flag) {
 // enhanceArgsSchema adds detailed argument information to the args property.
 func enhanceArgsSchema(schema *jsonschema.Schema, cmd *cobra.Command) {
 	description := "Positional command line arguments"
-	use := cmd.Use
 
 	// remove "[flags]" from usage
-	use = strings.Replace(use, " [flags]", "", 1)
+	usage := strings.Replace(cmd.Use, " [flags]", "", 1)
 
 	// Extract argument pattern from cmd.Use
-	if use != "" {
-		if spaceIdx := strings.IndexByte(use, ' '); spaceIdx != -1 {
-			argsPattern := use[spaceIdx+1:]
+	if usage != "" {
+		if spaceIdx := strings.IndexByte(usage, ' '); spaceIdx != -1 {
+			argsPattern := usage[spaceIdx+1:]
 			if argsPattern != "" {
 				description += fmt.Sprintf("\nUsage pattern: %s", argsPattern)
 			}

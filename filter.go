@@ -16,6 +16,7 @@ func defaultFilters() []Filter {
 	return []Filter{
 		runsFilter(),
 		hiddenFilter(),
+		depreciatedFilter(),
 		ExcludeFilter(cfgmgr.MCPCommandName, "help", "completion"),
 	}
 }
@@ -57,6 +58,18 @@ func hiddenFilter() Filter {
 			slog.Debug("excluding hidden command", "command", cmd.Name())
 		}
 		return !cmd.Hidden
+	}
+}
+
+// depreciatedFilter creates a filter that excludes hidden commands.
+func depreciatedFilter() Filter {
+	return func(cmd *cobra.Command) bool {
+		deprecated := cmd.Deprecated != ""
+		if deprecated {
+			slog.Debug("excluding depreciated command", "command", cmd.Name())
+		}
+
+		return !deprecated
 	}
 }
 
