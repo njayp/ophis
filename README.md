@@ -81,6 +81,8 @@ config := &ophis.Config{
 
 Selectors control which commands become MCP tools and which flags they include.
 
+#### Basic Examples
+
 ```go
 // Default: expose all commands with all their flags
 config := &ophis.Config{}
@@ -119,8 +121,6 @@ config := &ophis.Config{
     },
 }
 ```
-
-
 
 #### How Selectors Work
 

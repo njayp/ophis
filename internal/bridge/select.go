@@ -1,9 +1,11 @@
-package ophis
+package bridge
 
 import (
+	"log/slog"
 	"slices"
 	"strings"
 
+	"github.com/njayp/ophis/internal/cfgmgr"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -45,6 +47,58 @@ type Selector struct {
 	FlagSelector FlagSelector
 }
 
+func defaultCmdSelect(c *cobra.Command) bool {
+	if c.Hidden {
+		return false
+	}
+
+	if c.Deprecated != "" {
+		return false
+	}
+
+	if c.Run == nil && c.RunE == nil && c.PreRun == nil && c.PreRunE == nil {
+		return false
+	}
+
+	return ExcludeCmd(cfgmgr.MCPCommandName, "help", "completion")(c)
+}
+
+func (s *Selector) cmdSelect(cmd *cobra.Command) bool {
+	if !defaultCmdSelect(cmd) {
+		return false
+	}
+
+	if s.CmdSelector != nil {
+		return s.CmdSelector(cmd)
+	}
+
+	return true
+}
+
+func defaultFlagSelect(flag *pflag.Flag) bool {
+	if flag.Hidden {
+		return false
+	}
+
+	if flag.Deprecated != "" {
+		return false
+	}
+
+	return true
+}
+
+func (s *Selector) flagSelect(flag *pflag.Flag) bool {
+	if !defaultFlagSelect(flag) {
+		return false
+	}
+
+	if s.FlagSelector != nil {
+		return s.FlagSelector(flag)
+	}
+
+	return true
+}
+
 // ExcludeCmd creates a selector that rejects commands whose path contains any listed phrase.
 // Example: ExcludeCmd("kubectl delete", "admin") excludes "kubectl delete" and "cli admin user".
 func ExcludeCmd(cmds ...string) CmdSelector {
@@ -69,6 +123,7 @@ func AllowCmd(cmds ...string) CmdSelector {
 			}
 		}
 
+		slog.Debug("excluding command by allow list", "command_path", cmd.CommandPath(), "allow_list", cmds)
 		return false
 	}
 }
@@ -77,7 +132,12 @@ func AllowCmd(cmds ...string) CmdSelector {
 // Example: ExcludeFlag("color", "kubeconfig") excludes flags named "color" and "kubeconfig".
 func ExcludeFlag(names ...string) FlagSelector {
 	return func(flag *pflag.Flag) bool {
-		return !slices.Contains(names, flag.Name)
+		if slices.Contains(names, flag.Name) {
+			slog.Debug("excluding flag by exclude list", "flag_name", flag.Name, "exclude_list", names)
+			return false
+		}
+
+		return true
 	}
 }
 
@@ -85,6 +145,11 @@ func ExcludeFlag(names ...string) FlagSelector {
 // Example: AllowFlag("namespace", "output") includes only flags named "namespace" and "output".
 func AllowFlag(names ...string) FlagSelector {
 	return func(flag *pflag.Flag) bool {
-		return slices.Contains(names, flag.Name)
+		if slices.Contains(names, flag.Name) {
+			return true
+		}
+
+		slog.Debug("excluding flag by allow list", "flag_name", flag.Name, "allow_list", names)
+		return false
 	}
 }

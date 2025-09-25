@@ -26,7 +26,7 @@ type Config struct {
 	//   2. That selector's FlagSelector determines which flags are included
 	//   3. If no selectors match, the command is not exposed as a tool
 	//
-	// If nil or empty, defaults to exposing all safe commands with all safe flags.
+	// If nil or empty, defaults to exposing all commands with all flags.
 	Selectors []Selector
 
 	// PreRun is middleware hook that runs before each tool call
@@ -71,42 +71,31 @@ func (c *Config) serveStdio(cmd *cobra.Command) error {
 	return server.Run(cmd.Context(), c.Transport)
 }
 
+func (c *Config) bridgeSelectors() bridge.Selectors {
+	// if selectors is empty or nil, return default selector
+	length := len(c.Selectors)
+	if length == 0 {
+		return bridge.Selectors{{}}
+	}
+
+	selectors := make([]bridge.Selector, length)
+	for i, s := range c.Selectors {
+		selectors[i] = bridge.Selector{
+			CmdSelector:  bridge.CmdSelector(s.CmdSelector),
+			FlagSelector: bridge.FlagSelector(s.FlagSelector),
+		}
+	}
+
+	return selectors
+}
+
 // tools takes care of setup, and calls toolsRecursive
 func (c *Config) tools(rootCmd *cobra.Command) []*mcp.Tool {
 	// slog to stderr
 	handler := slog.NewTextHandler(os.Stderr, c.SloggerOptions)
 	slog.SetDefault(slog.New(handler))
 
-	if c.Selectors == nil {
-		c.Selectors = []Selector{{}}
-	}
-
-	// get tools recursively
-	return c.toolsRecursive(rootCmd, nil)
-}
-
-func (c *Config) toolsRecursive(cmd *cobra.Command, tools []*mcp.Tool) []*mcp.Tool {
-	if cmd == nil {
-		return tools
-	}
-
-	// register all subcommands
-	for _, subCmd := range cmd.Commands() {
-		tools = c.toolsRecursive(subCmd, tools)
-	}
-
-	// cycle through selectors until one matches the cmd
-	for _, s := range c.Selectors {
-		if s.cmdSelect(cmd) {
-			// create tool with selected flags
-			tool := bridge.CreateToolFromCmd(cmd, bridge.FlagSelector(s.FlagSelector))
-			slog.Debug("created tool", "tool_name", tool.Name)
-			return append(tools, tool)
-		}
-	}
-
-	// no selectors matched
-	return tools
+	return c.bridgeSelectors().ToolsRecursive(rootCmd, nil)
 }
 
 func (c *Config) execute(ctx context.Context, request *mcp.CallToolRequest, input bridge.CmdToolInput) (result *mcp.CallToolResult, output bridge.CmdToolOutput, err error) {

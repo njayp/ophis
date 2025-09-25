@@ -12,22 +12,39 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// FlagSelector is a selector for flags
-// Return true to include flag
-type FlagSelector func(*pflag.Flag) bool
+// Selectors is an array of Selector, it is required to call ToolsRecursive
+type Selectors []Selector
 
-func (s FlagSelector) flagSelect(flag *pflag.Flag) bool {
-	if flag.Hidden || flag.Deprecated != "" {
-		return false
+// ToolsRecursive explores a cmd tree, making tools recursively out of the provided cmd and its children
+func (s Selectors) ToolsRecursive(cmd *cobra.Command, tools []*mcp.Tool) []*mcp.Tool {
+	if cmd == nil {
+		slog.Warn("ToolsRecursive called with nil command")
+		return tools
 	}
 
-	return s(flag)
+	// register all subcommands
+	for _, subCmd := range cmd.Commands() {
+		tools = s.ToolsRecursive(subCmd, tools)
+	}
+
+	// cycle through selectors until one matches the cmd
+	for i, selector := range s {
+		if selector.cmdSelect(cmd) {
+			// create tool with selected flags
+			tool := selector.CreateToolFromCmd(cmd)
+			slog.Debug("created tool", "tool_name", tool.Name, "selector_index", i)
+			return append(tools, tool)
+		}
+	}
+
+	// no selectors matched
+	return tools
 }
 
 // CreateToolFromCmd creates an MCP tool from a Cobra command.
-func CreateToolFromCmd(cmd *cobra.Command, selector FlagSelector) *mcp.Tool {
+func (s Selector) CreateToolFromCmd(cmd *cobra.Command) *mcp.Tool {
 	schema := inputSchema.copy()
-	enhanceFlagsSchema(schema.Properties["flags"], cmd, selector)
+	s.enhanceFlagsSchema(schema.Properties["flags"], cmd)
 	enhanceArgsSchema(schema.Properties["args"], cmd)
 
 	// Create the tool
@@ -75,20 +92,15 @@ func toolDescription(cmd *cobra.Command) string {
 }
 
 // enhanceFlagsSchema adds detailed flag information to the flags property.
-func enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Command, selector FlagSelector) {
+func (s Selector) enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Command) {
 	// Ensure properties map exists
 	if schema.Properties == nil {
 		schema.Properties = make(map[string]*jsonschema.Schema)
 	}
 
-	// Ensure selector exists
-	if selector == nil {
-		selector = func(*pflag.Flag) bool { return true }
-	}
-
 	// Process local flags
 	cmd.LocalFlags().VisitAll(func(flag *pflag.Flag) {
-		if !selector.flagSelect(flag) {
+		if !s.flagSelect(flag) {
 			return
 		}
 
@@ -97,7 +109,7 @@ func enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Command, selector 
 
 	// Process inherited flags
 	cmd.InheritedFlags().VisitAll(func(flag *pflag.Flag) {
-		if !selector.flagSelect(flag) {
+		if !s.flagSelect(flag) {
 			return
 		}
 
