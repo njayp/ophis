@@ -77,43 +77,68 @@ config := &ophis.Config{
 }
 ```
 
-### Command and Flag Selection
+### Selectors
 
-Ophis uses a powerful selector system to give you fine-grain control over which commands and flags are exposed as MCP tools. 
+Selectors control which commands become MCP tools and which flags they include.
 
-**Select Commands:**
 ```go
-type Selector struct {
-	// Selects *cobra.Commands to be made into MCP tools
-	CmdSelector CmdSelector
-	// Selects flags for selected *cobra.Commands
-	FlagSelector FlagSelector
-}
+// Default: expose all commands with all their flags
+config := &ophis.Config{}
 ```
 
-The first selector that matches a command will convert that command into a MCP tool. If no selector matches a command, it will not be made into a tool.
-
-#### Default
-
-If `Config.Selectors` is nil, all valid commands will be converted into MCP tools.
-
-#### Basic Example
-
 ```go
-// Expose only specific read operations
+// Basic selection
 config := &ophis.Config{
     Selectors: []ophis.Selector{
         {
-            CmdSelector: ophis.AllowCmd("get", "helm repo list"),
-            // FlagSelector defaults to all non-hidden, non-deprecated flags
+            CmdSelector: ophis.AllowCmd("get", "helm repo list"), // Only these commands
+            FlagSelector: ophis.ExcludeFlag("kubeconfig"), // Without this flag
         },
     },
 }
 ```
 
-#### Advanced: Different Flag Rules for Different Commands
+#### How Selectors Work
 
-The real power comes from combining multiple selectors with different flag rules. See the helm example [config](./examples/helm/config.go).
+1. **Safety first**: Hidden, deprecated, and non-runnable commands/flags are always excluded
+2. **First match wins**: Selectors are evaluated in order; the first matching `CmdSelector` determines which `FlagSelector` is used
+3. **No match = no tool**: Commands that don't match any selector are not exposed
+
+#### Multiple Selectors
+
+Different commands can have different flag rules:
+
+```go
+config := &ophis.Config{
+    Selectors: []ophis.Selector{
+        {
+            // Read operations: only output flags
+            CmdSelector: ophis.AllowCmd("get", "list"),
+            FlagSelector: ophis.AllowFlag("output", "format"),
+        },
+        {
+            // Write operations: exclude dangerous flags
+            CmdSelector: ophis.AllowCmd("create", "apply"),
+            FlagSelector: ophis.ExcludeFlag("force", "cascade"),
+        },
+        {
+            // Everything else: with common exclusions
+            CmdSelector: func(*cobra.Command) bool { return true },
+            FlagSelector: ophis.ExcludeFlag("token", "insecure"),
+        },
+    },
+}
+```
+
+#### Selector Functions
+
+| Function | Purpose | Example |
+|----------|---------|------|
+| `AllowCmd(...)` | Only match commands containing these strings | `AllowCmd("get", "list")` matches "kubectl get pods" |
+| `ExcludeCmd(...)` | Don't match commands containing these strings | `ExcludeCmd("delete")` skips "kubectl delete pod" |
+| `AllowFlag(...)` | Only include these flags | `AllowFlag("output", "namespace")` |
+| `ExcludeFlag(...)` | Include all flags except these | `ExcludeFlag("force", "all")` |
+| Custom function | Write your own logic | `func(cmd *cobra.Command) bool { ... }` |
 
 #### Custom Selector Functions
 
@@ -131,7 +156,6 @@ ophis.Selector{
     },
 }
 ```
-
 
 ## Ophis Commands
 
