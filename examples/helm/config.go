@@ -11,6 +11,7 @@ func config() *ophis.Config {
 func selectors() []ophis.Selector {
 	return []ophis.Selector{
 		{
+			// helm get [all, hooks, manifest, metadata, notes, values]
 			CmdSelector: ophis.AllowCmd("helm get"),
 			FlagSelector: ophis.AllowFlag(
 				"namespace",
@@ -65,6 +66,7 @@ func selectors() []ophis.Selector {
 			),
 		},
 		{
+			// helm show [all, chart, crds, readme, values]
 			CmdSelector: ophis.AllowCmd("helm show"),
 			FlagSelector: ophis.AllowFlag(
 				"version",
