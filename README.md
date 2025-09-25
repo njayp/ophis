@@ -121,14 +121,13 @@ For complex logic, use custom functions:
 
 ```go
 ophis.Selector{
-    // Match commands based on custom logic (basic exclusions still apply)
+    // Match commands based on custom logic
     CmdSelector: func(cmd *cobra.Command) bool {
-        // Only expose commands that have been annotated as "safe"
-        return cmd.Annotations["mcp-safe"] == "true"
+        // Only expose commands that have been annotated as "mcp"
+        return cmd.Annotations["mcp"] == "true"
     },
-    // Include only flags that don't modify state (hidden/deprecated still excluded)
     FlagSelector: func(flag *pflag.Flag) bool {
-        return flag.Annotations["mcp-safe"] == "true"
+        return flag.Annotations["mcp"] == "true"
     },
 }
 ```
