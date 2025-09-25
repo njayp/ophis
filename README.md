@@ -98,6 +98,30 @@ config := &ophis.Config{
 }
 ```
 
+```go
+config := &ophis.Config{
+    Selectors: []ophis.Selector{
+        {
+            CmdSelector: ophis.AllowCmd("get", "helm repo list"), // Only these commands
+            // All flags
+        },
+    },
+}
+```
+
+```go
+config := &ophis.Config{
+    Selectors: []ophis.Selector{
+        {
+            // All commands
+            FlagSelector: ophis.ExcludeFlag("kubeconfig"), // Without this flag
+        },
+    },
+}
+```
+
+
+
 #### How Selectors Work
 
 1. **Safety first**: Hidden, deprecated, and non-runnable commands/flags are always excluded
@@ -119,26 +143,15 @@ config := &ophis.Config{
         {
             // Write operations: exclude dangerous flags
             CmdSelector: ophis.AllowCmd("create", "apply"),
-            FlagSelector: ophis.ExcludeFlag("force", "cascade"),
+            FlagSelector: ophis.ExcludeFlag("force", "token", "insecure"),
         },
         {
-            // Everything else: with common exclusions
-            CmdSelector: func(*cobra.Command) bool { return true },
+            // Everything else: with common flag exclusions
             FlagSelector: ophis.ExcludeFlag("token", "insecure"),
         },
     },
 }
 ```
-
-#### Selector Functions
-
-| Function | Purpose | Example |
-|----------|---------|------|
-| `AllowCmd(...)` | Only match commands containing these strings | `AllowCmd("get", "list")` matches "kubectl get pods" |
-| `ExcludeCmd(...)` | Don't match commands containing these strings | `ExcludeCmd("delete")` skips "kubectl delete pod" |
-| `AllowFlag(...)` | Only include these flags | `AllowFlag("output", "namespace")` |
-| `ExcludeFlag(...)` | Include all flags except these | `ExcludeFlag("force", "all")` |
-| Custom function | Write your own logic | `func(cmd *cobra.Command) bool { ... }` |
 
 #### Custom Selector Functions
 
