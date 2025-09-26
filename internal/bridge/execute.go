@@ -49,7 +49,6 @@ func execute(ctx context.Context, request *mcp.CallToolRequest, input CmdToolInp
 	// Build command arguments
 	name := request.Params.Name
 	args := buildCommandArgs(name, input)
-
 	slog.Debug("executing command",
 		"tool", name,
 		"input", input,

@@ -61,6 +61,15 @@
 //	            CmdSelector: ophis.AllowCmd("get", "list"),
 //	            // Control which flags are included for matched commands
 //	            FlagSelector: ophis.AllowFlag("namespace", "output"),
+//	            // Optional: Add middleware hooks
+//	            PreRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.CmdToolInput) (context.Context, *mcp.CallToolRequest, bridge.CmdToolInput) {
+//	                // Add timeout, logging, auth checks, etc.
+//	                return ctx, req, in
+//	            },
+//	            PostRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.CmdToolInput, res *mcp.CallToolResult, out bridge.CmdToolOutput, err error) (*mcp.CallToolResult, bridge.CmdToolOutput, error) {
+//	                // Error handling, response filtering, metrics
+//	                return res, out, err
+//	            },
 //	        },
 //	        {
 //	            CmdSelector: ophis.AllowCmd("delete"),
@@ -75,6 +84,7 @@
 //	}
 //
 // The selector system allows different commands to have different flag filtering
-// rules, enabling precise control over the exposed tool surface. Each selector
-// defines both which commands to match and which of their flags to include.
+// rules and middleware hooks, enabling precise control over the exposed tool surface.
+// Each selector defines which commands to match, which flags to include, and optional
+// PreRun/PostRun hooks for middleware functionality like timeouts, logging, and filtering.
 package ophis

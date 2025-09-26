@@ -56,18 +56,16 @@ The `ophis.Command()` function accepts an optional `*ophis.Config` parameter to 
 
 ```go
 config := &ophis.Config{
-    // Customize command selection
+    // Customize tool creation and execution
     Selectors: []ophis.Selector{
         {
-            CmdSelect: ophis.ExcludeCmd("dangerous"),
+            CmdSelector: ophis.ExcludeCmd("dangerous"),
+            PreRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.CmdToolInput) (context.Context, *mcp.CallToolRequest, bridge.CmdToolInput) {
+                // Add timeout
+                ctx, _ = context.WithTimeout(ctx, time.Minute)
+                return ctx, req, in
+            },
         },
-    },
-
-    // Send metrics or set timeouts
-    PreRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.CmdToolInput) (context.Context, *mcp.CallToolRequest, bridge.CmdToolInput) {
-        // your middleware here
-        ctx, _ = context.WithTimeout(ctx, time.Minute)
-        return ctx, req, in
     },
     
     // Configure logging (logs to stderr)
@@ -169,6 +167,36 @@ ophis.Selector{
     },
 }
 ```
+
+#### Middleware Hooks
+
+Each selector can include middleware hooks that run before and after tool execution. Different selectors can specify different PreRun and PostRun functions for different commands.
+
+```go
+config := &ophis.Config{
+    Selectors: []ophis.Selector{
+        {
+            // PreRun executes before each tool call
+            // Return a cancelled context to prevent execution
+            PreRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.CmdToolInput) (context.Context, *mcp.CallToolRequest, bridge.CmdToolInput) {
+                // Add timeout
+                ctx, _ = context.WithTimeout(ctx, time.Minute)
+                return ctx, req, in
+            },
+            
+            // PostRun executes after each tool call
+            PostRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.CmdToolInput, res *mcp.CallToolResult, out bridge.CmdToolOutput, err error) (*mcp.CallToolResult, bridge.CmdToolOutput, error) {
+                // Your middleware here
+                return res, out, err
+            },
+        },
+    },
+}
+```
+
+Common use cases for middleware:
+- **PreRun**: Add timeouts, rate limiting, authentication checks, request logging
+- **PostRun**: Error handling, response filtering, metrics collection, output sanitization
 
 ## Ophis Commands
 
