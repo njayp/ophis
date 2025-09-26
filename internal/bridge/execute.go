@@ -23,8 +23,28 @@ func initExecPath() string {
 	return path
 }
 
-// Execute runs the underlying CLI command.
-func Execute(ctx context.Context, request *mcp.CallToolRequest, input CmdToolInput) (*mcp.CallToolResult, CmdToolOutput, error) {
+func (s *Selector) execute(ctx context.Context, request *mcp.CallToolRequest, input CmdToolInput) (result *mcp.CallToolResult, output CmdToolOutput, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic: %v", r)
+		}
+	}()
+
+	if s.PreRun != nil {
+		ctx, request, input = s.PreRun(ctx, request, input)
+	}
+
+	result, output, err = execute(ctx, request, input)
+
+	if s.PostRun != nil {
+		result, output, err = s.PostRun(ctx, request, input, result, output, err)
+	}
+
+	return
+}
+
+// execute runs the underlying CLI command.
+func execute(ctx context.Context, request *mcp.CallToolRequest, input CmdToolInput) (*mcp.CallToolResult, CmdToolOutput, error) {
 	slog.Info("mcp tool request received", "request", request.Params.Name)
 	// Build command arguments
 	name := request.Params.Name
@@ -38,11 +58,11 @@ func Execute(ctx context.Context, request *mcp.CallToolRequest, input CmdToolInp
 
 	// Create exec.Cmd and run it
 	cmd := exec.CommandContext(ctx, executablePath, args...)
-	return execute(cmd)
+	return run(cmd)
 }
 
-// execute runs the given exec.Cmd and returns stdout, stderr, and exit code.
-func execute(cmd *exec.Cmd) (*mcp.CallToolResult, CmdToolOutput, error) {
+// run runs the given exec.Cmd and returns stdout, stderr, and exit code.
+func run(cmd *exec.Cmd) (*mcp.CallToolResult, CmdToolOutput, error) {
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr

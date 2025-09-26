@@ -1,8 +1,6 @@
 package ophis
 
 import (
-	"context"
-	"fmt"
 	"log/slog"
 	"os"
 
@@ -29,15 +27,6 @@ type Config struct {
 	// If nil or empty, defaults to exposing all commands with all flags.
 	Selectors []Selector
 
-	// PreRun is middleware hook that runs before each tool call
-	// Return a cancelled context to prevent execution.
-	// Common uses: add timeouts, rate limiting, auth checks, metrics.
-	PreRun func(context.Context, *mcp.CallToolRequest, bridge.CmdToolInput) (context.Context, *mcp.CallToolRequest, bridge.CmdToolInput)
-
-	// PostRun is middleware hook that runs after each tool call
-	// Common uses: error handling, response filtering, metrics collection.
-	PostRun func(context.Context, *mcp.CallToolRequest, bridge.CmdToolInput, *mcp.CallToolResult, bridge.CmdToolOutput, error) (*mcp.CallToolResult, bridge.CmdToolOutput, error)
-
 	// SloggerOptions configures logging to stderr.
 	// Default: Info level logging.
 	SloggerOptions *slog.HandlerOptions
@@ -50,32 +39,51 @@ type Config struct {
 }
 
 func (c *Config) serveStdio(cmd *cobra.Command) error {
+	if c.Transport == nil {
+		c.Transport = &mcp.StdioTransport{}
+	}
+
+	return c.manager(cmd).Server.Run(cmd.Context(), c.Transport)
+}
+
+func (c *Config) tools(cmd *cobra.Command) []*mcp.Tool {
+	return c.manager(cmd).Tools
+}
+
+// manager fully initializes a bridge.Manager
+func (c *Config) manager(cmd *cobra.Command) *bridge.Manager {
+	// slog to stderr
+	handler := slog.NewTextHandler(os.Stderr, c.SloggerOptions)
+	slog.SetDefault(slog.New(handler))
+
+	// get root cmd
 	rootCmd := getRootCmd(cmd)
 	name := rootCmd.Name()
 	version := rootCmd.Version
 
+	// make server
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:    name,
 		Version: version,
 	}, c.ServerOptions)
 
-	for _, tool := range c.tools(rootCmd) {
-		mcp.AddTool(server, tool, c.execute)
+	// make manager
+	manager := &bridge.Manager{
+		Selectors: c.selectors(),
+		Server:    server,
 	}
 
-	if c.Transport == nil {
-		c.Transport = &mcp.StdioTransport{}
-	}
-
-	slog.Info("running MCP server", "name", name, "version", version)
-	return server.Run(cmd.Context(), c.Transport)
+	// register tools
+	manager.RegisterTools(rootCmd)
+	return manager
 }
 
-func (c *Config) bridgeSelectors() bridge.Selectors {
+func (c *Config) selectors() []bridge.Selector {
+	// make selectors
 	// if selectors is empty or nil, return default selector
 	length := len(c.Selectors)
 	if length == 0 {
-		return bridge.Selectors{{}}
+		return []bridge.Selector{{}}
 	}
 
 	selectors := make([]bridge.Selector, length)
@@ -83,37 +91,10 @@ func (c *Config) bridgeSelectors() bridge.Selectors {
 		selectors[i] = bridge.Selector{
 			CmdSelector:  bridge.CmdSelector(s.CmdSelector),
 			FlagSelector: bridge.FlagSelector(s.FlagSelector),
+			PreRun:       s.PreRun,
+			PostRun:      s.PostRun,
 		}
 	}
 
 	return selectors
-}
-
-// tools takes care of setup, and calls toolsRecursive
-func (c *Config) tools(rootCmd *cobra.Command) []*mcp.Tool {
-	// slog to stderr
-	handler := slog.NewTextHandler(os.Stderr, c.SloggerOptions)
-	slog.SetDefault(slog.New(handler))
-
-	return c.bridgeSelectors().ToolsRecursive(rootCmd, nil)
-}
-
-func (c *Config) execute(ctx context.Context, request *mcp.CallToolRequest, input bridge.CmdToolInput) (result *mcp.CallToolResult, output bridge.CmdToolOutput, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("panic: %v", r)
-		}
-	}()
-
-	if c.PreRun != nil {
-		ctx, request, input = c.PreRun(ctx, request, input)
-	}
-
-	result, output, err = bridge.Execute(ctx, request, input)
-
-	if c.PostRun != nil {
-		result, output, err = c.PostRun(ctx, request, input, result, output, err)
-	}
-
-	return
 }

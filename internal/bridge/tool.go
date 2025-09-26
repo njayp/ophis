@@ -12,33 +12,34 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// Selectors is an array of Selector, it is required to call ToolsRecursive
-type Selectors []Selector
+// Manager is an array of Selector, it is required to call ToolsRecursive
+type Manager struct {
+	Selectors []Selector
+	Server    *mcp.Server
+	Tools     []*mcp.Tool
+}
 
-// ToolsRecursive explores a cmd tree, making tools recursively out of the provided cmd and its children
-func (s Selectors) ToolsRecursive(cmd *cobra.Command, tools []*mcp.Tool) []*mcp.Tool {
+// RegisterTools explores a cmd tree, making tools recursively out of the provided cmd and its children
+func (m *Manager) RegisterTools(cmd *cobra.Command) {
 	if cmd == nil {
 		slog.Warn("ToolsRecursive called with nil command")
-		return tools
+		return
 	}
 
 	// register all subcommands
 	for _, subCmd := range cmd.Commands() {
-		tools = s.ToolsRecursive(subCmd, tools)
+		m.RegisterTools(subCmd)
 	}
 
 	// cycle through selectors until one matches the cmd
-	for i, selector := range s {
+	for i, selector := range m.Selectors {
 		if selector.cmdSelect(cmd) {
-			// create tool with selected flags
 			tool := selector.CreateToolFromCmd(cmd)
+			mcp.AddTool(m.Server, tool, selector.execute)
+			m.Tools = append(m.Tools, tool)
 			slog.Debug("created tool", "tool_name", tool.Name, "selector_index", i)
-			return append(tools, tool)
 		}
 	}
-
-	// no selectors matched
-	return tools
 }
 
 // CreateToolFromCmd creates an MCP tool from a Cobra command.

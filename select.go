@@ -1,9 +1,12 @@
 package ophis
 
 import (
+	"context"
 	"slices"
 	"strings"
 
+	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/njayp/ophis/internal/bridge"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -43,6 +46,15 @@ type Selector struct {
 	// If nil, includes all flags that pass basic safety filters.
 	// Cannot be used to bypass safety filters (hidden, deprecated flags).
 	FlagSelector FlagSelector
+
+	// PreRun is middleware hook that runs before each tool call
+	// Return a cancelled context to prevent execution.
+	// Common uses: add timeouts, rate limiting, auth checks, metrics.
+	PreRun func(context.Context, *mcp.CallToolRequest, bridge.CmdToolInput) (context.Context, *mcp.CallToolRequest, bridge.CmdToolInput)
+
+	// PostRun is middleware hook that runs after each tool call
+	// Common uses: error handling, response filtering, metrics collection.
+	PostRun func(context.Context, *mcp.CallToolRequest, bridge.CmdToolInput, *mcp.CallToolResult, bridge.CmdToolOutput, error) (*mcp.CallToolResult, bridge.CmdToolOutput, error)
 }
 
 // ExcludeCmd creates a selector that rejects commands whose path contains any listed phrase.

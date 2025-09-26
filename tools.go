@@ -34,7 +34,7 @@ func toolCommand(config *Config) *cobra.Command {
 				config.SloggerOptions.Level = parseLogLevel(toolFlags.logLevel)
 			}
 
-			tools := config.tools(getRootCmd(cmd))
+			tools := config.tools(cmd)
 
 			file, err := os.OpenFile("mcp-tools.json", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
 			if err != nil {
