@@ -78,8 +78,8 @@ func (c *Config) manager(cmd *cobra.Command) *bridge.Manager {
 	return manager
 }
 
+// selectors converts Config.Selectors to bridge.Selectors
 func (c *Config) selectors() []bridge.Selector {
-	// make selectors
 	// if selectors is empty or nil, return default selector
 	length := len(c.Selectors)
 	if length == 0 {

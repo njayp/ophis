@@ -91,8 +91,10 @@ config := &ophis.Config{}
 config := &ophis.Config{
     Selectors: []ophis.Selector{
         {
-            CmdSelector: ophis.AllowCmd("get", "helm repo list"), // Only these commands
-            FlagSelector: ophis.ExcludeFlag("kubeconfig"), // Without this flag
+            // Only these commands
+            CmdSelector: ophis.AllowCmd("get", "helm repo list"),
+            // Without this flag
+            FlagSelector: ophis.ExcludeFlag("kubeconfig"),
         },
     },
 }
@@ -102,8 +104,8 @@ config := &ophis.Config{
 config := &ophis.Config{
     Selectors: []ophis.Selector{
         {
-            CmdSelector: ophis.AllowCmd("get", "helm repo list"), // Only these commands
-            // All flags
+            // Only these commands, with all flags
+            CmdSelector: ophis.AllowCmd("get", "helm repo list"),
         },
     },
 }
@@ -113,60 +115,18 @@ config := &ophis.Config{
 config := &ophis.Config{
     Selectors: []ophis.Selector{
         {
-            // All commands
-            FlagSelector: ophis.ExcludeFlag("kubeconfig"), // Without this flag
+            // All commands, without this flag
+            FlagSelector: ophis.ExcludeFlag("kubeconfig"),
         },
     },
 }
 ```
 
-#### How Selectors Work
+#### How Selectors Select Commands
 
 1. **Safety first**: Hidden, deprecated, and non-runnable commands/flags are always excluded
 2. **First match wins**: Selectors are evaluated in order; the first matching `CmdSelector` determines which `FlagSelector` is used
 3. **No match = no tool**: Commands that don't match any selector are not exposed
-
-#### Multiple Selectors
-
-Different commands can have different flag rules:
-
-```go
-config := &ophis.Config{
-    Selectors: []ophis.Selector{
-        {
-            // Read operations: only output flags
-            CmdSelector: ophis.AllowCmd("get", "list"),
-            FlagSelector: ophis.AllowFlag("output", "format"),
-        },
-        {
-            // Write operations: exclude dangerous flags
-            CmdSelector: ophis.AllowCmd("create", "apply"),
-            FlagSelector: ophis.ExcludeFlag("force", "token", "insecure"),
-        },
-        {
-            // Everything else: with common flag exclusions
-            FlagSelector: ophis.ExcludeFlag("token", "insecure"),
-        },
-    },
-}
-```
-
-#### Custom Selector Functions
-
-For complex logic, use custom functions:
-
-```go
-ophis.Selector{
-    // Match commands based on custom logic
-    CmdSelector: func(cmd *cobra.Command) bool {
-        // Only expose commands that have been annotated as "mcp"
-        return cmd.Annotations["mcp"] == "true"
-    },
-    FlagSelector: func(flag *pflag.Flag) bool {
-        return flag.Annotations["mcp"] == "true"
-    },
-}
-```
 
 #### Middleware Hooks
 
@@ -197,6 +157,53 @@ config := &ophis.Config{
 Common use cases for middleware:
 - **PreRun**: Add timeouts, rate limiting, authentication checks, request logging
 - **PostRun**: Error handling, response filtering, metrics collection, output sanitization
+
+#### Multiple Selectors
+
+Different commands can have different flag rules:
+
+```go
+config := &ophis.Config{
+    Selectors: []ophis.Selector{
+        {
+            // Read operations: only output flags
+            CmdSelector: ophis.AllowCmd("get", "list", "logs"),
+            FlagSelector: ophis.AllowFlag("output", "format"),
+            PreRun: timeoutFn(),
+            PostRun: limitOutputFn(),
+        },
+        {
+            // Write operations: exclude dangerous flags
+            CmdSelector: ophis.AllowCmd("create", "apply"),
+            FlagSelector: ophis.ExcludeFlag("force", "token", "insecure"),
+            PreRun: timeoutFn(),
+        },
+        {
+            // Everything else: with common flag exclusions
+            FlagSelector: ophis.ExcludeFlag("token", "insecure"),
+            PreRun: timeoutFn(),
+        },
+    },
+}
+```
+
+#### Custom Selector Functions
+
+For complex logic, use custom functions:
+
+```go
+ophis.Selector{
+    // Match commands based on custom logic
+    CmdSelector: func(cmd *cobra.Command) bool {
+        // Only expose commands that have been annotated as "mcp"
+        return cmd.Annotations["mcp"] == "true"
+    },
+    FlagSelector: func(flag *pflag.Flag) bool {
+        return flag.Annotations["mcp"] == "true"
+    },
+}
+```
+
 
 ## Ophis Commands
 
