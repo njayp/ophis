@@ -5,12 +5,12 @@ on:
   workflow_call:
     inputs:
       go-version:
-        description: 'Go version to use'
+        description: "Go version to use"
         required: false
         type: string
-        default: '1.24'
+        default: "1.24"
       fetch-depth:
-        description: 'Number of commits to fetch (0 for all history)'
+        description: "Number of commits to fetch (0 for all history)"
         required: false
         type: number
         default: 1
@@ -30,6 +30,10 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ inputs.go-version }}
+
+      # Install Mage
+      - name: Install Mage
+        run: go install github.com/magefile/mage@latest
 
       # Install golangci-lint
       - name: Install golangci-lint
