@@ -45,9 +45,10 @@ func (s *Selector) execute(ctx context.Context, request *mcp.CallToolRequest, in
 
 // execute runs the underlying CLI command.
 func execute(ctx context.Context, request *mcp.CallToolRequest, input CmdToolInput) (*mcp.CallToolResult, CmdToolOutput, error) {
-	slog.Info("mcp tool request received", "request", request.Params.Name)
-	// Build command arguments
 	name := request.Params.Name
+	slog.Info("mcp tool request received", "request", name)
+
+	// Build command arguments
 	args := buildCommandArgs(name, input)
 	slog.Debug("executing command",
 		"tool", name,

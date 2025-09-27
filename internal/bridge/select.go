@@ -74,6 +74,7 @@ func defaultCmdSelect(c *cobra.Command) bool {
 	return ExcludeCmd(cfgmgr.MCPCommandName, "help", "completion")(c)
 }
 
+// cmdSelect returns true if the command passes default filters and this selector's CmdSelector (if any).
 func (s *Selector) cmdSelect(cmd *cobra.Command) bool {
 	if !defaultCmdSelect(cmd) {
 		return false
@@ -98,6 +99,7 @@ func defaultFlagSelect(flag *pflag.Flag) bool {
 	return true
 }
 
+// flagSelect returns true if the flag passes default filters and this selector's FlagSelector (if any).
 func (s *Selector) flagSelect(flag *pflag.Flag) bool {
 	if !defaultFlagSelect(flag) {
 		return false

@@ -160,7 +160,7 @@ Common use cases for middleware:
 
 #### Multiple Selectors
 
-Different commands can have different flag rules:
+Different commands can have different flag rules and execution hooks:
 
 ```go
 config := &ophis.Config{
