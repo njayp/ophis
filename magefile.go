@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 )
 
@@ -20,8 +21,13 @@ func runMakeInExamples(target string) error {
 		return fmt.Errorf("failed to read examples directory: %w", err)
 	}
 
+	type result struct {
+		dir string
+		err error
+	}
+
 	var wg sync.WaitGroup
-	errChan := make(chan error, len(entries))
+	resultChan := make(chan result, len(entries))
 
 	for _, entry := range entries {
 		if !entry.IsDir() {
@@ -47,32 +53,39 @@ func runMakeInExamples(target string) error {
 			cmd.Stderr = os.Stderr
 
 			if err := cmd.Run(); err != nil {
-				errChan <- fmt.Errorf("%s: %w", dir, err)
 				fmt.Printf("✗ Failed: %s\n", dir)
+				resultChan <- result{dir: dir, err: err}
 			} else {
 				fmt.Printf("✓ Success: %s\n", dir)
+				resultChan <- result{dir: dir, err: nil}
 			}
 		}(dir)
 	}
 
 	// Wait for all goroutines to complete
 	wg.Wait()
-	close(errChan)
+	close(resultChan)
 
-	// Collect any errors
-	var failed bool
-	for err := range errChan {
-		if err != nil {
-			fmt.Printf("Error: %v\n", err)
-			failed = true
+	// Collect all results and errors
+	var failures []string
+	var successCount int
+	for res := range resultChan {
+		if res.err != nil {
+			failures = append(failures, fmt.Sprintf("  - %s: %v", res.dir, res.err))
+		} else {
+			successCount++
 		}
 	}
 
-	if failed {
-		return fmt.Errorf("'make %s' failed in some examples", target)
+	// Report final status
+	if len(failures) > 0 {
+		fmt.Printf("\n✗ 'make %s' failed in %d example(s):\n", target, len(failures))
+		fmt.Println(strings.Join(failures, "\n"))
+		fmt.Printf("\nSummary: %d succeeded, %d failed\n", successCount, len(failures))
+		return fmt.Errorf("'make %s' failed in %d example(s)", target, len(failures))
 	}
 
-	fmt.Printf("\n✓ Successfully ran 'make %s' in all examples\n", target)
+	fmt.Printf("\n✓ Successfully ran 'make %s' in all %d examples\n", target, successCount)
 	return nil
 }
 
@@ -84,20 +97,4 @@ func All() error {
 // Build runs 'make build' for each example directory in parallel
 func Build() error {
 	return runMakeInExamples("build")
-}
-
-// Test runs 'make test' for the main project
-func Test() error {
-	cmd := exec.Command("make", "test")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
-
-// Lint runs 'make lint' for the main project
-func Lint() error {
-	cmd := exec.Command("make", "lint")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
 }

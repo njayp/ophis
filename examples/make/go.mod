@@ -1,6 +1,6 @@
 module github.com/njayp/ophis/examples/make
 
-go 1.24
+go 1.24.6
 
 replace github.com/njayp/ophis => ../../
 

@@ -1,6 +1,6 @@
 module github.com/njayp/ophis/examples/kubectl
 
-go 1.24.0
+go 1.24.6
 
 replace github.com/njayp/ophis => ../../
 
