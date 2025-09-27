@@ -3,6 +3,7 @@ package bridge
 import (
 	"testing"
 
+	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,13 +34,14 @@ func TestCreateToolFromCmd_Basic(t *testing.T) {
 	assert.NotNil(t, tool.InputSchema)
 
 	// Verify schema structure
-	assert.Equal(t, "object", tool.InputSchema.Type)
-	require.NotNil(t, tool.InputSchema.Properties)
-	assert.Contains(t, tool.InputSchema.Properties, "flags")
-	assert.Contains(t, tool.InputSchema.Properties, "args")
+	inputSchema := tool.InputSchema.(*jsonschema.Schema)
+	assert.Equal(t, "object", inputSchema.Type)
+	require.NotNil(t, inputSchema.Properties)
+	assert.Contains(t, inputSchema.Properties, "flags")
+	assert.Contains(t, inputSchema.Properties, "args")
 
 	// Verify flags schema
-	flagsSchema := tool.InputSchema.Properties["flags"]
+	flagsSchema := inputSchema.Properties["flags"]
 	require.NotNil(t, flagsSchema.Properties)
 	assert.Contains(t, flagsSchema.Properties, "output")
 	assert.Contains(t, flagsSchema.Properties, "verbose")
