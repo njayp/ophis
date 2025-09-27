@@ -12,6 +12,7 @@
 - Go 1.24 or later
 - golangci-lint (for linting)
 - Make (for build automation)
+- Mage (for build automation) 
 
 ### Setup Steps
 

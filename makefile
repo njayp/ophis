@@ -1,8 +1,6 @@
 .PHONY: all
 all: up lint test
-	@for dir in examples/*/; do \
-		$(MAKE) -C "$$dir" all || exit 1; \
-	done
+	mage all
 
 .PHONY: up
 up:
@@ -20,9 +18,7 @@ test:
 
 .PHONY: build
 build:
-	@for dir in examples/*/; do \
-		$(MAKE) -C "$$dir" build || exit 1; \
-	done
+	mage build
 
 .PHONY: release
 release: all
