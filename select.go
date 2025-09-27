@@ -1,11 +1,9 @@
 package ophis
 
 import (
-	"context"
 	"slices"
 	"strings"
 
-	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/njayp/ophis/internal/bridge"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -15,13 +13,22 @@ import (
 // Return true to include the command as a tool.
 // Note: Basic safety filters (hidden, deprecated, non-runnable) are always applied first.
 // Commands are tested against selectors in order; the first matching selector wins.
-type CmdSelector func(*cobra.Command) bool
+type CmdSelector bridge.CmdSelector
 
 // FlagSelector determines if a flag should be included in an MCP tool.
 // Return true to include the flag.
 // Note: Hidden and deprecated flags are always excluded regardless of this selector.
 // This selector is only applied to commands that match the associated CmdSelector.
-type FlagSelector func(*pflag.Flag) bool
+type FlagSelector bridge.FlagSelector
+
+// PreRunFunc is middleware hook that runs before each tool call
+// Return a cancelled context to prevent execution.
+// Common uses: add timeouts, rate limiting, auth checks, metrics.
+type PreRunFunc bridge.PreRunFunc
+
+// PostRunFunc is middleware hook that runs after each tool call
+// Common uses: error handling, response filtering, metrics collection.
+type PostRunFunc bridge.PostRunFunc
 
 // Selector contains selectors for filtering commands and flags.
 // When multiple selectors are configured, they are evaluated in order.
@@ -50,11 +57,11 @@ type Selector struct {
 	// PreRun is middleware hook that runs before each tool call
 	// Return a cancelled context to prevent execution.
 	// Common uses: add timeouts, rate limiting, auth checks, metrics.
-	PreRun func(context.Context, *mcp.CallToolRequest, bridge.CmdToolInput) (context.Context, *mcp.CallToolRequest, bridge.CmdToolInput)
+	PreRun PreRunFunc
 
 	// PostRun is middleware hook that runs after each tool call
 	// Common uses: error handling, response filtering, metrics collection.
-	PostRun func(context.Context, *mcp.CallToolRequest, bridge.CmdToolInput, *mcp.CallToolResult, bridge.CmdToolOutput, error) (*mcp.CallToolResult, bridge.CmdToolOutput, error)
+	PostRun PostRunFunc
 }
 
 // ExcludeCmd creates a selector that rejects commands whose path contains any listed phrase.

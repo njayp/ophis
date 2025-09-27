@@ -2,8 +2,6 @@ package bridge
 
 import (
 	"context"
-	"log/slog"
-	"slices"
 	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -23,6 +21,15 @@ type CmdSelector func(*cobra.Command) bool
 // Note: Hidden and deprecated flags are always excluded regardless of this selector.
 // This selector is only applied to commands that match the associated CmdSelector.
 type FlagSelector func(*pflag.Flag) bool
+
+// PreRunFunc is middleware hook that runs before each tool call
+// Return a cancelled context to prevent execution.
+// Common uses: add timeouts, rate limiting, auth checks, metrics.
+type PreRunFunc func(context.Context, *mcp.CallToolRequest, CmdToolInput) (context.Context, *mcp.CallToolRequest, CmdToolInput)
+
+// PostRunFunc is middleware hook that runs after each tool call
+// Common uses: error handling, response filtering, metrics collection.
+type PostRunFunc func(context.Context, *mcp.CallToolRequest, CmdToolInput, *mcp.CallToolResult, CmdToolOutput, error) (*mcp.CallToolResult, CmdToolOutput, error)
 
 // Selector contains selectors for filtering commands and flags.
 // When multiple selectors are configured, they are evaluated in order.
@@ -51,11 +58,11 @@ type Selector struct {
 	// PreRun is middleware hook that runs before each tool call
 	// Return a cancelled context to prevent execution.
 	// Common uses: add timeouts, rate limiting, auth checks, metrics.
-	PreRun func(context.Context, *mcp.CallToolRequest, CmdToolInput) (context.Context, *mcp.CallToolRequest, CmdToolInput)
+	PreRun PreRunFunc
 
 	// PostRun is middleware hook that runs after each tool call
 	// Common uses: error handling, response filtering, metrics collection.
-	PostRun func(context.Context, *mcp.CallToolRequest, CmdToolInput, *mcp.CallToolResult, CmdToolOutput, error) (*mcp.CallToolResult, CmdToolOutput, error)
+	PostRun PostRunFunc
 }
 
 func defaultCmdSelect(c *cobra.Command) bool {
@@ -71,7 +78,7 @@ func defaultCmdSelect(c *cobra.Command) bool {
 		return false
 	}
 
-	return ExcludeCmd(cfgmgr.MCPCommandName, "help", "completion")(c)
+	return excludeCmd(cfgmgr.MCPCommandName, "help", "completion")(c)
 }
 
 // cmdSelect returns true if the command passes default filters and this selector's CmdSelector (if any).
@@ -112,9 +119,9 @@ func (s *Selector) flagSelect(flag *pflag.Flag) bool {
 	return true
 }
 
-// ExcludeCmd creates a selector that rejects commands whose path contains any listed phrase.
-// Example: ExcludeCmd("kubectl delete", "admin") excludes "kubectl delete" and "cli admin user".
-func ExcludeCmd(cmds ...string) CmdSelector {
+// excludeCmd creates a selector that rejects commands whose path contains any listed phrase.
+// Example: excludeCmd("kubectl delete", "admin") excludes "kubectl delete" and "cli admin user".
+func excludeCmd(cmds ...string) CmdSelector {
 	return func(cmd *cobra.Command) bool {
 		for _, phrase := range cmds {
 			if strings.Contains(cmd.CommandPath(), phrase) {
@@ -123,46 +130,5 @@ func ExcludeCmd(cmds ...string) CmdSelector {
 		}
 
 		return true
-	}
-}
-
-// AllowCmd creates a selector that only accepts commands whose path contains a listed phrase.
-// Example: AllowCmd("get", "helm list") includes "kubectl get pods" and "helm list".
-func AllowCmd(cmds ...string) CmdSelector {
-	return func(cmd *cobra.Command) bool {
-		for _, phrase := range cmds {
-			if strings.Contains(cmd.CommandPath(), phrase) {
-				return true
-			}
-		}
-
-		slog.Debug("excluding command by allow list", "command_path", cmd.CommandPath(), "allow_list", cmds)
-		return false
-	}
-}
-
-// ExcludeFlag creates a selector that rejects flags whose name is listed.
-// Example: ExcludeFlag("color", "kubeconfig") excludes flags named "color" and "kubeconfig".
-func ExcludeFlag(names ...string) FlagSelector {
-	return func(flag *pflag.Flag) bool {
-		if slices.Contains(names, flag.Name) {
-			slog.Debug("excluding flag by exclude list", "flag_name", flag.Name, "exclude_list", names)
-			return false
-		}
-
-		return true
-	}
-}
-
-// AllowFlag creates a selector that only accepts flags whose name is listed.
-// Example: AllowFlag("namespace", "output") includes only flags named "namespace" and "output".
-func AllowFlag(names ...string) FlagSelector {
-	return func(flag *pflag.Flag) bool {
-		if slices.Contains(names, flag.Name) {
-			return true
-		}
-
-		slog.Debug("excluding flag by allow list", "flag_name", flag.Name, "allow_list", names)
-		return false
 	}
 }

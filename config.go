@@ -91,8 +91,8 @@ func (c *Config) selectors() []bridge.Selector {
 		selectors[i] = bridge.Selector{
 			CmdSelector:  bridge.CmdSelector(s.CmdSelector),
 			FlagSelector: bridge.FlagSelector(s.FlagSelector),
-			PreRun:       s.PreRun,
-			PostRun:      s.PostRun,
+			PreRun:       bridge.PreRunFunc(s.PreRun),
+			PostRun:      bridge.PostRunFunc(s.PostRun),
 		}
 	}
 
