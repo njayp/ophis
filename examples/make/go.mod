@@ -5,7 +5,7 @@ go 1.24.6
 replace github.com/njayp/ophis => ../../
 
 require (
-	github.com/njayp/ophis v0.6.2
+	github.com/njayp/ophis v0.6.3
 	github.com/spf13/cobra v1.10.1
 )
 
