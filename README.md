@@ -50,36 +50,11 @@ func main() {
 
 Your CLI commands are now available as mcp server tools!
 
-## Configuration
+## Config
 
-The `ophis.Command()` function accepts an optional `*ophis.Config` parameter to customize the MCP server behavior:
+Selectors select commands and flags to be made into MCP tools, and provides hooks for PreRun and PostRun middleware for selected commands.
 
-```go
-config := &ophis.Config{
-    // Customize tool creation and execution
-    Selectors: []ophis.Selector{
-        {
-            CmdSelector: ophis.ExcludeCmd("dangerous"),
-            PreRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.CmdToolInput) (context.Context, *mcp.CallToolRequest, bridge.CmdToolInput) {
-                // Add timeout
-                ctx, _ = context.WithTimeout(ctx, time.Minute)
-                return ctx, req, in
-            },
-        },
-    },
-    
-    // Configure logging (logs to stderr)
-    SloggerOptions: &slog.HandlerOptions{
-        Level: slog.LevelDebug,
-    },
-}
-```
-
-### Selectors
-
-Selectors control which commands become MCP tools and which flags they include.
-
-#### Basic Examples
+### Basic Examples
 
 ```go
 // Default: expose all commands with all their flags
@@ -122,13 +97,13 @@ config := &ophis.Config{
 }
 ```
 
-#### How Selectors Select Commands
+### How Selectors Select Commands
 
 1. **Safety first**: Hidden, deprecated, and non-runnable commands/flags are always excluded
-2. **First match wins**: Selectors are evaluated in order; the first matching `CmdSelector` determines which `FlagSelector` is used
+2. **First match wins**: Selectors are evaluated in order; the first Selector with a matching `CmdSelector` creates the MCP tool
 3. **No match = no tool**: Commands that don't match any selector are not exposed
 
-#### Middleware Hooks
+### Middleware Hooks
 
 Each selector can include middleware hooks that run before and after tool execution. Different selectors can specify different PreRun and PostRun functions for different commands.
 
@@ -158,7 +133,7 @@ Common use cases for middleware:
 - **PreRun**: Add timeouts, rate limiting, authentication checks, request logging
 - **PostRun**: Error handling, response filtering, metrics collection, output sanitization
 
-#### Multiple Selectors
+### Multiple Selectors
 
 Different commands can have different flag rules and execution hooks:
 
@@ -187,7 +162,7 @@ config := &ophis.Config{
 }
 ```
 
-#### Custom Selector Functions
+### Custom Selector Functions
 
 For complex logic, use custom functions:
 
@@ -203,7 +178,6 @@ ophis.Selector{
     },
 }
 ```
-
 
 ## Ophis Commands
 
@@ -229,6 +203,7 @@ Run `make build` to build all examples to `ophis/bin`.
 
 - [kubectl](./examples/kubectl/)
 - [helm](./examples/helm/)
+- [argocd](./examples/argocd/)
 - [make](./examples/make/)
 
 ### External Examples
