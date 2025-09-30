@@ -22,7 +22,6 @@ mcp
     └── list         # List MCP configurations in VS Code
 ```
 
-
 ## Quick Start
 
 ### Import
@@ -71,88 +70,19 @@ Your CLI commands are now available as mcp server tools!
 
 ## Config
 
-Selectors select commands and flags to be made into MCP tools, and provides hooks for PreRun and PostRun middleware for selected commands.
+`Selectors` select commands and flags to be made into MCP tools, and provide hooks for PreRun and PostRun middleware for those tools.
 
-### Basic Examples
+### How Selectors Work
 
-```go
-// Default: expose all commands with all their flags
-config := &ophis.Config{}
-```
+Selectors control which commands and flags become MCP tools. Each selector contains a `CmdSelector` that chooses which commands to expose and a `FlagSelector` that determines which flags to include. When converting your CLI, ophis evaluates selectors in order and uses the first matching selector to create each command's MCP tool. Commands that don't match any selector are not exposed.
 
-```go
-// Basic selection
-config := &ophis.Config{
-    Selectors: []ophis.Selector{
-        {
-            // Only these commands
-            CmdSelector: ophis.AllowCmd("get", "helm repo list"),
-            // Without this flag
-            FlagSelector: ophis.ExcludeFlag("kubeconfig"),
-        },
-    },
-}
-```
+If a `CmdSelector` is nil, all commands are allowed. If a `FlagSelector` is nil, all flags are allowed. This makes it easy to create catch-all selectors or to expose everything by default.
 
-```go
-config := &ophis.Config{
-    Selectors: []ophis.Selector{
-        {
-            // Only these commands, with all flags
-            CmdSelector: ophis.AllowCmd("get", "helm repo list"),
-        },
-    },
-}
-```
+Hidden, deprecated, and non-runnable commands are automatically filtered out, as are hidden and deprecated flags.
 
-```go
-config := &ophis.Config{
-    Selectors: []ophis.Selector{
-        {
-            // All commands, without this flag
-            FlagSelector: ophis.ExcludeFlag("kubeconfig"),
-        },
-    },
-}
-```
+Each selector can also include PreRun and PostRun middleware hooks that execute before and after tool invocation. This lets you apply different behavior to different commands—for example, adding timeouts to read operations, excluding sensitive flags from write operations, or sanitizing outputs for public-facing tools.
 
-### How Selectors Select Commands
-
-1. **Safety first**: Hidden, deprecated, and non-runnable commands/flags are always excluded
-2. **First match wins**: Selectors are evaluated in order; the first Selector with a matching `CmdSelector` creates the MCP tool
-3. **No match = no tool**: Commands that don't match any selector are not exposed
-
-### Middleware Hooks
-
-Each selector can include middleware hooks that run before and after tool execution. Different selectors can specify different PreRun and PostRun functions for different commands.
-
-```go
-config := &ophis.Config{
-    Selectors: []ophis.Selector{
-        {
-            // PreRun executes before each tool call
-            // Return a cancelled context to prevent execution
-            PreRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.CmdToolInput) (context.Context, *mcp.CallToolRequest, bridge.CmdToolInput) {
-                // Add timeout
-                ctx, _ = context.WithTimeout(ctx, time.Minute)
-                return ctx, req, in
-            },
-            
-            // PostRun executes after each tool call
-            PostRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.CmdToolInput, res *mcp.CallToolResult, out bridge.CmdToolOutput, err error) (*mcp.CallToolResult, bridge.CmdToolOutput, error) {
-                // Your middleware here
-                return res, out, err
-            },
-        },
-    },
-}
-```
-
-Common use cases for middleware:
-- **PreRun**: Add timeouts, rate limiting, authentication checks, request logging
-- **PostRun**: Error handling, response filtering, metrics collection, output sanitization
-
-### Multiple Selectors
+### Multiple Selectors Example
 
 Different commands can have different flag rules and execution hooks:
 
@@ -160,22 +90,30 @@ Different commands can have different flag rules and execution hooks:
 config := &ophis.Config{
     Selectors: []ophis.Selector{
         {
-            // Read operations: only output flags
-            CmdSelector: ophis.AllowCmd("get", "list", "logs"),
-            FlagSelector: ophis.AllowFlag("output", "format"),
-            PreRun: timeoutFn(),
-            PostRun: limitOutputFn(),
+            // Select read-only commands
+            CmdSelector: ophis.AllowCmd("get", "helm repo list", "logs"),
+
+            // FlagSelector is nil, selecting all flags
+
+            // Add middleware for these commands
+            PreRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.CmdToolInput) (context.Context, *mcp.CallToolRequest, bridge.CmdToolInput) {
+                // Add timeout
+                ctx, _ = context.WithTimeout(ctx, time.Minute)
+                return ctx, req, in
+            },
         },
         {
-            // Write operations: exclude dangerous flags
-            CmdSelector: ophis.AllowCmd("create", "apply"),
+            // Select write commands
+            CmdSelector: ophis.AllowCmd("helm repo add", "apply"),
+            
+            // Exclude dangerous flags
             FlagSelector: ophis.ExcludeFlag("force", "token", "insecure"),
-            PreRun: timeoutFn(),
         },
         {
-            // Everything else: with common flag exclusions
+            // CmdSelector is nil, selecting all remaining commands
+
+            // Exclude common, dangerous flags
             FlagSelector: ophis.ExcludeFlag("token", "insecure"),
-            PreRun: timeoutFn(),
         },
     },
 }
