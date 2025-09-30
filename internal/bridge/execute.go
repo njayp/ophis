@@ -76,11 +76,7 @@ func run(cmd *exec.Cmd) (*mcp.CallToolResult, CmdToolOutput, error) {
 		} else {
 			// Non-exit errors (like command not found)
 			slog.Error("command failed to run", "error", err)
-			return nil, CmdToolOutput{
-				StdOut:   stdout.String(),
-				StdErr:   stderr.String(),
-				ExitCode: -1,
-			}, err
+			return nil, CmdToolOutput{}, err
 		}
 	}
 

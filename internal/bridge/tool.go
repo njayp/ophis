@@ -32,12 +32,17 @@ func (m *Manager) RegisterTools(cmd *cobra.Command) {
 	}
 
 	// cycle through selectors until one matches the cmd
-	for i, selector := range m.Selectors {
-		if selector.cmdSelect(cmd) {
-			tool := selector.CreateToolFromCmd(cmd)
-			mcp.AddTool(m.Server, tool, selector.execute)
-			m.Tools = append(m.Tools, tool)
+	for i, s := range m.Selectors {
+		if s.cmdSelect(cmd) {
+			// create tool from cmd
+			tool := s.CreateToolFromCmd(cmd)
 			slog.Debug("created tool", "tool_name", tool.Name, "selector_index", i)
+
+			// register tool with server
+			mcp.AddTool(m.Server, tool, s.execute)
+
+			// add tool to manager's tool list (for `tools` command)
+			m.Tools = append(m.Tools, tool)
 		}
 	}
 }
@@ -59,7 +64,6 @@ func (s Selector) CreateToolFromCmd(cmd *cobra.Command) *mcp.Tool {
 
 // toolName creates a tool name from the command path.
 func toolName(cmd *cobra.Command) string {
-	// Count depth for capacity hint
 	var names []string
 	current := cmd
 	for current != nil && current.Name() != "" {
