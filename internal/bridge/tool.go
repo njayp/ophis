@@ -125,10 +125,38 @@ func (s Selector) enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Comma
 	})
 }
 
+// isFlagRequired checks if a flag has been marked as required by Cobra.
+// Cobra uses the BashCompOneRequiredFlag annotation to track required flags.
+func isFlagRequired(flag *pflag.Flag) bool {
+	if flag.Annotations == nil {
+		return false
+	}
+
+	// Check if the flag has the required annotation
+	// The constant is defined as "cobra_annotation_bash_completion_one_required_flag" in Cobra
+	if val, ok := flag.Annotations[cobra.BashCompOneRequiredFlag]; ok {
+		// The annotation is present if the flag is required
+		return len(val) > 0 && val[0] == "true"
+	}
+
+	return false
+}
+
 // addFlagToSchema adds a single flag to the schema properties.
 func addFlagToSchema(schema *jsonschema.Schema, flag *pflag.Flag) {
 	flagSchema := &jsonschema.Schema{
 		Description: flag.Usage,
+	}
+
+	// Check if flag is marked as required in its annotations
+	// Cobra uses the BashCompOneRequiredFlag annotation to mark required flags
+	if isRequired := isFlagRequired(flag); isRequired {
+		// Mark the flag as required in the schema
+		if schema.Required == nil {
+			schema.Required = []string{}
+		}
+
+		schema.Required = append(schema.Required, flag.Name)
 	}
 
 	// Set appropriate JSON schema type based on flag type

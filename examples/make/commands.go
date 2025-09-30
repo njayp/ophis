@@ -17,8 +17,6 @@ func createMakeCommands() *cobra.Command {
 
 	// Add some common flags that make commands might use as persistent flags
 	// These will be available to all subcommands
-	rootCmd.PersistentFlags().StringP("file", "f", "", "Use FILE as a makefile")
-	rootCmd.PersistentFlags().StringP("directory", "C", "", "Change to directory before doing anything")
 
 	// Add make target commands
 	testCmd := createMakeTargetCommand("test", "Run tests", "Run the test suite")
@@ -31,7 +29,7 @@ func createMakeCommands() *cobra.Command {
 
 // createMakeTargetCommand creates a cobra command for a specific make target
 func createMakeTargetCommand(target, short, long string) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   target,
 		Short: short,
 		Long:  long,
@@ -44,6 +42,15 @@ func createMakeTargetCommand(target, short, long string) *cobra.Command {
 			return subCmd.Run()
 		},
 	}
+
+	cmd.Flags().StringP("file", "f", "", "Use FILE as a makefile")
+	cmd.Flags().StringP("directory", "C", "", "Change to directory before doing anything")
+	err := cmd.MarkFlagRequired("directory")
+	if err != nil {
+		panic(err)
+	}
+
+	return cmd
 }
 
 func buildArgs(cmd *cobra.Command, args []string) []string {
