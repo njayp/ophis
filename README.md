@@ -4,13 +4,32 @@
 
 Ophis automatically converts your existing Cobra commands into MCP tools, and provides CLI commands for integration with Claude and VSCode.
 
-## Import
+## Ophis Commands
+
+`ophis.Command` returns the following commands:
+
+```
+mcp
+├── start            # Start MCP server on stdio
+├── tools            # Export available MCP tools as JSON
+├── claude
+│   ├── enable       # Enable Helm MCP in Claude Desktop
+│   ├── disable      # Disable Helm MCP in Claude Desktop
+│   └── list         # List MCP configurations in Claude Desktop
+└── vscode
+    ├── enable       # Enable Helm MCP in VS Code
+    ├── disable      # Disable Helm MCP in VS Code
+    └── list         # List MCP configurations in VS Code
+```
+
+
+## Quick Start
+
+### Import
 
 ```bash
 go get github.com/njayp/ophis
 ```
-
-## Quick Start
 
 ### Add MCP server commands to your command tree.
 
@@ -177,24 +196,6 @@ ophis.Selector{
         return flag.Annotations["mcp"] == "true"
     },
 }
-```
-
-## Ophis Commands
-
-`ophis.Command` returns the following commands:
-
-```
-mcp
-├── start            # Start MCP server on stdio
-├── tools            # Export available MCP tools as JSON
-├── claude
-│   ├── enable       # Enable Helm MCP in Claude Desktop
-│   ├── disable      # Disable Helm MCP in Claude Desktop
-│   └── list         # List MCP configurations in Claude Desktop
-└── vscode
-    ├── enable       # Enable Helm MCP in VS Code
-    ├── disable      # Disable Helm MCP in VS Code
-    └── list         # List MCP configurations in VS Code
 ```
 
 ## Examples
