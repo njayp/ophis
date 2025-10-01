@@ -5,7 +5,7 @@ go 1.24.6
 replace github.com/njayp/ophis => ../../
 
 require (
-	github.com/njayp/ophis v0.6.3
+	github.com/njayp/ophis v0.6.4
 	github.com/spf13/cobra v1.10.1
 	k8s.io/client-go v0.34.1
 	k8s.io/component-base v0.34.1
@@ -57,7 +57,7 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/moby/spdystream v0.5.0 // indirect
 	github.com/moby/term v0.5.2 // indirect
-	github.com/modelcontextprotocol/go-sdk v0.8.0 // indirect
+	github.com/modelcontextprotocol/go-sdk v1.0.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect

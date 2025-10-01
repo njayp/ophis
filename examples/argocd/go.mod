@@ -8,6 +8,7 @@ require (
 	github.com/argoproj/argo-cd/v3 v3.1.7
 	github.com/njayp/ophis v0.0.0-00010101000000-000000000000
 	github.com/spf13/cobra v1.10.1
+	github.com/spf13/pflag v1.0.10
 	k8s.io/klog/v2 v2.130.1
 )
 
@@ -178,7 +179,7 @@ require (
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/spdystream v0.5.0 // indirect
 	github.com/moby/term v0.5.2 // indirect
-	github.com/modelcontextprotocol/go-sdk v0.8.0 // indirect
+	github.com/modelcontextprotocol/go-sdk v1.0.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
@@ -211,7 +212,6 @@ require (
 	github.com/slack-go/slack v0.16.0 // indirect
 	github.com/soheilhy/cmux v0.1.5 // indirect
 	github.com/spf13/cast v1.7.1 // indirect
-	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/stretchr/testify v1.11.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
