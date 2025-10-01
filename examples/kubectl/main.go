@@ -27,21 +27,11 @@ func rootCmd() *cobra.Command {
 					"kubectl top node",
 					"kubectl explain",
 				),
-				FlagSelector: ophis.AllowFlag(
-					"all-namespaces",
+
+				InheritedFlagSelector: ophis.AllowFlag(
 					"namespace",
 					"context",
 					"output",
-					"field-selector",
-					"selector",
-					"sort-by",
-					"container",
-					"previous",
-					"tail",
-					"since",
-					"since-time",
-					"limit-bytes",
-					"recursive",
 				),
 			},
 		},

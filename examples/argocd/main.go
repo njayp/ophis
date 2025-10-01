@@ -12,10 +12,6 @@ import (
 	"k8s.io/klog/v2"
 )
 
-const (
-	binaryNameEnv = "ARGOCD_BINARY_NAME"
-)
-
 func init() {
 	// Make sure klog uses the configured log level and format.
 	klog.SetLogger(log.NewLogrusLogger(log.NewWithCurrentConfig()))
