@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -50,29 +51,18 @@ func GetExecutableServerName(serverName string) (string, error) {
 // GetMCPCommandPath builds the command path to the MCP command.
 // Example: for "cli alpha mcp start", returns ["alpha", "mcp"].
 func GetMCPCommandPath(cmd *cobra.Command) []string {
-	args := []string{}
-	foundMCP := false
-	cur := cmd
-	for {
-		if cur.Name() == MCPCommandName {
-			foundMCP = true
-		}
-		if foundMCP {
-			args = append(args, cur.Name())
-		}
-		if cur.Parent() == nil {
-			break
-		}
-		cur = cur.Parent()
+	path := cmd.CommandPath()
+	args := strings.Fields(path) // splits on spaces, handles multiple spaces
+
+	// Find the index of the MCP command name
+	index := slices.Index(args, MCPCommandName)
+	if index == -1 {
+		// MCP command not found
+		panic(fmt.Sprintf("MCP command name %q not found in command path %q", MCPCommandName, path))
 	}
 
-	if len(args) == 0 {
-		return []string{}
-	}
-
-	slices.Reverse(args)
-
-	return args[1:]
+	// Return the slice from after the root command to the MCP command
+	return args[1 : index+1]
 }
 
 // BackupConfigFile creates a .backup copy of the configuration file.

@@ -3,7 +3,6 @@ package bridge
 import (
 	"fmt"
 	"log/slog"
-	"slices"
 	"strings"
 
 	"github.com/google/jsonschema-go/jsonschema"
@@ -22,7 +21,7 @@ type Manager struct {
 // RegisterTools explores a cmd tree, making tools recursively out of the provided cmd and its children
 func (m *Manager) RegisterTools(cmd *cobra.Command) {
 	if cmd == nil {
-		slog.Warn("ToolsRecursive called with nil command")
+		slog.Error("ToolsRecursive called with nil command")
 		return
 	}
 
@@ -64,15 +63,8 @@ func (s Selector) CreateToolFromCmd(cmd *cobra.Command) *mcp.Tool {
 
 // toolName creates a tool name from the command path.
 func toolName(cmd *cobra.Command) string {
-	var names []string
-	current := cmd
-	for current != nil && current.Name() != "" {
-		names = append(names, current.Name())
-		current = current.Parent()
-	}
-
-	slices.Reverse(names)
-	return strings.Join(names, "_")
+	path := cmd.CommandPath()
+	return strings.ReplaceAll(path, " ", "_")
 }
 
 // toolDescription creates a comprehensive tool description.
