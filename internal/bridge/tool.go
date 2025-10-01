@@ -105,22 +105,18 @@ func (s Selector) enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Comma
 
 	// Process local flags
 	cmd.LocalFlags().VisitAll(func(flag *pflag.Flag) {
-		if !s.flagSelect(flag) {
-			return
+		if s.localFlagSelect(flag) {
+			addFlagToSchema(schema, flag)
 		}
-
-		addFlagToSchema(schema, flag)
 	})
 
 	// Process inherited flags
 	cmd.InheritedFlags().VisitAll(func(flag *pflag.Flag) {
-		if !s.flagSelect(flag) {
-			return
-		}
-
-		// Skip if already added as local flag
-		if _, exists := schema.Properties[flag.Name]; !exists {
-			addFlagToSchema(schema, flag)
+		if s.inheritedFlagSelect(flag) {
+			// Skip if already added as local flag
+			if _, exists := schema.Properties[flag.Name]; !exists {
+				addFlagToSchema(schema, flag)
+			}
 		}
 	})
 }

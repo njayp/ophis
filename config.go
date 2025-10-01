@@ -89,10 +89,11 @@ func (c *Config) selectors() []bridge.Selector {
 	selectors := make([]bridge.Selector, length)
 	for i, s := range c.Selectors {
 		selectors[i] = bridge.Selector{
-			CmdSelector:  bridge.CmdSelector(s.CmdSelector),
-			FlagSelector: bridge.FlagSelector(s.FlagSelector),
-			PreRun:       bridge.PreRunFunc(s.PreRun),
-			PostRun:      bridge.PostRunFunc(s.PostRun),
+			CmdSelector:           bridge.CmdSelector(s.CmdSelector),
+			LocalFlagSelector:     bridge.FlagSelector(s.LocalFlagSelector),
+			InheritedFlagSelector: bridge.FlagSelector(s.InheritedFlagSelector),
+			PreRun:                bridge.PreRunFunc(s.PreRun),
+			PostRun:               bridge.PostRunFunc(s.PostRun),
 		}
 	}
 

@@ -50,10 +50,16 @@ type Selector struct {
 	// If nil, accepts all commands that pass basic safety filters.
 	// Cannot be used to bypass safety filters (hidden, deprecated, non-runnable).
 	CmdSelector CmdSelector
-	// FlagSelector determines which flags to include for commands matched by CmdSelector.
+
+	// LocalFlagSelector determines which flags to include for commands matched by CmdSelector.
 	// If nil, includes all flags that pass basic safety filters.
 	// Cannot be used to bypass safety filters (hidden, deprecated flags).
-	FlagSelector FlagSelector
+	LocalFlagSelector FlagSelector
+
+	// InheritedFlagSelector determines which persistent flags to include for commands matched by CmdSelector.
+	// If nil, includes all flags that pass basic safety filters.
+	// Cannot be used to bypass safety filters (hidden, deprecated flags).
+	InheritedFlagSelector FlagSelector
 
 	// PreRun is middleware hook that runs before each tool call
 	// Return a cancelled context to prevent execution.
@@ -106,14 +112,27 @@ func defaultFlagSelect(flag *pflag.Flag) bool {
 	return true
 }
 
-// flagSelect returns true if the flag passes default filters and this selector's FlagSelector (if any).
-func (s *Selector) flagSelect(flag *pflag.Flag) bool {
+// localFlagSelect returns true if the flag passes default filters and this selector's FlagSelector (if any).
+func (s *Selector) localFlagSelect(flag *pflag.Flag) bool {
 	if !defaultFlagSelect(flag) {
 		return false
 	}
 
-	if s.FlagSelector != nil {
-		return s.FlagSelector(flag)
+	if s.LocalFlagSelector != nil {
+		return s.LocalFlagSelector(flag)
+	}
+
+	return true
+}
+
+// flagSelect returns true if the flag passes default filters and this selector's FlagSelector (if any).
+func (s *Selector) inheritedFlagSelect(flag *pflag.Flag) bool {
+	if !defaultFlagSelect(flag) {
+		return false
+	}
+
+	if s.InheritedFlagSelector != nil {
+		return s.InheritedFlagSelector(flag)
 	}
 
 	return true

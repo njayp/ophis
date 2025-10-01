@@ -49,10 +49,16 @@ type Selector struct {
 	// If nil, accepts all commands that pass basic safety filters.
 	// Cannot be used to bypass safety filters (hidden, deprecated, non-runnable).
 	CmdSelector CmdSelector
-	// FlagSelector determines which flags to include for commands matched by CmdSelector.
+
+	// LocalFlagSelector determines which flags to include for commands matched by CmdSelector.
 	// If nil, includes all flags that pass basic safety filters.
 	// Cannot be used to bypass safety filters (hidden, deprecated flags).
-	FlagSelector FlagSelector
+	LocalFlagSelector FlagSelector
+
+	// InheritedFlagSelector determines which persistent flags to include for commands matched by CmdSelector.
+	// If nil, includes all flags that pass basic safety filters.
+	// Cannot be used to bypass safety filters (hidden, deprecated flags).
+	InheritedFlagSelector FlagSelector
 
 	// PreRun is middleware hook that runs before each tool call
 	// Return a cancelled context to prevent execution.
@@ -106,4 +112,9 @@ func AllowFlag(names ...string) FlagSelector {
 	return func(flag *pflag.Flag) bool {
 		return slices.Contains(names, flag.Name)
 	}
+}
+
+// NoFlags is a FlagSelector that excludes all flags.
+func NoFlags(_ *pflag.Flag) bool {
+	return false
 }

@@ -40,7 +40,7 @@ func (s *Selector) execute(ctx context.Context, request *mcp.CallToolRequest, in
 		result, output, err = s.PostRun(ctx, request, input, result, output, err)
 	}
 
-	return
+	return result, output, err
 }
 
 // execute runs the underlying CLI command.

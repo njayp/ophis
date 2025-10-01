@@ -74,9 +74,9 @@ Your CLI commands are now available as mcp server tools!
 
 ### How Selectors Work
 
-Selectors control which commands and flags become MCP tools. Each selector contains a `CmdSelector` that chooses which commands to expose and a `FlagSelector` that determines which flags to include. When converting your CLI, ophis evaluates selectors in order and uses the first matching selector to create each command's MCP tool. Commands that don't match any selector are not exposed.
+Selectors control which commands and flags become MCP tools. Each selector contains a `CmdSelector` that chooses which commands to expose and `LocalFlagSelector`, `InheritedFlagSelector` that determine which flags to include. When converting your CLI, ophis evaluates selectors in order and uses the first matching selector to create each command's MCP tool. Commands that don't match any selector are not exposed.
 
-If a `CmdSelector` is nil, all commands are allowed. If a `FlagSelector` is nil, all flags are allowed. This makes it easy to create catch-all selectors or to expose everything by default.
+If a `CmdSelector` is nil, all commands are allowed. If a flag selector is nil, all flags are allowed. This makes it easy to create catch-all selectors or to expose everything by default.
 
 Hidden, deprecated, and non-runnable commands are automatically filtered out, as are hidden and deprecated flags.
 
@@ -93,7 +93,10 @@ config := &ophis.Config{
             // Select read-only commands
             CmdSelector: ophis.AllowCmd("get", "helm repo list", "logs"),
 
-            // FlagSelector is nil, selecting all flags
+            // FlagSelector is nil, selecting all local flags
+
+            // Exclude all inherited flags
+            InheritedFlagSelector: ophis.NoFlags,
 
             // Add middleware for these commands
             PreRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.CmdToolInput) (context.Context, *mcp.CallToolRequest, bridge.CmdToolInput) {
@@ -107,13 +110,19 @@ config := &ophis.Config{
             CmdSelector: ophis.AllowCmd("helm repo add", "apply"),
             
             // Exclude dangerous flags
-            FlagSelector: ophis.ExcludeFlag("force", "token", "insecure"),
+            LocalFlagSelector: ophis.ExcludeFlag("force", "token", "insecure"),
+
+            // Exclude all inherited flags
+            InheritedFlagSelector: ophis.NoFlags,
         },
         {
             // CmdSelector is nil, selecting all remaining commands
 
-            // Exclude common, dangerous flags
-            FlagSelector: ophis.ExcludeFlag("token", "insecure"),
+            // Exclude common, dangerous local flags
+            LocalFlagSelector: ophis.ExcludeFlag("token", "insecure"),
+
+            // Exclude all inherited flags
+            InheritedFlagSelector: ophis.NoFlags,
         },
     },
 }
