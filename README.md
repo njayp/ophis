@@ -93,7 +93,7 @@ config := &ophis.Config{
             // Select read-only commands
             CmdSelector: ophis.AllowCmd("get", "helm repo list", "logs"),
 
-            // FlagSelector is nil, selecting all local flags
+            // LocalFlagSelector is nil, selecting all local flags
 
             // Exclude all inherited flags
             InheritedFlagSelector: ophis.NoFlags,
@@ -139,7 +139,12 @@ ophis.Selector{
         // Only expose commands that have been annotated as "mcp"
         return cmd.Annotations["mcp"] == "true"
     },
-    FlagSelector: func(flag *pflag.Flag) bool {
+
+    LocalFlagSelector: func(flag *pflag.Flag) bool {
+        return flag.Annotations["mcp"] == "true"
+    },
+
+    InheritedFlagSelector: func(flag *pflag.Flag) bool {
         return flag.Annotations["mcp"] == "true"
     },
 }
