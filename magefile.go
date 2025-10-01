@@ -11,6 +11,16 @@ import (
 	"sync"
 )
 
+// All runs 'make all' for each example directory in parallel
+func All() error {
+	return runMakeInExamples("all")
+}
+
+// Build runs 'make build' for each example directory in parallel
+func Build() error {
+	return runMakeInExamples("build")
+}
+
 // runMakeInExamples runs a make target in all example directories in parallel
 func runMakeInExamples(target string) error {
 	// Find all example directories
@@ -86,14 +96,4 @@ func runMakeInExamples(target string) error {
 
 	fmt.Printf("\n✓ Successfully ran 'make %s' in all %d examples\n", target, successCount)
 	return nil
-}
-
-// All runs 'make all' for each example directory in parallel
-func All() error {
-	return runMakeInExamples("all")
-}
-
-// Build runs 'make build' for each example directory in parallel
-func Build() error {
-	return runMakeInExamples("build")
 }
