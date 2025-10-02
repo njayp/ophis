@@ -90,8 +90,8 @@ Different commands can have different flag rules and execution hooks:
 config := &ophis.Config{
     Selectors: []ophis.Selector{
         {
-            // Select read-only commands
-            CmdSelector: ophis.AllowCmd("get", "helm repo list", "logs"),
+            // Select all get commands
+            CmdSelector: ophis.AllowCmdsContaining("get"),
 
             // LocalFlagSelector is nil, selecting all local flags
 
@@ -106,11 +106,11 @@ config := &ophis.Config{
             },
         },
         {
-            // Select write commands
-            CmdSelector: ophis.AllowCmd("helm repo add", "apply"),
+            // Select exactly these write commands
+            CmdSelector: ophis.AllowCmds("mycli create", "mycli apply"),
             
             // Exclude dangerous flags
-            LocalFlagSelector: ophis.ExcludeFlag("force", "token", "insecure"),
+            LocalFlagSelector: ophis.ExcludeFlags("force", "token", "insecure"),
 
             // Exclude all inherited flags
             InheritedFlagSelector: ophis.NoFlags,
@@ -119,7 +119,7 @@ config := &ophis.Config{
             // CmdSelector is nil, selecting all remaining commands
 
             // Exclude common, dangerous local flags
-            LocalFlagSelector: ophis.ExcludeFlag("token", "insecure"),
+            LocalFlagSelector: ophis.ExcludeFlags("token", "insecure"),
 
             // Exclude all inherited flags
             InheritedFlagSelector: ophis.NoFlags,

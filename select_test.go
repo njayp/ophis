@@ -93,7 +93,7 @@ func TestAllowCmd(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cmd := buildCommandTree(tt.commandNames...)
-			selector := AllowCmd(tt.allowPhrases...)
+			selector := AllowCmdsContaining(tt.allowPhrases...)
 			result := selector(cmd)
 			assert.Equal(t, tt.expected, result)
 		})
@@ -166,7 +166,7 @@ func TestExcludeCmd(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cmd := buildCommandTree(tt.commandNames...)
-			selector := ExcludeCmd(tt.excludePhrases...)
+			selector := ExcludeCmdsContaining(tt.excludePhrases...)
 			result := selector(cmd)
 			assert.Equal(t, tt.expected, result)
 		})
@@ -233,8 +233,142 @@ func TestAllowFlag(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			flag := &pflag.Flag{Name: tt.flagName}
-			selector := AllowFlag(tt.allowNames...)
+			selector := AllowFlags(tt.allowNames...)
 			result := selector(flag)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestAllowCmds(t *testing.T) {
+	tests := []struct {
+		name         string
+		allowCmds    []string
+		commandNames []string
+		expected     bool
+	}{
+		{
+			name:         "matches exact command path",
+			allowCmds:    []string{"kubectl get"},
+			commandNames: []string{"kubectl", "get"},
+			expected:     true,
+		},
+		{
+			name:         "does not match partial path",
+			allowCmds:    []string{"kubectl get"},
+			commandNames: []string{"kubectl", "get", "pods"},
+			expected:     false,
+		},
+		{
+			name:         "matches one of multiple commands",
+			allowCmds:    []string{"kubectl get", "helm list", "docker ps"},
+			commandNames: []string{"helm", "list"},
+			expected:     true,
+		},
+		{
+			name:         "does not match if not in list",
+			allowCmds:    []string{"kubectl get", "helm list"},
+			commandNames: []string{"docker", "ps"},
+			expected:     false,
+		},
+		{
+			name:         "empty list rejects everything",
+			allowCmds:    []string{},
+			commandNames: []string{"kubectl", "get"},
+			expected:     false,
+		},
+		{
+			name:         "case sensitive matching",
+			allowCmds:    []string{"kubectl Get"},
+			commandNames: []string{"kubectl", "get"},
+			expected:     false,
+		},
+		{
+			name:         "requires exact match - no substring",
+			allowCmds:    []string{"kubectl"},
+			commandNames: []string{"kubectl", "get"},
+			expected:     false,
+		},
+		{
+			name:         "single command name",
+			allowCmds:    []string{"kubectl"},
+			commandNames: []string{"kubectl"},
+			expected:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := buildCommandTree(tt.commandNames...)
+			selector := AllowCmds(tt.allowCmds...)
+			result := selector(cmd)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestExcludeCmds(t *testing.T) {
+	tests := []struct {
+		name         string
+		excludeCmds  []string
+		commandNames []string
+		expected     bool
+	}{
+		{
+			name:         "excludes exact command path",
+			excludeCmds:  []string{"kubectl delete"},
+			commandNames: []string{"kubectl", "delete"},
+			expected:     false,
+		},
+		{
+			name:         "allows partial path not in list",
+			excludeCmds:  []string{"kubectl delete"},
+			commandNames: []string{"kubectl", "delete", "pod"},
+			expected:     true,
+		},
+		{
+			name:         "excludes if in list of multiple commands",
+			excludeCmds:  []string{"kubectl delete", "helm uninstall", "docker rm"},
+			commandNames: []string{"helm", "uninstall"},
+			expected:     false,
+		},
+		{
+			name:         "allows if not in exclusion list",
+			excludeCmds:  []string{"kubectl delete", "helm uninstall"},
+			commandNames: []string{"kubectl", "get"},
+			expected:     true,
+		},
+		{
+			name:         "empty list allows everything",
+			excludeCmds:  []string{},
+			commandNames: []string{"kubectl", "delete"},
+			expected:     true,
+		},
+		{
+			name:         "case sensitive matching",
+			excludeCmds:  []string{"kubectl Delete"},
+			commandNames: []string{"kubectl", "delete"},
+			expected:     true,
+		},
+		{
+			name:         "requires exact match - no substring",
+			excludeCmds:  []string{"kubectl"},
+			commandNames: []string{"kubectl", "delete"},
+			expected:     true,
+		},
+		{
+			name:         "single command exclusion",
+			excludeCmds:  []string{"kubectl"},
+			commandNames: []string{"kubectl"},
+			expected:     false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := buildCommandTree(tt.commandNames...)
+			selector := ExcludeCmds(tt.excludeCmds...)
+			result := selector(cmd)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -300,8 +434,55 @@ func TestExcludeFlag(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			flag := &pflag.Flag{Name: tt.flagName}
-			selector := ExcludeFlag(tt.excludeNames...)
+			selector := ExcludeFlags(tt.excludeNames...)
 			result := selector(flag)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestNoFlags(t *testing.T) {
+	tests := []struct {
+		name     string
+		flagName string
+		expected bool
+	}{
+		{
+			name:     "rejects regular flag",
+			flagName: "namespace",
+			expected: false,
+		},
+		{
+			name:     "rejects verbose flag",
+			flagName: "verbose",
+			expected: false,
+		},
+		{
+			name:     "rejects output flag",
+			flagName: "output",
+			expected: false,
+		},
+		{
+			name:     "rejects empty flag name",
+			flagName: "",
+			expected: false,
+		},
+		{
+			name:     "rejects special character flag",
+			flagName: "@special",
+			expected: false,
+		},
+		{
+			name:     "rejects long flag name",
+			flagName: "very-long-flag-name-that-should-still-be-rejected",
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			flag := &pflag.Flag{Name: tt.flagName}
+			result := NoFlags(flag)
 			assert.Equal(t, tt.expected, result)
 		})
 	}

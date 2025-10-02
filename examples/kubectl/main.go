@@ -19,7 +19,7 @@ func rootCmd() *cobra.Command {
 	command.AddCommand(ophis.Command(&ophis.Config{
 		Selectors: []ophis.Selector{
 			{
-				CmdSelector: ophis.AllowCmd(
+				CmdSelector: ophis.AllowCmds(
 					"kubectl get",
 					"kubectl describe",
 					"kubectl logs",
@@ -28,7 +28,7 @@ func rootCmd() *cobra.Command {
 					"kubectl explain",
 				),
 
-				InheritedFlagSelector: ophis.AllowFlag(
+				InheritedFlagSelector: ophis.AllowFlags(
 					"namespace",
 					"context",
 					"output",

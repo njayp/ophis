@@ -22,7 +22,7 @@ func rootCmd() *cobra.Command {
 	command.AddCommand(ophis.Command(&ophis.Config{
 		Selectors: []ophis.Selector{
 			{
-				CmdSelector: ophis.AllowCmd(
+				CmdSelector: ophis.AllowCmds(
 					"argocd app get",
 					"argocd app list",
 					"argocd app diff",
