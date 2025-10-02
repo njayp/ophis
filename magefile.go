@@ -21,6 +21,10 @@ func Build() error {
 	return runMakeInExamples("build")
 }
 
+func Test() error {
+	return runMakeInExamples("test")
+}
+
 // runMakeInExamples runs a make target in all example directories in parallel
 func runMakeInExamples(target string) error {
 	// Find all example directories
