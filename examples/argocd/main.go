@@ -30,12 +30,20 @@ func rootCmd() *cobra.Command {
 					"argocd app history",
 					"argocd app resources",
 					"argocd app logs",
+					"argocd app sync",
+					"argocd app wait",
+					"argocd app rollback",
+					"argocd cluster list",
+					"argocd proj list",
+					"argocd repo list",
 				),
 
+				// No inherited flags
 				InheritedFlagSelector: ophis.NoFlags,
 			},
 		},
 	}))
+
 	return command
 }
 
