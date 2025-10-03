@@ -71,20 +71,20 @@ type Selector struct {
 	PostRun PostRunFunc
 }
 
-func defaultCmdSelect(c *cobra.Command) bool {
-	if c.Hidden {
+func defaultCmdSelect(cmd *cobra.Command) bool {
+	if cmd.Hidden {
 		return false
 	}
 
-	if c.Deprecated != "" {
+	if cmd.Deprecated != "" {
 		return false
 	}
 
-	if c.Run == nil && c.RunE == nil && c.PreRun == nil && c.PreRunE == nil {
+	if cmd.Run == nil && cmd.RunE == nil && cmd.PreRun == nil && cmd.PreRunE == nil {
 		return false
 	}
 
-	return excludeCmd(cfgmgr.MCPCommandName, "help", "completion")(c)
+	return excludeCmd(cfgmgr.MCPCommandName, "help", "completion")(cmd)
 }
 
 // cmdSelect returns true if the command passes default filters and this selector's CmdSelector (if any).
@@ -101,15 +101,7 @@ func (s *Selector) cmdSelect(cmd *cobra.Command) bool {
 }
 
 func defaultFlagSelect(flag *pflag.Flag) bool {
-	if flag.Hidden {
-		return false
-	}
-
-	if flag.Deprecated != "" {
-		return false
-	}
-
-	return true
+	return !flag.Hidden && flag.Deprecated == ""
 }
 
 // localFlagSelect returns true if the flag passes default filters and this selector's FlagSelector (if any).
