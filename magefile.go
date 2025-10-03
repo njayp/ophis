@@ -120,7 +120,7 @@ func runMakeInExamples(target string) error {
 		makefilePath := filepath.Join(dir, "Makefile")
 
 		if _, err := os.Stat(makefilePath); os.IsNotExist(err) {
-			continue
+			return fmt.Errorf("failed to find makefile at %s: %w", makefilePath, err)
 		}
 
 		dirs = append(dirs, dir)

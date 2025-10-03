@@ -57,13 +57,8 @@ func execute(ctx context.Context, request *mcp.CallToolRequest, input CmdToolInp
 	)
 
 	// Create exec.Cmd and run it
-	cmd := exec.CommandContext(ctx, executablePath, args...)
-	return run(cmd)
-}
-
-// run runs the given exec.Cmd and returns stdout, stderr, and exit code.
-func run(cmd *exec.Cmd) (*mcp.CallToolResult, CmdToolOutput, error) {
 	var stdout, stderr bytes.Buffer
+	cmd := exec.CommandContext(ctx, executablePath, args...)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	exitCode := 0
@@ -75,7 +70,7 @@ func run(cmd *exec.Cmd) (*mcp.CallToolResult, CmdToolOutput, error) {
 			exitCode = exitErr.ExitCode()
 		} else {
 			// Non-exit errors (like command not found)
-			slog.Error("command failed to run", "error", err)
+			slog.Error("command failed to run", "name", name, "error", err)
 			return nil, CmdToolOutput{}, err
 		}
 	}
