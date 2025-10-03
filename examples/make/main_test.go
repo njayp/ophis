@@ -7,10 +7,9 @@ import (
 )
 
 func TestTools(t *testing.T) {
-	cmd := createMakeCommands()
+	cmd := makeCmd()
 
 	examples.TestTools(t, cmd, []string{
-		"make_lint",
-		"make_test",
+		"make",
 	})
 }

@@ -159,10 +159,6 @@ Run `make build` to build all examples to `ophis/bin`.
 - [argocd](./examples/argocd/)
 - [make](./examples/make/)
 
-### External Examples
-
-- [helm](https://github.com/njayp/helm)
-
 ## Contributing
 
 Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md)

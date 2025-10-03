@@ -5,7 +5,7 @@ all: up lint test build
 up:
 	# do not update, breaks builds
 	# go get -u ./...
-	go mod tidy
+	# go mod tidy
 
 .PHONY: lint
 lint: 
