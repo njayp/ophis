@@ -5,7 +5,7 @@ go 1.24.6
 replace github.com/njayp/ophis => ../../
 
 require (
-	github.com/argoproj/argo-cd/v3 v3.1.7
+	github.com/argoproj/argo-cd/v3 v3.1.8
 	github.com/njayp/ophis v0.0.0-00010101000000-000000000000
 	github.com/spf13/cobra v1.10.1
 	k8s.io/klog/v2 v2.130.1

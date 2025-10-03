@@ -138,7 +138,7 @@ func addFlagToSchema(schema *jsonschema.Schema, flag *pflag.Flag) {
 
 	// Check if flag is marked as required in its annotations
 	// Cobra uses the BashCompOneRequiredFlag annotation to mark required flags
-	if isRequired := isFlagRequired(flag); isRequired {
+	if isFlagRequired(flag) {
 		// Mark the flag as required in the schema
 		if schema.Required == nil {
 			schema.Required = []string{}

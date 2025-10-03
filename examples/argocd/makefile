@@ -3,9 +3,10 @@ all: up lint test build
 
 .PHONY: up
 up:
-	# do not update, breaks builds
+	# do not update all, breaks builds
 	# go get -u ./...
-	# go mod tidy
+	go get -u github.com/argoproj/argo-cd/v3
+	go mod tidy
 
 .PHONY: lint
 lint: 

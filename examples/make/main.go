@@ -23,7 +23,7 @@ func makeCmd() *cobra.Command {
 	flags := &flags{}
 	// Create the root make command
 	cmd := &cobra.Command{
-		Use:   "make",
+		Use:   "make [targets...]",
 		Short: "Run make targets",
 		Long:  `Execute make targets`,
 		RunE:  flags.run,
