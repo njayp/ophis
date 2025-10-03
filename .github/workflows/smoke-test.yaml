@@ -43,5 +43,5 @@ jobs:
       # Run smoke test using make
       - name: Smoke test
         run: |
-          make
+          make up lint test
           git diff --exit-code go.mod go.sum
