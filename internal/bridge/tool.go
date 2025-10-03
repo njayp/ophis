@@ -42,6 +42,9 @@ func (m *Manager) RegisterTools(cmd *cobra.Command) {
 
 			// add tool to manager's tool list (for `tools` command)
 			m.Tools = append(m.Tools, tool)
+
+			// only the first matching selector is used
+			break
 		}
 	}
 }
