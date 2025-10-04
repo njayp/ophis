@@ -158,6 +158,7 @@ func TestCreateToolFromCmd(t *testing.T) {
 		assert.NotContains(t, flagsSchema.Properties, "include", "Should not include excluded flag")
 		assert.NotContains(t, flagsSchema.Properties, "count", "Should not include excluded flag")
 		assert.NotContains(t, flagsSchema.Properties, "config", "Should not include excluded persistent flag")
+		assert.NotContains(t, flagsSchema.Properties, "greeting", "Should not include excluded flag")
 
 		// Verify required flags - none should be required since 'count' was excluded
 		require.Empty(t, flagsSchema.Required, "Should have no required flags")

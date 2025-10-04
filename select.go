@@ -2,7 +2,6 @@ package ophis
 
 import (
 	"slices"
-	"strings"
 
 	"github.com/njayp/ophis/internal/bridge"
 	"github.com/spf13/cobra"
@@ -73,28 +72,15 @@ type Selector struct {
 // AllowCmdsContaining creates a selector that only accepts commands whose path contains a listed phrase.
 // Example: AllowCmdsContaining("get", "helm list") includes "kubectl get pods" and "helm list".
 func AllowCmdsContaining(substrings ...string) CmdSelector {
-	return func(cmd *cobra.Command) bool {
-		for _, s := range substrings {
-			if strings.Contains(cmd.CommandPath(), s) {
-				return true
-			}
-		}
-
-		return false
-	}
+	return CmdSelector(bridge.CmdContains(substrings...))
 }
 
 // ExcludeCmdsContaining creates a selector that rejects commands whose path contains any listed phrase.
 // Example: ExcludeCmdsContaining("kubectl delete", "admin") excludes "kubectl delete" and "cli admin user".
 func ExcludeCmdsContaining(substrings ...string) CmdSelector {
+	selector := bridge.CmdContains(substrings...)
 	return func(cmd *cobra.Command) bool {
-		for _, s := range substrings {
-			if strings.Contains(cmd.CommandPath(), s) {
-				return false
-			}
-		}
-
-		return true
+		return !selector(cmd)
 	}
 }
 

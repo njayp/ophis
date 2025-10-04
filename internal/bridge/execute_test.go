@@ -100,13 +100,13 @@ func TestBuildCommandArgs(t *testing.T) {
 	tests := []struct {
 		name         string
 		commandName  string
-		input        CmdToolInput
+		input        ToolInput
 		expectedArgs []string
 	}{
 		{
 			name:        "Simple command",
 			commandName: "root_test",
-			input: CmdToolInput{
+			input: ToolInput{
 				Flags: map[string]any{},
 				Args:  []string{},
 			},
@@ -115,7 +115,7 @@ func TestBuildCommandArgs(t *testing.T) {
 		{
 			name:        "Nested command",
 			commandName: "root_sub_command",
-			input: CmdToolInput{
+			input: ToolInput{
 				Flags: map[string]any{},
 				Args:  []string{},
 			},
@@ -124,7 +124,7 @@ func TestBuildCommandArgs(t *testing.T) {
 		{
 			name:        "Command with flags",
 			commandName: "root_test",
-			input: CmdToolInput{
+			input: ToolInput{
 				Flags: map[string]any{
 					"verbose": true,
 					"output":  "result.txt",
@@ -136,7 +136,7 @@ func TestBuildCommandArgs(t *testing.T) {
 		{
 			name:        "Command with arguments",
 			commandName: "root_test",
-			input: CmdToolInput{
+			input: ToolInput{
 				Flags: map[string]any{},
 				Args:  []string{"file1.txt", "file2.txt"},
 			},
@@ -145,7 +145,7 @@ func TestBuildCommandArgs(t *testing.T) {
 		{
 			name:        "Command with flags and arguments",
 			commandName: "root_deploy",
-			input: CmdToolInput{
+			input: ToolInput{
 				Flags: map[string]any{
 					"namespace": "production",
 					"replicas":  3,
@@ -158,7 +158,7 @@ func TestBuildCommandArgs(t *testing.T) {
 		{
 			name:        "Complex nested command",
 			commandName: "root_cluster_node_list",
-			input: CmdToolInput{
+			input: ToolInput{
 				Flags: map[string]any{
 					"output": "json",
 					"label":  []any{"env=prod", "team=backend"},
@@ -170,7 +170,7 @@ func TestBuildCommandArgs(t *testing.T) {
 		{
 			name:        "Command with quoted arguments",
 			commandName: "root_exec",
-			input: CmdToolInput{
+			input: ToolInput{
 				Flags: map[string]any{},
 				Args:  []string{"argument with spaces", "another quoted arg", "normal"},
 			},

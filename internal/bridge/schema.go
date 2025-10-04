@@ -8,19 +8,19 @@ import (
 )
 
 var (
-	inputSchema  = newSchemaCache[CmdToolInput]()
-	outputSchema = newSchemaCache[CmdToolOutput]()
+	inputSchema  = newSchemaCache[ToolInput]()
+	outputSchema = newSchemaCache[ToolOutput]()
 )
 
-// CmdToolInput represents the input structure for command tools.
-// Do not `omitempty` the Flags field, it helps the AI.
-type CmdToolInput struct {
+// ToolInput represents the input structure for command tools.
+// Do not `omitempty` the Flags field, there may be required flags inside.
+type ToolInput struct {
 	Flags map[string]any `json:"flags" jsonschema:"Command line flags"`
 	Args  []string       `json:"args,omitempty" jsonschema:"Positional command line arguments"`
 }
 
-// CmdToolOutput represents the output structure for command tools.
-type CmdToolOutput struct {
+// ToolOutput represents the output structure for command tools.
+type ToolOutput struct {
 	StdOut   string `json:"stdout,omitempty" jsonschema:"Standard output"`
 	StdErr   string `json:"stderr,omitempty" jsonschema:"Standard error"`
 	ExitCode int    `json:"exitCode" jsonschema:"Exit code"`

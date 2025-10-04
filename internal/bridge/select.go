@@ -25,11 +25,11 @@ type FlagSelector func(*pflag.Flag) bool
 // PreRunFunc is middleware hook that runs before each tool call
 // Return a cancelled context to prevent execution.
 // Common uses: add timeouts, rate limiting, auth checks, metrics.
-type PreRunFunc func(context.Context, *mcp.CallToolRequest, CmdToolInput) (context.Context, *mcp.CallToolRequest, CmdToolInput)
+type PreRunFunc func(context.Context, *mcp.CallToolRequest, ToolInput) (context.Context, *mcp.CallToolRequest, ToolInput)
 
 // PostRunFunc is middleware hook that runs after each tool call
 // Common uses: error handling, response filtering, metrics collection.
-type PostRunFunc func(context.Context, *mcp.CallToolRequest, CmdToolInput, *mcp.CallToolResult, CmdToolOutput, error) (*mcp.CallToolResult, CmdToolOutput, error)
+type PostRunFunc func(context.Context, *mcp.CallToolRequest, ToolInput, *mcp.CallToolResult, ToolOutput, error) (*mcp.CallToolResult, ToolOutput, error)
 
 // Selector contains selectors for filtering commands and flags.
 // When multiple selectors are configured, they are evaluated in order.
@@ -71,12 +71,9 @@ type Selector struct {
 	PostRun PostRunFunc
 }
 
-func defaultCmdSelect(cmd *cobra.Command) bool {
-	if cmd.Hidden {
-		return false
-	}
-
-	if cmd.Deprecated != "" {
+// cmdSelect returns true if the command passes default filters and this selector's CmdSelector (if any).
+func (s *Selector) cmdSelect(cmd *cobra.Command) bool {
+	if cmd.Hidden || cmd.Deprecated != "" {
 		return false
 	}
 
@@ -84,12 +81,7 @@ func defaultCmdSelect(cmd *cobra.Command) bool {
 		return false
 	}
 
-	return excludeCmd(cfgmgr.MCPCommandName, "help", "completion")(cmd)
-}
-
-// cmdSelect returns true if the command passes default filters and this selector's CmdSelector (if any).
-func (s *Selector) cmdSelect(cmd *cobra.Command) bool {
-	if !defaultCmdSelect(cmd) {
+	if CmdContains(cfgmgr.MCPCommandName, "help", "completion")(cmd) {
 		return false
 	}
 
@@ -98,6 +90,20 @@ func (s *Selector) cmdSelect(cmd *cobra.Command) bool {
 	}
 
 	return true
+}
+
+// CmdContains creates a selector that only accepts commands whose path contains a listed phrase.
+// Example: CmdContains("get", "helm list") includes "kubectl get pods" and "helm list".
+func CmdContains(substrings ...string) CmdSelector {
+	return func(cmd *cobra.Command) bool {
+		for _, s := range substrings {
+			if strings.Contains(cmd.CommandPath(), s) {
+				return true
+			}
+		}
+
+		return false
+	}
 }
 
 func defaultFlagSelect(flag *pflag.Flag) bool {
@@ -128,18 +134,4 @@ func (s *Selector) inheritedFlagSelect(flag *pflag.Flag) bool {
 	}
 
 	return true
-}
-
-// excludeCmd creates a selector that rejects commands whose path contains any listed phrase.
-// Example: excludeCmd("kubectl delete", "admin") excludes "kubectl delete" and "cli admin user".
-func excludeCmd(cmds ...string) CmdSelector {
-	return func(cmd *cobra.Command) bool {
-		for _, phrase := range cmds {
-			if strings.Contains(cmd.CommandPath(), phrase) {
-				return false
-			}
-		}
-
-		return true
-	}
 }

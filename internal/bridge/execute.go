@@ -23,7 +23,7 @@ func initExecPath() string {
 	return path
 }
 
-func (s *Selector) execute(ctx context.Context, request *mcp.CallToolRequest, input CmdToolInput) (result *mcp.CallToolResult, output CmdToolOutput, err error) {
+func (s *Selector) execute(ctx context.Context, request *mcp.CallToolRequest, input ToolInput) (result *mcp.CallToolResult, output ToolOutput, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("panic: %v", r)
@@ -44,7 +44,7 @@ func (s *Selector) execute(ctx context.Context, request *mcp.CallToolRequest, in
 }
 
 // execute runs the underlying CLI command.
-func execute(ctx context.Context, request *mcp.CallToolRequest, input CmdToolInput) (*mcp.CallToolResult, CmdToolOutput, error) {
+func execute(ctx context.Context, request *mcp.CallToolRequest, input ToolInput) (*mcp.CallToolResult, ToolOutput, error) {
 	name := request.Params.Name
 	slog.Info("mcp tool request received", "request", name)
 
@@ -71,11 +71,11 @@ func execute(ctx context.Context, request *mcp.CallToolRequest, input CmdToolInp
 		} else {
 			// Non-exit errors (like command not found)
 			slog.Error("command failed to run", "name", name, "error", err)
-			return nil, CmdToolOutput{}, err
+			return nil, ToolOutput{}, err
 		}
 	}
 
-	return nil, CmdToolOutput{
+	return nil, ToolOutput{
 		StdOut:   stdout.String(),
 		StdErr:   stderr.String(),
 		ExitCode: exitCode,
@@ -83,7 +83,7 @@ func execute(ctx context.Context, request *mcp.CallToolRequest, input CmdToolInp
 }
 
 // buildCommandArgs constructs CLI arguments from the MCP request.
-func buildCommandArgs(name string, input CmdToolInput) []string {
+func buildCommandArgs(name string, input ToolInput) []string {
 	// Start with the command path (e.g., "root_sub_command" -> ["root", "sub", "command"])
 	// And remove the root command prefix
 	args := strings.Split(name, "_")[1:]

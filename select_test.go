@@ -27,7 +27,7 @@ func buildCommandTree(names ...string) *cobra.Command {
 	return parent
 }
 
-func TestAllowCmd(t *testing.T) {
+func TestAllowCmdsContaining(t *testing.T) {
 	tests := []struct {
 		name         string
 		allowPhrases []string
@@ -100,7 +100,7 @@ func TestAllowCmd(t *testing.T) {
 	}
 }
 
-func TestExcludeCmd(t *testing.T) {
+func TestExcludeCmdsContaining(t *testing.T) {
 	tests := []struct {
 		name           string
 		excludePhrases []string
@@ -173,7 +173,7 @@ func TestExcludeCmd(t *testing.T) {
 	}
 }
 
-func TestAllowFlag(t *testing.T) {
+func TestAllowFlags(t *testing.T) {
 	tests := []struct {
 		name       string
 		allowNames []string
@@ -374,7 +374,7 @@ func TestExcludeCmds(t *testing.T) {
 	}
 }
 
-func TestExcludeFlag(t *testing.T) {
+func TestExcludeFlags(t *testing.T) {
 	tests := []struct {
 		name         string
 		excludeNames []string
