@@ -163,7 +163,7 @@ Ophis recursively walks your Cobra command tree at runtime, creating MCP tools f
 For each selected command, ophis automatically generates JSON schemas for both input and output:
 
 **Input Schema** includes:
-- `flags`: An object with properties for each included flag, typed according to Cobra's flag types (string, bool, int, stringSlice, etc.), and whether it is required
+- `flags`: An object with properties for each included flag, typed according to Cobra's flag types (string, bool, int, stringSlice, etc.)
 - `args`: An array of strings for positional arguments, enhanced with usage patterns from the command's `Use` field
 
 **Output Schema** includes:
