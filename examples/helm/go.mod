@@ -5,7 +5,7 @@ go 1.25.0
 replace github.com/njayp/ophis => ../../
 
 require (
-	github.com/njayp/ophis v1.0.2
+	github.com/njayp/ophis v1.0.3
 	github.com/spf13/cobra v1.10.1
 	helm.sh/helm/v4 v4.0.0-alpha.1
 	k8s.io/client-go v0.34.1

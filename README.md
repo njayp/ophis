@@ -74,9 +74,9 @@ Your CLI commands are now available as mcp server tools!
 
 ### How Selectors Work
 
-Selectors control which commands and flags become MCP tools. Each selector contains a `CmdSelector` that chooses which commands to expose and `LocalFlagSelector`, `InheritedFlagSelector` that determine which flags to include. When converting your CLI, ophis evaluates selectors in order and uses the first matching selector to create each command's MCP tool. Commands that don't match any selector are not exposed.
+Selectors control which commands and flags become MCP tools. Each selector contains a `CmdSelector` that chooses which commands to expose and `LocalFlagSelector`, `InheritedFlagSelector` that determine which flags to include. When converting commands, ophis evaluates selectors in order and uses the **first matching selector** to create each command's MCP tool. Commands that don't match any selector are not exposed.
 
-If a `CmdSelector` is nil, all commands are allowed. If a flag selector is nil, all flags are allowed. This makes it easy to create catch-all selectors or to expose everything by default.
+If `CmdSelector` is nil, all commands are allowed. If a flag selector is nil, all flags are allowed. This makes it easy to create catch-all selectors or to expose everything by default.
 
 Hidden, deprecated, and non-runnable commands are automatically filtered out, as are hidden and deprecated flags.
 
