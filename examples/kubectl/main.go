@@ -23,14 +23,12 @@ func rootCmd() *cobra.Command {
 					"kubectl get",
 					"kubectl describe",
 					"kubectl logs",
-					"kubectl top pod",
-					"kubectl top node",
 					"kubectl explain",
+					"kubectl api-resources",
 				),
 
 				InheritedFlagSelector: ophis.AllowFlags(
 					"namespace",
-					"context",
 					"output",
 				),
 			},

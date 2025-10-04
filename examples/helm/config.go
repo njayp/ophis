@@ -11,16 +11,24 @@ func config() *ophis.Config {
 func selectors() []ophis.Selector {
 	return []ophis.Selector{
 		{
-			CmdSelector: ophis.AllowCmdsContaining(
-				// helm get [all, hooks, manifest, metadata, notes, values]
-				"helm get",
+			CmdSelector: ophis.AllowCmds(
+				"helm get hooks",
+				"helm get manifest",
+				"helm get notes",
+				"helm get values",
 				"helm history",
 				"helm list",
-				"helm search repo",
 				"helm search hub",
-				// helm show [all, chart, crds, readme, values]
-				"helm show",
+				"helm search repo",
+				"helm show chart",
+				"helm show crds",
+				"helm show readme",
+				"helm show values",
 				"helm status",
+				"helm repo list",
+				"helm template",
+				"helm dependency list",
+				"helm lint",
 			),
 
 			InheritedFlagSelector: ophis.AllowFlags("namespace"),

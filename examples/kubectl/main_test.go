@@ -13,8 +13,7 @@ func TestTools(t *testing.T) {
 		"kubectl_get",
 		"kubectl_describe",
 		"kubectl_logs",
-		"kubectl_top_pod",
-		"kubectl_top_node",
 		"kubectl_explain",
+		"kubectl_api-resources",
 	})
 }
