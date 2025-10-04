@@ -35,79 +35,48 @@ func Vscode() error {
 	return enableMCP("vscode")
 }
 
-// taskConfig defines a task to run in parallel
-type taskConfig struct {
-	name        string
-	description string
-	cmd         func(item string) *exec.Cmd
+// runMakeInExamples runs a make target in all example directories in parallel
+func runMakeInExamples(target string) error {
+	dirs, err := findExampleDirs()
+	if err != nil {
+		return err
+	}
+
+	return runParallel(dirs, func(dir string) error {
+		cmd := exec.Command("make", target)
+		cmd.Dir = dir
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+	})
 }
 
-// runParallelTasks runs commands in parallel and reports results
-func runParallelTasks(items []string, cfg taskConfig) error {
-	if len(items) == 0 {
-		return fmt.Errorf("no items to process")
+// enableMCP runs './bin/<cli> mcp <platform> enable' for every binary in bin/
+func enableMCP(platform string) error {
+	binaries, err := findExecutables("bin")
+	if err != nil {
+		return err
 	}
 
-	type result struct {
-		item string
-		err  error
+	if err := runParallel(binaries, func(binary string) error {
+		cmd := exec.Command(binary, "mcp", platform, "enable")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+	}); err != nil {
+		return err
 	}
 
-	var wg sync.WaitGroup
-	resultChan := make(chan result, len(items))
-
-	for _, item := range items {
-		wg.Add(1)
-		go func(item string) {
-			defer wg.Done()
-
-			fmt.Printf("%s: %s\n", cfg.description, item)
-			cmd := cfg.cmd(item)
-			cmd.Stdout = os.Stdout
-			cmd.Stderr = os.Stderr
-
-			if err := cmd.Run(); err != nil {
-				fmt.Printf("✗ Failed: %s\n", item)
-				resultChan <- result{item: item, err: err}
-			} else {
-				fmt.Printf("✓ Success: %s\n", item)
-				resultChan <- result{item: item, err: nil}
-			}
-		}(item)
-	}
-
-	wg.Wait()
-	close(resultChan)
-
-	// Collect results
-	var failures []string
-	var successCount int
-	for res := range resultChan {
-		if res.err != nil {
-			failures = append(failures, fmt.Sprintf("  - %s: %v", res.item, res.err))
-		} else {
-			successCount++
-		}
-	}
-
-	// Report final status
-	if len(failures) > 0 {
-		fmt.Printf("\n✗ %s failed for %d item(s):\n", cfg.name, len(failures))
-		fmt.Println(strings.Join(failures, "\n"))
-		fmt.Printf("\nSummary: %d succeeded, %d failed\n", successCount, len(failures))
-		return fmt.Errorf("%s failed for %d item(s)", cfg.name, len(failures))
-	}
-
-	fmt.Printf("\n✓ Successfully ran %s for all %d items\n", cfg.name, successCount)
+	fmt.Printf("\n🎉 All binaries are now available in %s!\n", platform)
+	fmt.Printf("⚠️  Please restart %s for changes to take effect.\n", platform)
 	return nil
 }
 
-// runMakeInExamples runs a make target in all example directories in parallel
-func runMakeInExamples(target string) error {
-	examplesDir := "examples"
-	entries, err := os.ReadDir(examplesDir)
+// findExampleDirs returns all example directories with makefiles
+func findExampleDirs() ([]string, error) {
+	entries, err := os.ReadDir("examples")
 	if err != nil {
-		return fmt.Errorf("failed to read examples directory: %w", err)
+		return nil, fmt.Errorf("failed to read examples directory: %w", err)
 	}
 
 	var dirs []string
@@ -115,72 +84,70 @@ func runMakeInExamples(target string) error {
 		if !entry.IsDir() {
 			continue
 		}
-
-		dir := filepath.Join(examplesDir, entry.Name())
-		makefilePath := filepath.Join(dir, "makefile")
-
-		if _, err := os.Stat(makefilePath); os.IsNotExist(err) {
-			return fmt.Errorf("failed to find makefile at %s: %w", makefilePath, err)
+		dir := filepath.Join("examples", entry.Name())
+		if _, err := os.Stat(filepath.Join(dir, "makefile")); err == nil {
+			dirs = append(dirs, dir)
 		}
-
-		dirs = append(dirs, dir)
 	}
-
-	return runParallelTasks(dirs, taskConfig{
-		name:        fmt.Sprintf("make %s", target),
-		description: fmt.Sprintf("Running 'make %s' in", target),
-		cmd: func(dir string) *exec.Cmd {
-			cmd := exec.Command("make", target)
-			cmd.Dir = dir
-			return cmd
-		},
-	})
+	return dirs, nil
 }
 
-// enableMCP runs './bin/<cli> mcp <platform> enable' for every binary in bin/
-func enableMCP(platform string) error {
-	binDir := "bin"
-
-	if _, err := os.Stat(binDir); os.IsNotExist(err) {
-		return fmt.Errorf("bin directory does not exist - run 'mage build' first")
+// findExecutables returns all executable files in a directory
+func findExecutables(dir string) ([]string, error) {
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		return nil, fmt.Errorf("%s directory does not exist - run 'mage build' first", dir)
 	}
 
-	entries, err := os.ReadDir(binDir)
+	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return fmt.Errorf("failed to read bin directory: %w", err)
+		return nil, fmt.Errorf("failed to read %s directory: %w", dir, err)
 	}
 
-	var binaries []string
+	var executables []string
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
 		}
-
 		info, err := entry.Info()
 		if err != nil {
 			continue
 		}
-
-		// Check if file is executable
-		if info.Mode()&0o111 == 0 {
-			continue
+		if info.Mode()&0o111 != 0 {
+			executables = append(executables, filepath.Join(dir, entry.Name()))
 		}
+	}
+	return executables, nil
+}
 
-		binaries = append(binaries, filepath.Join(binDir, entry.Name()))
+// runParallel runs a function on multiple items in parallel
+func runParallel(items []string, fn func(string) error) error {
+	if len(items) == 0 {
+		return fmt.Errorf("no items to process")
 	}
 
-	err = runParallelTasks(binaries, taskConfig{
-		name:        fmt.Sprintf("%s MCP enable", platform),
-		description: fmt.Sprintf("Enabling %s MCP for", platform),
-		cmd: func(binary string) *exec.Cmd {
-			return exec.Command(binary, "mcp", platform, "enable")
-		},
-	})
+	var wg sync.WaitGroup
+	errChan := make(chan error, len(items))
 
-	if err == nil {
-		fmt.Printf("\n🎉 All binaries are now available in %s!\n", platform)
-		fmt.Printf("⚠️  Please restart %s for changes to take effect.\n", platform)
+	for _, item := range items {
+		wg.Add(1)
+		go func(item string) {
+			defer wg.Done()
+			if err := fn(item); err != nil {
+				errChan <- fmt.Errorf("%s: %w", item, err)
+			}
+		}(item)
 	}
 
-	return err
+	wg.Wait()
+	close(errChan)
+
+	var errors []string
+	for err := range errChan {
+		errors = append(errors, err.Error())
+	}
+
+	if len(errors) > 0 {
+		return fmt.Errorf("failed:\n%s", strings.Join(errors, "\n"))
+	}
+	return nil
 }

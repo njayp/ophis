@@ -1,6 +1,6 @@
 .PHONY: all
 all: up lint test
-	mage all
+	go run github.com/magefile/mage@latest all
 
 .PHONY: up
 up:
@@ -18,7 +18,7 @@ test:
 
 .PHONY: build
 build:
-	mage build
+	go run github.com/magefile/mage@latest build
 
 .PHONY: release
 release: all
