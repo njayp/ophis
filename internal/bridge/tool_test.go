@@ -23,7 +23,8 @@ func TestCreateToolFromCmd(t *testing.T) {
 	// Add some flags
 	cmd.Flags().String("output", "", "Output file")
 	cmd.Flags().Bool("verbose", false, "Verbose output")
-	cmd.Flags().StringSlice("include", []string{}, "Include patterns")
+	cmd.Flags().IntSlice("include", []int{}, "Include patterns")
+	cmd.Flags().StringSlice("greeting", []string{"hello", "world"}, "Include patterns")
 	cmd.Flags().Int("count", 10, "Number of items")
 
 	// Add a hidden flag
@@ -73,6 +74,7 @@ func TestCreateToolFromCmd(t *testing.T) {
 		assert.Contains(t, flagsSchema.Properties, "verbose")
 		assert.Contains(t, flagsSchema.Properties, "include")
 		assert.Contains(t, flagsSchema.Properties, "count")
+		assert.Contains(t, flagsSchema.Properties, "greeting")
 
 		// Verify excluded flags
 		assert.NotContains(t, flagsSchema.Properties, "hidden", "Should not include hidden flag")
@@ -83,15 +85,30 @@ func TestCreateToolFromCmd(t *testing.T) {
 		assert.Equal(t, "boolean", flagsSchema.Properties["verbose"].Type)
 		assert.Equal(t, "array", flagsSchema.Properties["include"].Type)
 		assert.Equal(t, "integer", flagsSchema.Properties["count"].Type)
+		assert.Equal(t, "array", flagsSchema.Properties["greeting"].Type)
 
 		// Verify required flags
 		require.Len(t, flagsSchema.Required, 1, "Should have 1 required flag")
 		assert.Contains(t, flagsSchema.Required, "count", "count flag should be marked as required")
 
+		// Verify default values
+		assert.NotNil(t, flagsSchema.Properties["verbose"].Default)
+		assert.JSONEq(t, "false", string(flagsSchema.Properties["verbose"].Default))
+		assert.NotNil(t, flagsSchema.Properties["count"].Default)
+		assert.JSONEq(t, "10", string(flagsSchema.Properties["count"].Default))
+		assert.NotNil(t, flagsSchema.Properties["greeting"].Default)
+		assert.JSONEq(t, `["hello","world"]`, string(flagsSchema.Properties["greeting"].Default))
+		// Empty string and empty array should not have defaults set
+		assert.Nil(t, flagsSchema.Properties["output"].Default)
+		assert.Nil(t, flagsSchema.Properties["include"].Default)
+
 		// Verify array items schema
 		includeSchema := flagsSchema.Properties["include"]
 		assert.NotNil(t, includeSchema.Items)
-		assert.Equal(t, "string", includeSchema.Items.Type)
+		assert.Equal(t, "integer", includeSchema.Items.Type)
+		greetingSchema := flagsSchema.Properties["greeting"]
+		assert.NotNil(t, greetingSchema.Items)
+		assert.Equal(t, "string", greetingSchema.Items.Type)
 
 		// Verify persistent flag from parent command
 		assert.Contains(t, flagsSchema.Properties, "config", "Should include persistent flag from parent command")

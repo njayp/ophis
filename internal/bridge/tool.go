@@ -1,8 +1,10 @@
 package bridge
 
 import (
+	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strconv"
 	"strings"
 
 	"github.com/google/jsonschema-go/jsonschema"
@@ -204,7 +206,98 @@ func addFlagToSchema(schema *jsonschema.Schema, flag *pflag.Flag) {
 		slog.Debug("unknown flag type, defaulting to string", "flag", flag.Name, "type", t)
 	}
 
+	setDefaultValue(flagSchema, flag.DefValue)
 	schema.Properties[flag.Name] = flagSchema
+}
+
+// setDefaultValue sets the default value for a flag schema if it's not a zero value.
+func setDefaultValue(flagSchema *jsonschema.Schema, defValue string) {
+	if defValue == "" {
+		return
+	}
+
+	setDefault := func(val any) {
+		if raw, err := json.Marshal(val); err == nil {
+			flagSchema.Default = json.RawMessage(raw)
+		}
+	}
+
+	// Parse the default value based on the schema type
+	switch flagSchema.Type {
+	case "boolean":
+		if val, err := strconv.ParseBool(defValue); err == nil {
+			setDefault(val)
+		}
+	case "integer":
+		if val, err := strconv.ParseInt(defValue, 10, 64); err == nil {
+			setDefault(val)
+		}
+	case "number":
+		if val, err := strconv.ParseFloat(defValue, 64); err == nil {
+			setDefault(val)
+		}
+	case "string":
+		setDefault(defValue)
+	case "array":
+		// Handle array types (slices)
+		// pflag represents empty slices as "[]"
+		if defValue == "[]" {
+			return
+		}
+		// pflag represents arrays as "[item1,item2,item3]"
+		// We need to manually parse this into an actual JSON array
+		// --- Ewwww Gross ---
+		if strings.HasPrefix(defValue, "[") && strings.HasSuffix(defValue, "]") {
+			// Remove the brackets
+			inner := defValue[1 : len(defValue)-1]
+			if inner == "" {
+				return // Empty array
+			}
+			// Split by comma
+			parts := strings.Split(inner, ",")
+			// Determine the array item type from the schema
+			if flagSchema.Items != nil {
+				switch flagSchema.Items.Type {
+				case "integer":
+					// Parse as integer array
+					intArr := make([]int64, 0, len(parts))
+					for _, p := range parts {
+						if val, err := strconv.ParseInt(strings.TrimSpace(p), 10, 64); err == nil {
+							intArr = append(intArr, val)
+						}
+					}
+					setDefault(intArr)
+				case "number":
+					// Parse as float array
+					floatArr := make([]float64, 0, len(parts))
+					for _, p := range parts {
+						if val, err := strconv.ParseFloat(strings.TrimSpace(p), 64); err == nil {
+							floatArr = append(floatArr, val)
+						}
+					}
+					setDefault(floatArr)
+				case "boolean":
+					// Parse as boolean array
+					boolArr := make([]bool, 0, len(parts))
+					for _, p := range parts {
+						if val, err := strconv.ParseBool(strings.TrimSpace(p)); err == nil {
+							boolArr = append(boolArr, val)
+						}
+					}
+					setDefault(boolArr)
+				case "string":
+					// String array - trim whitespace from each element
+					strArr := make([]string, 0, len(parts))
+					for _, p := range parts {
+						strArr = append(strArr, strings.TrimSpace(p))
+					}
+					setDefault(strArr)
+				}
+
+				// there are no array of objects in pflag, so we don't handle that case
+			}
+		}
+	}
 }
 
 // enhanceArgsSchema adds detailed argument information to the args property.
