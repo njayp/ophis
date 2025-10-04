@@ -154,11 +154,11 @@ ophis.Selector{
 
 Ophis bridges Cobra commands and the Model Context Protocol through three main components:
 
-### 1. Command Discovery and Filtering
+### Command Discovery and Filtering
 
 Ophis recursively walks your Cobra command tree at runtime, creating MCP tools from selected commands.
 
-### 2. Schema Generation
+### Schema Generation
 
 For each selected command, ophis automatically generates JSON schemas for both input and output:
 
@@ -173,7 +173,7 @@ For each selected command, ophis automatically generates JSON schemas for both i
 
 Flag schemas include rich metadata like descriptions, default values, required status, and format constraints. This allows AI assistants to understand exactly how to invoke each tool.
 
-### 3. Tool Execution
+### Tool Execution
 
 When an AI assistant calls an MCP tool, ophis runs optional `PreRun` middleware, spawns your CLI as a subprocess with the requested flags and arguments, captures stdout/stderr/exitCode, then runs optional `PostRun` middleware. Your CLI is invoked exactly as a user would from the command line.
 
