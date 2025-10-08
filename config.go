@@ -57,14 +57,15 @@ func (c *Config) manager(cmd *cobra.Command) *bridge.Manager {
 	slog.SetDefault(slog.New(handler))
 
 	// get root cmd
-	rootCmd := getRootCmd(cmd)
-	name := rootCmd.Name()
-	version := rootCmd.Version
+	rootCmd := cmd
+	for rootCmd.Parent() != nil {
+		rootCmd = rootCmd.Parent()
+	}
 
 	// make server
 	server := mcp.NewServer(&mcp.Implementation{
-		Name:    name,
-		Version: version,
+		Name:    rootCmd.Name(),
+		Version: rootCmd.Version,
 	}, c.ServerOptions)
 
 	// make manager

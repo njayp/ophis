@@ -3,13 +3,9 @@ package main
 import (
 	"testing"
 
-	"github.com/njayp/ophis/examples"
+	"github.com/njayp/ophis/test"
 )
 
 func TestTools(t *testing.T) {
-	cmd := makeCmd()
-
-	examples.TestTools(t, cmd, []string{
-		"make",
-	})
+	test.Tools(t, makeCmd(), "make")
 }

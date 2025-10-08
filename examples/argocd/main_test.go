@@ -3,11 +3,11 @@ package main
 import (
 	"testing"
 
-	"github.com/njayp/ophis/examples"
+	"github.com/njayp/ophis/test"
 )
 
 func Test_main(t *testing.T) {
-	examples.TestTools(t, rootCmd(), []string{
+	test.Tools(t, rootCmd(),
 		"argocd_app_get",
 		"argocd_app_list",
 		"argocd_app_diff",
@@ -21,5 +21,5 @@ func Test_main(t *testing.T) {
 		"argocd_cluster_list",
 		"argocd_proj_list",
 		"argocd_repo_list",
-	})
+	)
 }

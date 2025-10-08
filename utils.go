@@ -3,8 +3,6 @@ package ophis
 import (
 	"log/slog"
 	"strings"
-
-	"github.com/spf13/cobra"
 )
 
 // parseLogLevel converts a string log level to slog.Level.
@@ -25,17 +23,4 @@ func parseLogLevel(level string) slog.Level {
 	}
 
 	return slogLevel
-}
-
-func getRootCmd(cmd *cobra.Command) *cobra.Command {
-	if cmd == nil {
-		panic("command cannot be nil")
-	}
-
-	rootCmd := cmd
-	for rootCmd.Parent() != nil {
-		rootCmd = rootCmd.Parent()
-	}
-
-	return rootCmd
 }

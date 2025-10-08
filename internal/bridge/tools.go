@@ -19,11 +19,6 @@ type Manager struct {
 
 // RegisterTools explores a cmd tree, making tools recursively out of the provided cmd and its children
 func (m *Manager) RegisterTools(cmd *cobra.Command) {
-	if cmd == nil {
-		slog.Error("ToolsRecursive called with nil command")
-		return
-	}
-
 	// register all subcommands
 	for _, subCmd := range cmd.Commands() {
 		m.RegisterTools(subCmd)

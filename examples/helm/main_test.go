@@ -3,13 +3,13 @@ package main
 import (
 	"testing"
 
-	"github.com/njayp/ophis/examples"
+	"github.com/njayp/ophis/test"
 )
 
 func TestTools(t *testing.T) {
 	cmd := rootCmd()
 
-	examples.TestTools(t, cmd, []string{
+	test.Tools(t, cmd,
 		"helm_get_hooks",
 		"helm_get_manifest",
 		"helm_get_notes",
@@ -27,5 +27,5 @@ func TestTools(t *testing.T) {
 		"helm_template",
 		"helm_dependency_list",
 		"helm_lint",
-	})
+	)
 }
