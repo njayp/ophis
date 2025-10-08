@@ -160,62 +160,89 @@ func setDefaultFromFlag(flagSchema *jsonschema.Schema, flag *pflag.Flag) {
 		setDefault(defValue)
 	case "array":
 		// Handle array types (slices)
-		// pflag represents empty slices as "[]"
-		if defValue == "[]" {
-			return
-		}
-		// pflag represents arrays as "[item1,item2,item3]"
-		// We need to manually parse this into an actual JSON array
-		// --- Ewwww Gross ---
-		if strings.HasPrefix(defValue, "[") && strings.HasSuffix(defValue, "]") {
-			// Remove the brackets
-			inner := defValue[1 : len(defValue)-1]
-			if inner == "" {
-				return // Empty array
-			}
-			// Split by comma
-			parts := strings.Split(inner, ",")
-			// Determine the array item type from the schema
-			if flagSchema.Items != nil {
-				switch flagSchema.Items.Type {
-				case "integer":
-					// Parse as integer array
-					intArr := make([]int64, 0, len(parts))
-					for _, p := range parts {
-						if val, err := strconv.ParseInt(strings.TrimSpace(p), 10, 64); err == nil {
-							intArr = append(intArr, val)
-						}
-					}
-					setDefault(intArr)
-				case "number":
-					// Parse as float array
-					floatArr := make([]float64, 0, len(parts))
-					for _, p := range parts {
-						if val, err := strconv.ParseFloat(strings.TrimSpace(p), 64); err == nil {
-							floatArr = append(floatArr, val)
-						}
-					}
-					setDefault(floatArr)
-				case "boolean":
-					// Parse as boolean array
-					boolArr := make([]bool, 0, len(parts))
-					for _, p := range parts {
-						if val, err := strconv.ParseBool(strings.TrimSpace(p)); err == nil {
-							boolArr = append(boolArr, val)
-						}
-					}
-					setDefault(boolArr)
-				case "string":
-					// String array - trim whitespace from each element
-					strArr := make([]string, 0, len(parts))
-					for _, p := range parts {
-						strArr = append(strArr, strings.TrimSpace(p))
-					}
-					setDefault(strArr)
-				}
-
-				// there are no array of objects in pflag, so we don't handle that case
-			}
+		if arr := parseArray(defValue, flagSchema.Items); arr != nil {
+			setDefault(arr)
 		}
 	}
+}
+
+// parseArray parses pflag's array representation ("[item1,item2]") into a typed slice.
+func parseArray(defValue string, itemSchema *jsonschema.Schema) any {
+	// pflag represents empty slices as "[]"
+	if defValue == "[]" {
+		return nil
+	}
+
+	// Verify array format
+	if !strings.HasPrefix(defValue, "[") || !strings.HasSuffix(defValue, "]") {
+		return nil
+	}
+
+	// Remove brackets and check for empty array
+	inner := defValue[1 : len(defValue)-1]
+	if inner == "" {
+		return nil
+	}
+
+	// Split by comma
+	parts := strings.Split(inner, ",")
+	if itemSchema == nil {
+		return nil
+	}
+
+	// Parse based on item type
+	switch itemSchema.Type {
+	case "integer":
+		return parseIntArray(parts)
+	case "number":
+		return parseFloatArray(parts)
+	case "boolean":
+		return parseBoolArray(parts)
+	case "string":
+		return parseStringArray(parts)
+	default:
+		return nil
+	}
+}
+
+// parseIntArray parses a slice of strings into a slice of int64.
+func parseIntArray(parts []string) []int64 {
+	result := make([]int64, 0, len(parts))
+	for _, p := range parts {
+		if val, err := strconv.ParseInt(strings.TrimSpace(p), 10, 64); err == nil {
+			result = append(result, val)
+		}
+	}
+	return result
+}
+
+// parseFloatArray parses a slice of strings into a slice of float64.
+func parseFloatArray(parts []string) []float64 {
+	result := make([]float64, 0, len(parts))
+	for _, p := range parts {
+		if val, err := strconv.ParseFloat(strings.TrimSpace(p), 64); err == nil {
+			result = append(result, val)
+		}
+	}
+	return result
+}
+
+// parseBoolArray parses a slice of strings into a slice of bool.
+func parseBoolArray(parts []string) []bool {
+	result := make([]bool, 0, len(parts))
+	for _, p := range parts {
+		if val, err := strconv.ParseBool(strings.TrimSpace(p)); err == nil {
+			result = append(result, val)
+		}
+	}
+	return result
+}
+
+// parseStringArray parses a slice of strings, trimming whitespace from each element.
+func parseStringArray(parts []string) []string {
+	result := make([]string, 0, len(parts))
+	for _, p := range parts {
+		result = append(result, strings.TrimSpace(p))
+	}
+	return result
 }

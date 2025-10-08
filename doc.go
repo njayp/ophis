@@ -62,11 +62,11 @@
 //	            // Control which flags are included for matched commands
 //	            FlagSelector: ophis.AllowFlags("namespace", "output"),
 //	            // Optional: Add middleware hooks
-//	            PreRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.CmdToolInput) (context.Context, *mcp.CallToolRequest, bridge.CmdToolInput) {
+//	            PreRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.ToolInput) (context.Context, *mcp.CallToolRequest, bridge.ToolInput) {
 //	                // Add timeout, logging, auth checks, etc.
 //	                return ctx, req, in
 //	            },
-//	            PostRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.CmdToolInput, res *mcp.CallToolResult, out bridge.CmdToolOutput, err error) (*mcp.CallToolResult, bridge.CmdToolOutput, error) {
+//	            PostRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.ToolInput, res *mcp.CallToolResult, out bridge.ToolOutput, err error) (*mcp.CallToolResult, bridge.ToolOutput, error) {
 //	                // Error handling, response filtering, metrics
 //	                return res, out, err
 //	            },
