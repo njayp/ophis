@@ -60,3 +60,11 @@ func TestGetTools(t *testing.T) {
 		assert.Equal(t, "object", schema.Type, "Schema type should be object")
 	}
 }
+
+func TestCmdNamesToToolNames(t *testing.T) {
+	cmdNames := []string{"get", "list all", "create this item"}
+	expectedToolNames := []string{"get", "list_all", "create_this_item"}
+
+	toolNames := CmdPathsToToolNames(cmdNames)
+	assert.Equal(t, expectedToolNames, toolNames, "Tool names should match expected format")
+}

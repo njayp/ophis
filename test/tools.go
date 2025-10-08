@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/google/jsonschema-go/jsonschema"
@@ -70,6 +71,16 @@ func ToolNames(t *testing.T, tools []*mcp.Tool, expectedNames ...string) {
 			t.Errorf("Tool name not expected: %q", tool.Name)
 		}
 	}
+}
+
+// CmdPathsToToolNames converts command names with spaces to tool names with underscores
+func CmdPathsToToolNames(paths []string) []string {
+	names := make([]string, 0, len(paths))
+	for _, path := range paths {
+		names = append(names, strings.ReplaceAll(path, " ", "_"))
+	}
+
+	return names
 }
 
 // Tools runs `mcp tools` and checks the output tool names against expectedNames
