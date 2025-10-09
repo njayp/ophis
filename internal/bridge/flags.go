@@ -167,6 +167,12 @@ func setDefaultFromFlag(flagSchema *jsonschema.Schema, flag *pflag.Flag) {
 }
 
 // parseArray parses pflag's array representation ("[item1,item2]") into a typed slice.
+// Invalid array elements are skipped and logged as warnings. Returns nil for malformed input.
+//
+// Limitations:
+//   - Does not support nested arrays
+//   - Does not handle quoted strings containing commas
+//   - Expects simple comma-separated values
 func parseArray(defValue string, itemSchema *jsonschema.Schema) any {
 	// pflag represents empty slices as "[]"
 	if defValue == "[]" {
@@ -175,6 +181,7 @@ func parseArray(defValue string, itemSchema *jsonschema.Schema) any {
 
 	// Verify array format
 	if !strings.HasPrefix(defValue, "[") || !strings.HasSuffix(defValue, "]") {
+		slog.Warn("malformed array default value: must start with '[' and end with ']'", "value", defValue)
 		return nil
 	}
 
@@ -187,6 +194,7 @@ func parseArray(defValue string, itemSchema *jsonschema.Schema) any {
 	// Split by comma
 	parts := strings.Split(inner, ",")
 	if itemSchema == nil {
+		slog.Error("nil item schema for array default value", "value", defValue)
 		return nil
 	}
 
@@ -201,38 +209,60 @@ func parseArray(defValue string, itemSchema *jsonschema.Schema) any {
 	case "string":
 		return parseStringArray(parts)
 	default:
+		slog.Warn("unsupported array item type for default value", "type", itemSchema.Type, "value", defValue)
 		return nil
 	}
 }
 
 // parseIntArray parses a slice of strings into a slice of int64.
+// Invalid elements are skipped and logged as warnings.
 func parseIntArray(parts []string) []int64 {
 	result := make([]int64, 0, len(parts))
-	for _, p := range parts {
-		if val, err := strconv.ParseInt(strings.TrimSpace(p), 10, 64); err == nil {
+	for i, p := range parts {
+		trimmed := strings.TrimSpace(p)
+		if val, err := strconv.ParseInt(trimmed, 10, 64); err == nil {
 			result = append(result, val)
+		} else {
+			slog.Warn("skipping invalid integer in array default value",
+				"index", i,
+				"value", p,
+				"error", err)
 		}
 	}
 	return result
 }
 
 // parseFloatArray parses a slice of strings into a slice of float64.
+// Invalid elements are skipped and logged as warnings.
 func parseFloatArray(parts []string) []float64 {
 	result := make([]float64, 0, len(parts))
-	for _, p := range parts {
-		if val, err := strconv.ParseFloat(strings.TrimSpace(p), 64); err == nil {
+	for i, p := range parts {
+		trimmed := strings.TrimSpace(p)
+		if val, err := strconv.ParseFloat(trimmed, 64); err == nil {
 			result = append(result, val)
+		} else {
+			slog.Warn("skipping invalid float in array default value",
+				"index", i,
+				"value", p,
+				"error", err)
 		}
 	}
 	return result
 }
 
 // parseBoolArray parses a slice of strings into a slice of bool.
+// Invalid elements are skipped and logged as warnings.
 func parseBoolArray(parts []string) []bool {
 	result := make([]bool, 0, len(parts))
-	for _, p := range parts {
-		if val, err := strconv.ParseBool(strings.TrimSpace(p)); err == nil {
+	for i, p := range parts {
+		trimmed := strings.TrimSpace(p)
+		if val, err := strconv.ParseBool(trimmed); err == nil {
 			result = append(result, val)
+		} else {
+			slog.Warn("skipping invalid boolean in array default value",
+				"index", i,
+				"value", p,
+				"error", err)
 		}
 	}
 	return result
