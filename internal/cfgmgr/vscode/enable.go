@@ -14,16 +14,15 @@ type enableCommandFlags struct {
 	logLevel   string
 	serverName string
 	workspace  bool
-	configType string
 }
 
 // enableCommand creates a Cobra command for enabling the MCP server in VSCode.
 func enableCommand() *cobra.Command {
 	enableFlags := &enableCommandFlags{}
 	cmd := &cobra.Command{
-		Use:   "enable",
-		Short: "Add server to VSCode config",
-		Long:  `Add this application as an MCP server in VSCode`,
+		Use:   cfgmgr.CmdEnable,
+		Short: cmdEnableShort,
+		Long:  cmdEnableLong,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return enableMCPServer(cmd, enableFlags)
 		},
@@ -31,11 +30,10 @@ func enableCommand() *cobra.Command {
 
 	// Add flags
 	flags := cmd.Flags()
-	flags.StringVar(&enableFlags.logLevel, "log-level", "", "Log level (debug, info, warn, error)")
-	flags.StringVar(&enableFlags.configPath, "config-path", "", "Path to VSCode config file")
-	flags.StringVar(&enableFlags.serverName, "server-name", "", "Name for the MCP server (default: derived from executable name)")
-	flags.BoolVar(&enableFlags.workspace, "workspace", false, "Add to workspace settings (.vscode/mcp.json) instead of user settings")
-	flags.StringVar(&enableFlags.configType, "config-type", "", "Configuration type: 'workspace' or 'user' (default: user)")
+	flags.StringVar(&enableFlags.logLevel, cfgmgr.FlagLogLevel, "", "Log level (debug, info, warn, error)")
+	flags.StringVar(&enableFlags.configPath, cfgmgr.FlagConfigPath, "", "Path to VSCode config file")
+	flags.StringVar(&enableFlags.serverName, cfgmgr.FlagServerName, "", "Name for the MCP server (default: derived from executable name)")
+	flags.BoolVar(&enableFlags.workspace, cfgmgr.FlagWorkspace, false, "Add to workspace settings (.vscode/mcp.json) instead of user settings")
 
 	return cmd
 }
@@ -49,12 +47,8 @@ func enableMCPServer(cmd *cobra.Command, flags *enableCommandFlags) error {
 
 	// Determine configuration type
 	configType := config.UserConfig
-	if flags.workspace || flags.configType == "workspace" {
+	if flags.workspace {
 		configType = config.WorkspaceConfig
-	} else if flags.configType == "user" {
-		configType = config.UserConfig
-	} else if flags.configType != "" {
-		return fmt.Errorf("invalid config type %q: must be 'workspace' or 'user'", flags.configType)
 	}
 
 	// Create config manager
@@ -69,6 +63,16 @@ func enableMCPServer(cmd *cobra.Command, flags *enableCommandFlags) error {
 		}
 	}
 
+	// Validate server name
+	if err := cfgmgr.ValidateServerName(serverName); err != nil {
+		return err
+	}
+
+	// Validate log level if provided
+	if err := cfgmgr.ValidateLogLevel(flags.logLevel); err != nil {
+		return err
+	}
+
 	// Check if server already exists
 	exists, err := configManager.HasServer(serverName)
 	if err != nil {
@@ -76,15 +80,20 @@ func enableMCPServer(cmd *cobra.Command, flags *enableCommandFlags) error {
 	}
 
 	// Build server configuration
+	mcpPath, err := cfgmgr.GetCmdPath(cmd)
+	if err != nil {
+		return fmt.Errorf("failed to determine MCP command path: %w", err)
+	}
+
 	server := config.MCPServer{
-		Type:    "stdio",
+		Type:    cfgmgr.ServerTypeStdio,
 		Command: executablePath,
-		Args:    append(cfgmgr.GetMCPCommandPath(cmd), cfgmgr.StartCommandName),
+		Args:    append(mcpPath, cfgmgr.StartCommandName),
 	}
 
 	// Add log level to args if specified
 	if flags.logLevel != "" {
-		server.Args = append(server.Args, "--log-level", flags.logLevel)
+		server.Args = append(server.Args, "--"+cfgmgr.FlagLogLevel, flags.logLevel)
 	}
 
 	// Add server to config (with backup)
@@ -94,19 +103,15 @@ func enableMCPServer(cmd *cobra.Command, flags *enableCommandFlags) error {
 
 	// Show warning if overwriting existing server
 	if exists {
-		fmt.Printf("⚠️ MCP server %q already exists and will be overwritten\n", serverName)
+		fmt.Printf(cfgmgr.MsgServerOverwrite, serverName)
 	}
 
 	if err := configManager.AddServer(serverName, server); err != nil {
 		return fmt.Errorf("failed to add MCP server %q to VSCode configuration: %w", serverName, err)
 	}
 
-	configTypeStr := "user"
-	if configType == config.WorkspaceConfig {
-		configTypeStr = "workspace"
-	}
-
-	fmt.Printf("Successfully enabled MCP server %q in VSCode (%s configuration)\n", serverName, configTypeStr)
+	fmt.Printf(cfgmgr.MsgServerEnabled, serverName)
+	fmt.Printf("Configuration: %s\n", configType)
 	fmt.Printf("Executable: %s\n", executablePath)
 	fmt.Printf("Args: %v\n", server.Args)
 	fmt.Printf("Configuration file: %s\n", configManager.GetConfigPath())

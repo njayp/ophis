@@ -48,6 +48,18 @@ const (
 	UserConfig
 )
 
+// String returns the string representation of the config type
+func (t Type) String() string {
+	switch t {
+	case WorkspaceConfig:
+		return "workspace"
+	case UserConfig:
+		return "user"
+	default:
+		return "unknown"
+	}
+}
+
 // NewVSCodeConfigManager creates a new config manager with the default or specified path
 func NewVSCodeConfigManager(configPath string, configType Type) *Manager {
 	if configPath == "" {

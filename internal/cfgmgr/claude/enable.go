@@ -19,9 +19,9 @@ type enableCommandFlags struct {
 func enableCommand() *cobra.Command {
 	enableFlags := &enableCommandFlags{}
 	cmd := &cobra.Command{
-		Use:   "enable",
-		Short: "Add server to Claude config",
-		Long:  `Add this application as an MCP server in Claude Desktop`,
+		Use:   cfgmgr.CmdEnable,
+		Short: cmdEnableShort,
+		Long:  cmdEnableLong,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return enableMCPServer(cmd, enableFlags)
 		},
@@ -29,9 +29,9 @@ func enableCommand() *cobra.Command {
 
 	// Add flags
 	flags := cmd.Flags()
-	flags.StringVar(&enableFlags.logLevel, "log-level", "", "Log level (debug, info, warn, error)")
-	flags.StringVar(&enableFlags.configPath, "config-path", "", "Path to Claude config file")
-	flags.StringVar(&enableFlags.serverName, "server-name", "", "Name for the MCP server (default: derived from executable name)")
+	flags.StringVar(&enableFlags.logLevel, cfgmgr.FlagLogLevel, "", "Log level (debug, info, warn, error)")
+	flags.StringVar(&enableFlags.configPath, cfgmgr.FlagConfigPath, "", "Path to Claude config file")
+	flags.StringVar(&enableFlags.serverName, cfgmgr.FlagServerName, "", "Name for the MCP server (default: derived from executable name)")
 	return cmd
 }
 
@@ -54,6 +54,16 @@ func enableMCPServer(cmd *cobra.Command, flags *enableCommandFlags) error {
 		}
 	}
 
+	// Validate server name
+	if err := cfgmgr.ValidateServerName(serverName); err != nil {
+		return err
+	}
+
+	// Validate log level if provided
+	if err := cfgmgr.ValidateLogLevel(flags.logLevel); err != nil {
+		return err
+	}
+
 	// Check if server already exists
 	exists, err := configManager.HasServer(serverName)
 	if err != nil {
@@ -61,14 +71,19 @@ func enableMCPServer(cmd *cobra.Command, flags *enableCommandFlags) error {
 	}
 
 	// Build server configuration
-	server := config.MCPServer{
-		Command: executablePath,
-		Args:    append(cfgmgr.GetMCPCommandPath(cmd), cfgmgr.StartCommandName),
+	mcpPath, err := cfgmgr.GetCmdPath(cmd)
+	if err != nil {
+		return fmt.Errorf("failed to determine MCP command path: %w", err)
 	}
 
-	// Add log level and log file to args if specified
+	server := config.MCPServer{
+		Command: executablePath,
+		Args:    append(mcpPath, cfgmgr.StartCommandName),
+	}
+
+	// Add log level to args if specified
 	if flags.logLevel != "" {
-		server.Args = append(server.Args, "--log-level", flags.logLevel)
+		server.Args = append(server.Args, "--"+cfgmgr.FlagLogLevel, flags.logLevel)
 	}
 
 	// Add server to config (with backup)
@@ -78,16 +93,16 @@ func enableMCPServer(cmd *cobra.Command, flags *enableCommandFlags) error {
 
 	// Show warning if overwriting existing server
 	if exists {
-		fmt.Printf("⚠️  MCP server %q already exists and will be overwritten\n", serverName)
+		fmt.Printf(cfgmgr.MsgServerOverwrite, serverName)
 	}
 
 	if err := configManager.AddServer(serverName, server); err != nil {
 		return fmt.Errorf("failed to add MCP server %q to Claude configuration: %w", serverName, err)
 	}
 
-	fmt.Printf("Successfully enabled MCP server %q\n", serverName)
+	fmt.Printf(cfgmgr.MsgServerEnabled, serverName)
 	fmt.Printf("Executable: %s\n", executablePath)
 	fmt.Printf("Args: %v\n", server.Args)
-	fmt.Printf("\nTo use this server, restart Claude Desktop.\n")
+	fmt.Print(cfgmgr.MsgRestartClaudeDesktop)
 	return nil
 }

@@ -3,6 +3,7 @@ package vscode
 import (
 	"fmt"
 
+	"github.com/njayp/ophis/internal/cfgmgr"
 	"github.com/njayp/ophis/internal/cfgmgr/vscode/config"
 	"github.com/spf13/cobra"
 )
@@ -10,16 +11,15 @@ import (
 type listCommandFlags struct {
 	configPath string
 	workspace  bool
-	configType string
 }
 
 // listCommand creates a Cobra command for listing MCP servers in VSCode.
 func listCommand() *cobra.Command {
 	listFlags := &listCommandFlags{}
 	cmd := &cobra.Command{
-		Use:   "list",
-		Short: "Show VSCode MCP servers",
-		Long:  `Show all MCP servers configured in VSCode`,
+		Use:   cfgmgr.CmdList,
+		Short: cmdListShort,
+		Long:  cmdListLong,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			return listMCPServers(listFlags)
 		},
@@ -27,9 +27,8 @@ func listCommand() *cobra.Command {
 
 	// Add flags
 	flags := cmd.Flags()
-	flags.StringVar(&listFlags.configPath, "config-path", "", "Path to VSCode config file")
-	flags.BoolVar(&listFlags.workspace, "workspace", false, "List from workspace settings (.vscode/mcp.json) instead of user settings")
-	flags.StringVar(&listFlags.configType, "config-type", "", "Configuration type: 'workspace' or 'user' (default: user)")
+	flags.StringVar(&listFlags.configPath, cfgmgr.FlagConfigPath, "", "Path to VSCode config file")
+	flags.BoolVar(&listFlags.workspace, cfgmgr.FlagWorkspace, false, "List from workspace settings (.vscode/mcp.json) instead of user settings")
 
 	return cmd
 }
@@ -37,12 +36,8 @@ func listCommand() *cobra.Command {
 func listMCPServers(flags *listCommandFlags) error {
 	// Determine configuration type
 	configType := config.UserConfig
-	if flags.workspace || flags.configType == "workspace" {
+	if flags.workspace {
 		configType = config.WorkspaceConfig
-	} else if flags.configType == "user" {
-		configType = config.UserConfig
-	} else if flags.configType != "" {
-		return fmt.Errorf("invalid config type '%s': must be 'workspace' or 'user'", flags.configType)
 	}
 
 	// Create config manager
@@ -54,16 +49,11 @@ func listMCPServers(flags *listCommandFlags) error {
 		return fmt.Errorf("failed to load VSCode configuration: %w", err)
 	}
 
-	configTypeStr := "user"
-	if configType == config.WorkspaceConfig {
-		configTypeStr = "workspace"
-	}
-
-	fmt.Printf("VSCode MCP Servers (%s configuration):\n", configTypeStr)
+	fmt.Printf("VSCode MCP Servers (%s configuration):\n", configType)
 	fmt.Printf("Configuration file: %s\n\n", configManager.GetConfigPath())
 
 	if len(vsConfig.Servers) == 0 {
-		fmt.Printf("No MCP servers configured.\n")
+		fmt.Println(cfgmgr.MsgNoServersConfigured)
 		return nil
 	}
 

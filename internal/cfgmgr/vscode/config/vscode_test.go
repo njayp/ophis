@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/njayp/ophis/internal/cfgmgr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -29,7 +30,7 @@ func TestVSCodeConfigManager(t *testing.T) {
 
 		// Test adding a server
 		server := MCPServer{
-			Type:    "stdio",
+			Type:    cfgmgr.ServerTypeStdio,
 			Command: "/path/to/executable",
 			Args:    []string{"mcp", "start"},
 		}
@@ -63,7 +64,7 @@ func TestVSCodeConfigManager(t *testing.T) {
 
 		// Test adding a server to an empty config
 		server := MCPServer{
-			Type:    "stdio",
+			Type:    cfgmgr.ServerTypeStdio,
 			Command: "/path/to/executable",
 			Args:    []string{"mcp", "start"},
 			Env: map[string]string{
@@ -108,7 +109,7 @@ func TestVSCodeConfigManager(t *testing.T) {
 			},
 			Servers: map[string]MCPServer{
 				"test-server": {
-					Type:    "stdio",
+					Type:    cfgmgr.ServerTypeStdio,
 					Command: "npx",
 					Args:    []string{"-y", "@example/server"},
 					Env: map[string]string{
@@ -141,7 +142,7 @@ func TestVSCodeConfigManager(t *testing.T) {
 
 		// Create initial config
 		server := MCPServer{
-			Type:    "stdio",
+			Type:    cfgmgr.ServerTypeStdio,
 			Command: "/path/to/executable",
 		}
 		err := manager.AddServer("initial-server", server)
@@ -214,4 +215,22 @@ func TestVSCodeConfigManagerEdgeCases(t *testing.T) {
 		assert.NotNil(t, config.Servers)
 		assert.Len(t, config.Servers, 0)
 	})
+}
+
+func TestConfigTypeString(t *testing.T) {
+	tests := []struct {
+		name     string
+		cfgType  Type
+		expected string
+	}{
+		{"WorkspaceConfig", WorkspaceConfig, "workspace"},
+		{"UserConfig", UserConfig, "user"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.cfgType.String()
+			assert.Equal(t, tt.expected, result)
+		})
+	}
 }

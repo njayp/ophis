@@ -17,9 +17,9 @@ type disableCommandFlags struct {
 func disableCommand() *cobra.Command {
 	disableFlags := &disableCommandFlags{} // Reuse flags struct
 	cmd := &cobra.Command{
-		Use:   "disable",
-		Short: "Remove server from Claude config",
-		Long:  `Remove this application from Claude Desktop MCP servers`,
+		Use:   cfgmgr.CmdDisable,
+		Short: cmdDisableShort,
+		Long:  cmdDisableLong,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			return disableMCPServer(disableFlags)
 		},
@@ -27,8 +27,8 @@ func disableCommand() *cobra.Command {
 
 	// Add flags
 	flags := cmd.Flags()
-	flags.StringVar(&disableFlags.configPath, "config-path", "", "Path to Claude config file")
-	flags.StringVar(&disableFlags.serverName, "server-name", "", "Name of the MCP server to remove (default: derived from executable name)")
+	flags.StringVar(&disableFlags.configPath, cfgmgr.FlagConfigPath, "", "Path to Claude config file")
+	flags.StringVar(&disableFlags.serverName, cfgmgr.FlagServerName, "", "Name of the MCP server to remove (default: derived from executable name)")
 	return cmd
 }
 
@@ -42,13 +42,18 @@ func disableMCPServer(flags *disableCommandFlags) error {
 		return err
 	}
 
+	// Validate server name
+	if err := cfgmgr.ValidateServerName(serverName); err != nil {
+		return err
+	}
+
 	// Check if server exists
 	exists, err := configManager.HasServer(serverName)
 	if err != nil {
 		return fmt.Errorf("failed to check if MCP server %q exists in Claude configuration: %w", serverName, err)
 	}
 	if !exists {
-		fmt.Printf("MCP server %q is not currently enabled\n", serverName)
+		fmt.Printf(cfgmgr.MsgServerNotEnabled, serverName)
 		return nil
 	}
 
@@ -61,7 +66,7 @@ func disableMCPServer(flags *disableCommandFlags) error {
 		return fmt.Errorf("failed to remove MCP server %q from Claude configuration: %w", serverName, err)
 	}
 
-	fmt.Printf("Successfully disabled MCP server %q\n", serverName)
-	fmt.Printf("\nTo apply changes, restart Claude Desktop.\n")
+	fmt.Printf(cfgmgr.MsgServerDisabled, serverName)
+	fmt.Print(cfgmgr.MsgRestartClaudeDesktop)
 	return nil
 }

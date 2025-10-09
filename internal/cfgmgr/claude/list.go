@@ -3,6 +3,7 @@ package claude
 import (
 	"fmt"
 
+	"github.com/njayp/ophis/internal/cfgmgr"
 	"github.com/njayp/ophis/internal/cfgmgr/claude/config"
 	"github.com/spf13/cobra"
 )
@@ -15,9 +16,9 @@ type listCommandFlags struct {
 func listCommand() *cobra.Command {
 	listFlags := &listCommandFlags{} // Reuse flags struct for config-path
 	cmd := &cobra.Command{
-		Use:   "list",
-		Short: "Show Claude MCP servers",
-		Long:  `Show all MCP servers configured in Claude Desktop`,
+		Use:   cfgmgr.CmdList,
+		Short: cmdListShort,
+		Long:  cmdListLong,
 		RunE: func(_ *cobra.Command, _ []string) error {
 			return listMCPServers(listFlags)
 		},
@@ -25,7 +26,7 @@ func listCommand() *cobra.Command {
 
 	// Add flags
 	flags := cmd.Flags()
-	flags.StringVar(&listFlags.configPath, "config-path", "", "Path to Claude config file")
+	flags.StringVar(&listFlags.configPath, cfgmgr.FlagConfigPath, "", "Path to Claude config file")
 	return cmd
 }
 
@@ -42,9 +43,9 @@ func listMCPServers(flags *listCommandFlags) error {
 	fmt.Printf("Claude MCP Configuration File: %s\n\n", configManager.GetConfigPath())
 
 	if len(claudeConfig.MCPServers) == 0 {
-		fmt.Println("No MCP servers are currently configured.")
+		fmt.Println(cfgmgr.MsgNoServersConfigured)
 		fmt.Println("\nTo enable this application as an MCP server, run:")
-		fmt.Println("  <your-app> mcp enable")
+		fmt.Println("  <your-app> mcp claude enable")
 		return nil
 	}
 

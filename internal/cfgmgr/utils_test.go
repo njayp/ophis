@@ -2,6 +2,7 @@ package cfgmgr
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,38 +13,57 @@ import (
 )
 
 func TestBackupConfigFile(t *testing.T) {
-	// Create a temporary directory for testing
 	tempDir := t.TempDir()
 	configPath := filepath.Join(tempDir, "test_config.json")
 
-	// Test backing up a non-existent file (should return nil)
-	err := BackupConfigFile(configPath)
-	if err != nil {
-		t.Errorf("BackupConfigFile should return nil for non-existent file, got: %v", err)
-	}
+	t.Run("non-existent file", func(t *testing.T) {
+		err := BackupConfigFile(configPath)
+		assert.NoError(t, err, "BackupConfigFile should return nil for non-existent file")
+	})
 
-	// Create a test config file
-	testData := []byte(`{"test": "data"}`)
-	if err := os.WriteFile(configPath, testData, 0o644); err != nil {
-		t.Fatalf("Failed to create test config file: %v", err)
-	}
+	t.Run("create first backup", func(t *testing.T) {
+		testData := []byte(`{"test": "data"}`)
+		err := os.WriteFile(configPath, testData, 0o644)
+		assert.NoError(t, err)
 
-	// Test backing up an existing file
-	err = BackupConfigFile(configPath)
-	if err != nil {
-		t.Errorf("BackupConfigFile failed: %v", err)
-	}
+		err = BackupConfigFile(configPath)
+		assert.NoError(t, err)
 
-	// Verify backup was created
-	backupPath := configPath + ".backup"
-	backupData, err := os.ReadFile(backupPath)
-	if err != nil {
-		t.Errorf("Failed to read backup file: %v", err)
-	}
+		backupPath := configPath + ".backup"
+		backupData, err := os.ReadFile(backupPath)
+		assert.NoError(t, err)
+		assert.Equal(t, string(testData), string(backupData))
+	})
 
-	if string(backupData) != string(testData) {
-		t.Errorf("Backup content mismatch. Expected %s, got %s", testData, backupData)
-	}
+	t.Run("rotate backups", func(t *testing.T) {
+		// Create multiple backups to test rotation
+		for i := 1; i <= MaxBackups+2; i++ {
+			testData := []byte(fmt.Sprintf(`{"version": %d}`, i))
+			err := os.WriteFile(configPath, testData, 0o644)
+			assert.NoError(t, err)
+
+			err = BackupConfigFile(configPath)
+			assert.NoError(t, err)
+		}
+
+		// Check that we have MaxBackups files (not counting the main config)
+		// Should have: .backup, .backup.1, .backup.2, .backup.3, .backup.4
+		for i := 0; i < MaxBackups; i++ {
+			var backupPath string
+			if i == 0 {
+				backupPath = configPath + ".backup"
+			} else {
+				backupPath = fmt.Sprintf("%s.backup.%d", configPath, i)
+			}
+			_, err := os.Stat(backupPath)
+			assert.NoError(t, err, "Backup %s should exist", backupPath)
+		}
+
+		// Check that older backups were removed
+		oldBackup := fmt.Sprintf("%s.backup.%d", configPath, MaxBackups)
+		_, err := os.Stat(oldBackup)
+		assert.True(t, os.IsNotExist(err), "Old backup %s should not exist", oldBackup)
+	})
 }
 
 func TestLoadJSONConfig(t *testing.T) {
@@ -174,7 +194,9 @@ func TestGetMCPCommandPath(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cmd := buildCommand(tt.commands...)
-			assert.Equal(t, tt.expected, GetMCPCommandPath(cmd))
+			result, err := GetCmdPath(cmd)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }

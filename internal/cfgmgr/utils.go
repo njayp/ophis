@@ -16,6 +16,31 @@ const (
 	MCPCommandName = "mcp"
 	// StartCommandName is the subcommand to start the MCP server.
 	StartCommandName = "start"
+
+	// CmdEnable is the enable subcommand name.
+	CmdEnable = "enable"
+	// CmdDisable is the disable subcommand name.
+	CmdDisable = "disable"
+	// CmdList is the list subcommand name.
+	CmdList = "list"
+
+	// FlagLogLevel is the flag name for log level.
+	FlagLogLevel = "log-level"
+	// FlagConfigPath is the flag name for config path.
+	FlagConfigPath = "config-path"
+	// FlagServerName is the flag name for server name.
+	FlagServerName = "server-name"
+	// FlagWorkspace is the flag name for workspace configuration.
+	FlagWorkspace = "workspace"
+
+	// BackupFileSuffix is the suffix for backup files.
+	BackupFileSuffix = ".backup"
+
+	// ServerTypeStdio is the stdio server type.
+	ServerTypeStdio = "stdio"
+
+	// MaxBackups is the maximum number of backup files to keep.
+	MaxBackups = 5
 )
 
 // DeriveServerName extracts the server name from an executable path.
@@ -48,9 +73,14 @@ func GetExecutableServerName(serverName string) (string, error) {
 	return derivedName, nil
 }
 
-// GetMCPCommandPath builds the command path to the MCP command.
-// Example: for "cli alpha mcp start", returns ["alpha", "mcp"].
-func GetMCPCommandPath(cmd *cobra.Command) []string {
+// GetCmdPath builds the command path to the MCP command, including the MCP command itself.
+// It returns the slice of command names from after the root command up to and including the MCP command.
+//
+// Example: for a command path "myapp alpha mcp start", this returns ["alpha", "mcp"].
+// The returned slice can be used as arguments to invoke the MCP command from the executable.
+//
+// Returns an error if the MCP command is not found in the command path.
+func GetCmdPath(cmd *cobra.Command) ([]string, error) {
 	path := cmd.CommandPath()
 	args := strings.Fields(path) // splits on spaces, handles multiple spaces
 
@@ -58,21 +88,28 @@ func GetMCPCommandPath(cmd *cobra.Command) []string {
 	index := slices.Index(args, MCPCommandName)
 	if index == -1 {
 		// MCP command not found
-		panic(fmt.Sprintf("MCP command name %q not found in command path %q", MCPCommandName, path))
+		return nil, fmt.Errorf("MCP command name %q not found in command path %q", MCPCommandName, path)
 	}
 
 	// Return the slice from after the root command to the MCP command
-	return args[1 : index+1]
+	return args[1 : index+1], nil
 }
 
-// BackupConfigFile creates a .backup copy of the configuration file.
+// BackupConfigFile creates a timestamped backup copy of the configuration file.
+// It maintains up to MaxBackups backup files and removes older ones.
 func BackupConfigFile(configPath string) error {
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		// No config file to backup
 		return nil
 	}
 
-	backupPath := configPath + ".backup"
+	// Rotate existing backups
+	if err := rotateBackups(configPath); err != nil {
+		return fmt.Errorf("failed to rotate backups: %w", err)
+	}
+
+	// Create new backup with .backup suffix (most recent)
+	backupPath := configPath + BackupFileSuffix
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return fmt.Errorf("failed to read configuration file for backup at %q: %w", configPath, err)
@@ -83,6 +120,39 @@ func BackupConfigFile(configPath string) error {
 	}
 
 	fmt.Printf("Backup config file created at %q\n", backupPath)
+	return nil
+}
+
+// rotateBackups shifts existing backups and removes old ones.
+func rotateBackups(configPath string) error {
+	// Remove the oldest backup if we're at the limit
+	oldestBackup := fmt.Sprintf("%s%s.%d", configPath, BackupFileSuffix, MaxBackups-1)
+	if _, err := os.Stat(oldestBackup); err == nil {
+		if err := os.Remove(oldestBackup); err != nil {
+			return fmt.Errorf("failed to remove oldest backup at %q: %w", oldestBackup, err)
+		}
+	}
+
+	// Shift existing numbered backups
+	for i := MaxBackups - 2; i >= 1; i-- {
+		oldPath := fmt.Sprintf("%s%s.%d", configPath, BackupFileSuffix, i)
+		newPath := fmt.Sprintf("%s%s.%d", configPath, BackupFileSuffix, i+1)
+		if _, err := os.Stat(oldPath); err == nil {
+			if err := os.Rename(oldPath, newPath); err != nil {
+				return fmt.Errorf("failed to rotate backup from %q to %q: %w", oldPath, newPath, err)
+			}
+		}
+	}
+
+	// Move current .backup to .backup.1
+	backupPath := configPath + BackupFileSuffix
+	if _, err := os.Stat(backupPath); err == nil {
+		newPath := backupPath + ".1"
+		if err := os.Rename(backupPath, newPath); err != nil {
+			return fmt.Errorf("failed to rotate current backup to %q: %w", newPath, err)
+		}
+	}
+
 	return nil
 }
 
