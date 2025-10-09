@@ -3,6 +3,7 @@ package ophis
 import (
 	"github.com/njayp/ophis/internal/cfgmgr"
 	"github.com/njayp/ophis/internal/cfgmgr/claude"
+	"github.com/njayp/ophis/internal/cfgmgr/cursor"
 	"github.com/njayp/ophis/internal/cfgmgr/vscode"
 	"github.com/spf13/cobra"
 )
@@ -17,6 +18,6 @@ func Command(config *Config) *cobra.Command {
 	}
 
 	// Add subcommands
-	cmd.AddCommand(startCommand(config), toolCommand(config), claude.Command(), vscode.Command())
+	cmd.AddCommand(startCommand(config), toolCommand(config), claude.Command(), vscode.Command(), cursor.Command())
 	return cmd
 }
