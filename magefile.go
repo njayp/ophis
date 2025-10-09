@@ -35,6 +35,11 @@ func Vscode() error {
 	return enableMCP("vscode")
 }
 
+// Vscode runs './bin/<cli> mcp cursor enable' for every binary in bin/
+func Cursor() error {
+	return enableMCP("cursor")
+}
+
 // runMakeInExamples runs a make target in all example directories in parallel
 func runMakeInExamples(target string) error {
 	dirs, err := findExampleDirs()
