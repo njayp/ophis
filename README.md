@@ -44,10 +44,10 @@ import (
 
 func main() {
     rootCmd := createMyRootCommand()
-    
+
     // Add MCP server commands
     rootCmd.AddCommand(ophis.Command(nil))
-    
+
     if err := rootCmd.Execute(); err != nil {
         os.Exit(1)
     }
@@ -108,7 +108,7 @@ config := &ophis.Config{
         {
             // Select exactly these write commands
             CmdSelector: ophis.AllowCmds("mycli create", "mycli apply"),
-            
+
             // Exclude dangerous flags
             LocalFlagSelector: ophis.ExcludeFlags("force", "token", "insecure"),
 
@@ -163,15 +163,17 @@ Ophis recursively walks your Cobra command tree at runtime, creating MCP tools f
 For each selected command, ophis automatically generates JSON schemas for both input and output:
 
 **Input Schema** includes:
+
 - `flags`: An object with properties for each included flag, typed according to Cobra's flag types (string, bool, int, stringSlice, etc.)
 - `args`: An array of strings for positional arguments, enhanced with usage patterns from the command's `Use` field
 
-**Output Schema** includes:
-- `stdout`: Captured standard output
-- `stderr`: Captured standard error  
-- `exitCode`: The command's exit code
-
 Flag schemas include rich metadata like descriptions, default values, required status, and format constraints. This allows AI assistants to understand exactly how to invoke each tool.
+
+**Output Schema** includes:
+
+- `stdout`: Captured standard output
+- `stderr`: Captured standard error
+- `exitCode`: The command's exit code
 
 ### Tool Execution
 
