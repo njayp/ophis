@@ -6,4 +6,4 @@
 // validating executables, deriving server names, and other cross-platform utilities.
 //
 // This is an internal package and should not be imported by users of the ophis library.
-package cfgmgr
+package manager

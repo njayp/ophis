@@ -1,4 +1,4 @@
-package config
+package vscode
 
 import (
 	"os"

@@ -12,4 +12,4 @@
 // locating VSCode configuration directories on different operating systems.
 //
 // This is an internal package and should not be imported by users of the ophis library.
-package config
+package vscode

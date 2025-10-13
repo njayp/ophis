@@ -3,8 +3,8 @@ package vscode
 import (
 	"fmt"
 
-	"github.com/njayp/ophis/internal/cfgmgr"
-	"github.com/njayp/ophis/internal/cfgmgr/vscode/config"
+	"github.com/njayp/ophis/internal/cfgmgr/manager"
+	"github.com/njayp/ophis/internal/cfgmgr/manager/vscode"
 	"github.com/spf13/cobra"
 )
 
@@ -17,47 +17,40 @@ type listCommandFlags struct {
 func listCommand() *cobra.Command {
 	listFlags := &listCommandFlags{}
 	cmd := &cobra.Command{
-		Use:   cfgmgr.CmdList,
-		Short: cmdListShort,
-		Long:  cmdListLong,
+		Use:   "list",
+		Short: "Show VSCode MCP servers",
+		Long:  "Show all MCP servers configured in VSCode",
 		RunE: func(_ *cobra.Command, _ []string) error {
-			return listMCPServers(listFlags)
+			return listFlags.listMCPServers()
 		},
 	}
 
 	// Add flags
 	flags := cmd.Flags()
-	flags.StringVar(&listFlags.configPath, cfgmgr.FlagConfigPath, "", "Path to VSCode config file")
-	flags.BoolVar(&listFlags.workspace, cfgmgr.FlagWorkspace, false, "List from workspace settings (.vscode/mcp.json) instead of user settings")
+	flags.StringVar(&listFlags.configPath, "config-path", "", "Path to VSCode config file")
+	flags.BoolVar(&listFlags.workspace, "workspace", false, "List from workspace settings (.vscode/mcp.json) instead of user settings")
 
 	return cmd
 }
 
-func listMCPServers(flags *listCommandFlags) error {
-	// Determine configuration type
-	configType := config.UserConfig
-	if flags.workspace {
-		configType = config.WorkspaceConfig
-	}
-
+func (f *listCommandFlags) listMCPServers() error {
 	// Create config manager
-	configManager := config.NewVSCodeConfigManager(flags.configPath, configType)
-
-	// Load config
-	vsConfig, err := configManager.LoadConfig()
-	if err != nil {
-		return fmt.Errorf("failed to load VSCode configuration: %w", err)
+	manager := manager.Manager[vscode.Config, vscode.MCPServer]{
+		Platform: vscode.NewVSCodeConfigManager(f.workspace),
 	}
 
-	fmt.Printf("VSCode MCP Servers (%s configuration):\n", configType)
-	fmt.Printf("Configuration file: %s\n\n", configManager.GetConfigPath())
+	config := vscode.Config{}
+	err := manager.LoadJSONConfig(&config)
+	if err != nil {
+		return err
+	}
 
-	if len(vsConfig.Servers) == 0 {
-		fmt.Println(cfgmgr.MsgNoServersConfigured)
+	if len(config.Servers) == 0 {
+		fmt.Println("")
 		return nil
 	}
 
-	for name, server := range vsConfig.Servers {
+	for name, server := range config.Servers {
 		fmt.Printf("Server: %s\n", name)
 		fmt.Printf("  Type: %s\n", server.Type)
 		if server.Command != "" {
