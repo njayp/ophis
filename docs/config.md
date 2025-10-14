@@ -20,7 +20,7 @@ Always filtered regardless of configuration:
 
 ## Examples
 
-### Expose specific commands
+### Expose Specific Commands
 
 ```go
 config := &ophis.Config{
@@ -32,7 +32,7 @@ config := &ophis.Config{
 }
 ```
 
-### Exclude sensitive flags
+### Exclude Sensitive Flags
 
 ```go
 config := &ophis.Config{
@@ -45,7 +45,7 @@ config := &ophis.Config{
 }
 ```
 
-### Different rules per command type
+### Different Rules per Command Type
 
 ```go
 config := &ophis.Config{
@@ -67,7 +67,7 @@ config := &ophis.Config{
 }
 ```
 
-### Custom functions: Annotation-based exposure
+### Custom Functions: Annotation-Based Exposure
 
 ```go
 config := &ophis.Config{
