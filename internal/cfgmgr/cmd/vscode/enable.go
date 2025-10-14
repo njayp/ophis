@@ -9,40 +9,40 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type enableCommandFlags struct {
+type enableFlags struct {
 	configPath string
 	logLevel   string
 	serverName string
 	workspace  bool
 }
 
-// enableCommand creates a Cobra command for enabling the MCP server in VSCode.
+// enableCommand creates a Cobra command for adding an MCP server to VSCode.
 func enableCommand() *cobra.Command {
-	enableFlags := &enableCommandFlags{}
+	f := &enableFlags{}
 	cmd := &cobra.Command{
 		Use:   "enable",
 		Short: "Add server to VSCode config",
 		Long:  "Add this application as an MCP server in VSCode",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return enableFlags.enableMCPServer(cmd)
+			return f.run(cmd)
 		},
 	}
 
 	// Add flags
 	flags := cmd.Flags()
-	flags.StringVar(&enableFlags.logLevel, "log-level", "", "Log level (debug, info, warn, error)")
-	flags.StringVar(&enableFlags.configPath, "config-path", "", "Path to VSCode config file")
-	flags.StringVar(&enableFlags.serverName, "server-name", "", "Name for the MCP server (default: derived from executable name)")
-	flags.BoolVar(&enableFlags.workspace, "workspace", false, "Add to workspace settings (.vscode/mcp.json) instead of user settings")
+	flags.StringVar(&f.logLevel, "log-level", "", "Log level (debug, info, warn, error)")
+	flags.StringVar(&f.configPath, "config-path", "", "Path to VSCode config file")
+	flags.StringVar(&f.serverName, "server-name", "", "Name for the MCP server (default: derived from executable name)")
+	flags.BoolVar(&f.workspace, "workspace", false, "Add to workspace settings (.vscode/mcp.json) instead of user settings")
 
 	return cmd
 }
 
-func (f *enableCommandFlags) enableMCPServer(cmd *cobra.Command) error {
+func (f *enableFlags) run(cmd *cobra.Command) error {
 	// Get the current executable path
 	executablePath, err := os.Executable()
 	if err != nil {
-		return fmt.Errorf("failed to get executable path for MCP server registration: %w", err)
+		return fmt.Errorf("failed to determine executable path: %w", err)
 	}
 
 	// Build server configuration
@@ -62,19 +62,15 @@ func (f *enableCommandFlags) enableMCPServer(cmd *cobra.Command) error {
 		server.Args = append(server.Args, "--log-level", f.logLevel)
 	}
 
-	// Determine server name
-	serverName := f.serverName
-	if serverName == "" {
-		serverName = manager.DeriveServerName(executablePath)
-		if serverName == "" {
-			return fmt.Errorf("MCP server name cannot be empty: unable to derive name from executable path %q", executablePath)
-		}
+	if f.serverName == "" {
+		f.serverName = manager.DeriveServerName(executablePath)
 	}
 
-	// Create config manager
-	manager := manager.Manager[vscode.Config, vscode.MCPServer]{
-		Platform: vscode.NewVSCodeConfigManager(f.workspace),
+	// Create config m
+	m, err := manager.NewVSCodeManager(f.configPath, f.workspace)
+	if err != nil {
+		return err
 	}
 
-	return manager.EnableMCPServer(serverName, server)
+	return m.EnableServer(f.serverName, server)
 }

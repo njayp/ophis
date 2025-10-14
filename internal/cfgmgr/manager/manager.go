@@ -5,79 +5,132 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/njayp/ophis/internal/cfgmgr/manager/claude"
+	"github.com/njayp/ophis/internal/cfgmgr/manager/vscode"
 )
 
-type Platform[T, S any] interface {
-	ConfigPath() string
-	AddServer(config *T, name string, server S)
-	RemoveServer(config *T, name string)
+// Config represents MCP server configuration that can be managed.
+type Config[S Server] interface {
+	HasServer(name string) bool
+	AddServer(name string, server S)
+	RemoveServer(name string)
+	Print()
 }
 
-type Manager[T, S any] struct {
-	Platform Platform[T, S]
+// Server represents an individual MCP server entry.
+type Server interface {
+	Print()
 }
 
-func (m *Manager[T, S]) EnableMCPServer(name string, server S) error {
-	var config T
-	err := m.LoadJSONConfig(&config)
+// Manager provides generic configuration management for MCP servers.
+// It handles loading, saving, and modifying MCP server configurations.
+// It is not thread-safe.
+type Manager[S Server, C Config[S]] struct {
+	configPath string
+	config     C
+}
+
+// NewVSCodeManager creates a new Manager configured for VSCode MCP servers.
+// If workspace is true, uses workspace configuration (.vscode/mcp.json),
+// otherwise uses user-level configuration.
+func NewVSCodeManager(configPath string, workspace bool) (*Manager[vscode.MCPServer, *vscode.Config], error) {
+	if configPath == "" {
+		configPath = vscode.ConfigPath(workspace)
+	}
+
+	m := &Manager[vscode.MCPServer, *vscode.Config]{
+		config:     &vscode.Config{},
+		configPath: configPath,
+	}
+
+	return m, m.loadConfig()
+}
+
+// NewClaudeManager creates a new Manager configured for Claude Desktop MCP servers.
+func NewClaudeManager(configPath string) (*Manager[claude.MCPServer, *claude.Config], error) {
+	if configPath == "" {
+		configPath = claude.ConfigPath()
+	}
+
+	m := &Manager[claude.MCPServer, *claude.Config]{
+		config:     &claude.Config{},
+		configPath: configPath,
+	}
+
+	return m, m.loadConfig()
+}
+
+// EnableServer adds or updates an MCP server in the configuration.
+func (m *Manager[S, C]) EnableServer(name string, server S) error {
+	if m.config.HasServer(name) {
+		fmt.Printf("⚠️  MCP server %q already exists and will be overwritten\n", name)
+	}
+
+	m.config.AddServer(name, server)
+	err := m.saveConfig()
 	if err != nil {
 		return err
 	}
 
-	m.Platform.AddServer(&config, name, server)
-	return m.SaveJSONConfig(&config)
+	fmt.Printf("Successfully enabled MCP server: %q\n", name)
+	server.Print()
+	return nil
 }
 
-func (m *Manager[T, S]) DisableMCPServer(name string) error {
-	var config T
-	err := m.LoadJSONConfig(&config)
-	if err != nil {
-		return err
+// DisableServer removes an MCP server from the configuration.
+func (m *Manager[S, C]) DisableServer(name string) error {
+	if m.config.HasServer(name) {
+		m.config.RemoveServer(name)
+		return m.saveConfig()
 	}
 
-	m.Platform.RemoveServer(&config, name)
-	return m.SaveJSONConfig(&config)
+	fmt.Printf("⚠️  MCP server %q does not exist\n", name)
+	return nil
 }
 
-// LoadJSONConfig unmarshals a JSON file into the provided interface.
-func (m *Manager[T, S]) LoadJSONConfig(config *T) error {
-	path := m.Platform.ConfigPath()
+// loadConfig unmarshals a JSON file into the provided interface.
+func (m *Manager[S, C]) loadConfig() error {
+	fmt.Printf("Using config path %q\n", m.configPath)
 
 	// Check if config file exists
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		// File doesn't exist - caller should handle initialization
+	if _, err := os.Stat(m.configPath); os.IsNotExist(err) {
+		// File doesn't exist - return nil to allow initialization
 		return nil
 	}
 
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(m.configPath)
 	if err != nil {
-		return fmt.Errorf("failed to read configuration file at %q: %w", path, err)
+		return fmt.Errorf("failed to read configuration file at %q: %w", m.configPath, err)
 	}
 
-	if err := json.Unmarshal(data, config); err != nil {
-		return fmt.Errorf("failed to parse configuration file at %q: invalid JSON format: %w", path, err)
+	if err := json.Unmarshal(data, m.config); err != nil {
+		return fmt.Errorf("failed to parse configuration file at %q: invalid JSON format: %w", m.configPath, err)
 	}
 
 	return nil
 }
 
-// SaveJSONConfig marshals and saves configuration as formatted JSON.
-func (m *Manager[T, S]) SaveJSONConfig(config *T) error {
-	path := m.Platform.ConfigPath()
-
+// saveConfig marshals and saves configuration as formatted JSON.
+func (m *Manager[S, C]) saveConfig() error {
 	// Ensure the directory exists
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		return fmt.Errorf("failed to create configuration directory at %q: %w", filepath.Dir(path), err)
+	if err := os.MkdirAll(filepath.Dir(m.configPath), 0o755); err != nil {
+		return fmt.Errorf("failed to create directory for configuration file at %q: %w", filepath.Dir(m.configPath), err)
 	}
 
-	data, err := json.MarshalIndent(config, "", "  ")
+	data, err := json.MarshalIndent(m.config, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal configuration to JSON: %w", err)
 	}
 
-	if err := os.WriteFile(path, data, 0o644); err != nil {
-		return fmt.Errorf("failed to write configuration file at %q: %w", path, err)
+	if err := os.WriteFile(m.configPath, data, 0o644); err != nil {
+		return fmt.Errorf("failed to write configuration file at %q: %w", m.configPath, err)
 	}
 
 	return nil
+}
+
+// Print calls Print on the underlying config
+func (m *Manager[S, C]) Print() {
+	m.config.Print()
 }

@@ -1,14 +1,12 @@
-// Package config provides internal configuration structures and platform-specific
-// implementations for managing Claude Desktop's MCP server configuration files.
+// Package claude provides configuration management for Claude Desktop MCP servers.
 //
 // This package handles:
-//   - Reading and writing claude_desktop_config.json files
-//   - Platform-specific configuration file locations (macOS, Linux, Windows)
-//   - Configuration file structure and JSON serialization
-//   - MCP server entry management within the configuration
+//   - Claude Desktop configuration structure (claude_desktop_config.json)
+//   - Platform-specific configuration file paths (macOS, Linux, Windows)
+//   - MCP server entry management
 //
-// The package uses build tags to provide platform-specific implementations for
-// locating the Claude Desktop configuration directory on different operating systems.
+// Platform-specific path functions use build tags to locate the Claude Desktop
+// configuration directory on different operating systems.
 //
 // This is an internal package and should not be imported by users of the ophis library.
 package claude

@@ -4,13 +4,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Command creates a new Cobra command that manages VSCode MCP configuration
-// This command can be added as a subcommand to any Cobra-based application
+// Command creates a new Cobra command for managing VSCode MCP servers.
 func Command() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "vscode",
-		Short: "Configure VSCode MCP servers",
-		Long:  "Configure MCP servers for Visual Studio Code",
+		Short: "Manage VSCode MCP servers",
+		Long:  "Manage MCP server configuration for Visual Studio Code",
 	}
 
 	// Add subcommands

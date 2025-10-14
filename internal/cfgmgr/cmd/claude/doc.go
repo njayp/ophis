@@ -1,12 +1,9 @@
-// Package claude provides internal CLI commands for managing Claude Desktop MCP server configuration.
+// Package claude provides CLI commands for managing Claude Desktop MCP servers.
 //
-// This package implements the 'mcp claude' subcommands that allow users to:
-//   - Enable MCP servers in Claude Desktop configuration
-//   - Disable MCP servers from Claude Desktop configuration
-//   - List currently enabled MCP servers in Claude Desktop
-//
-// The package manages the claude_desktop_config.json file across different operating systems,
-// handling platform-specific configuration paths and formats.
+// This package implements the 'mcp claude' subcommands:
+//   - enable: Add MCP server to Claude Desktop configuration
+//   - disable: Remove MCP server from Claude Desktop configuration
+//   - list: Show all configured MCP servers
 //
 // This is an internal package and should not be imported directly by users of the ophis library.
 // These commands are automatically available when using ophis.Command() in your application.

@@ -5,57 +5,52 @@ import (
 	"os"
 
 	"github.com/njayp/ophis/internal/cfgmgr/manager"
-	"github.com/njayp/ophis/internal/cfgmgr/manager/vscode"
 	"github.com/spf13/cobra"
 )
 
-type disableCommandFlags struct {
+type disableFlags struct {
 	configPath string
 	serverName string
 	workspace  bool
 }
 
-// disableCommand creates a Cobra command for disabling the MCP server in VSCode.
+// disableCommand creates a Cobra command for removing an MCP server from VSCode.
 func disableCommand() *cobra.Command {
-	disableFlags := &disableCommandFlags{}
+	f := &disableFlags{}
 	cmd := &cobra.Command{
 		Use:   "disable",
 		Short: "Remove server from VSCode config",
 		Long:  "Remove this application from VSCode MCP servers",
 		RunE: func(_ *cobra.Command, _ []string) error {
-			return disableFlags.disableMCPServer()
+			return f.run()
 		},
 	}
 
 	// Add flags
 	flags := cmd.Flags()
-	flags.StringVar(&disableFlags.configPath, "config-path", "", "Path to VSCode config file")
-	flags.StringVar(&disableFlags.serverName, "server-name", "", "Name of the MCP server to remove (default: derived from executable name)")
-	flags.BoolVar(&disableFlags.workspace, "workspace", false, "Remove from workspace settings (.vscode/mcp.json) instead of user settings")
+	flags.StringVar(&f.configPath, "config-path", "", "Path to VSCode config file")
+	flags.StringVar(&f.serverName, "server-name", "", "Name of the MCP server to remove (default: derived from executable name)")
+	flags.BoolVar(&f.workspace, "workspace", false, "Remove from workspace settings (.vscode/mcp.json) instead of user settings")
 
 	return cmd
 }
 
-func (f *disableCommandFlags) disableMCPServer() error {
+func (f *disableFlags) run() error {
 	// Get the current executable path
 	executablePath, err := os.Executable()
 	if err != nil {
-		return fmt.Errorf("failed to get executable path for MCP server registration: %w", err)
+		return fmt.Errorf("failed to determine executable path: %w", err)
 	}
 
-	// Determine server name
-	serverName := f.serverName
-	if serverName == "" {
-		serverName = manager.DeriveServerName(executablePath)
-		if serverName == "" {
-			return fmt.Errorf("MCP server name cannot be empty: unable to derive name from executable path %q", executablePath)
-		}
+	if f.serverName == "" {
+		f.serverName = manager.DeriveServerName(executablePath)
 	}
 
-	// Create config manager
-	manager := manager.Manager[vscode.Config, vscode.MCPServer]{
-		Platform: vscode.NewVSCodeConfigManager(f.workspace),
+	// Create config m
+	m, err := manager.NewVSCodeManager(f.configPath, f.workspace)
+	if err != nil {
+		return err
 	}
 
-	return manager.DisableMCPServer(serverName)
+	return m.DisableServer(f.serverName)
 }

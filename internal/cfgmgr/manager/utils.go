@@ -2,7 +2,6 @@ package manager
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -20,43 +19,22 @@ func DeriveServerName(executablePath string) string {
 	return serverName
 }
 
-// GetExecutableServerName returns the provided name or derives it from the executable.
-func GetExecutableServerName(serverName string) (string, error) {
-	if serverName != "" {
-		return serverName, nil
-	}
-
-	// Get the current executable path for default name
-	executablePath, err := os.Executable()
-	if err != nil {
-		return "", fmt.Errorf("failed to get executable path for determining default server name: %w", err)
-	}
-
-	derivedName := DeriveServerName(executablePath)
-	if derivedName == "" {
-		return "", fmt.Errorf("MCP server name cannot be empty: unable to derive name from executable path %q", executablePath)
-	}
-
-	return derivedName, nil
-}
-
-// GetCmdPath builds the command path to the MCP command, including the MCP command itself.
-// It returns the slice of command names from after the root command up to and including the MCP command.
+// GetCmdPath builds the command path to the MCP command.
+// It returns the slice of command names from after the root command up to and including "mcp".
 //
-// Example: for a command path "myapp alpha mcp start", this returns ["alpha", "mcp"].
-// The returned slice can be used as arguments to invoke the MCP command from the executable.
+// Example: for command path "myapp alpha mcp start", returns ["alpha", "mcp"].
 //
-// Returns an error if the MCP command is not found in the command path.
+// The returned slice can be used as arguments when invoking the executable.
+// Returns an error if "mcp" is not found in the command path.
 func GetCmdPath(cmd *cobra.Command) ([]string, error) {
 	path := cmd.CommandPath()
-	args := strings.Fields(path) // splits on spaces, handles multiple spaces
+	args := strings.Fields(path)
 
-	// Find the index of the MCP command name
+	// Find the index of "mcp" in the command path
 	name := "mcp"
 	index := slices.Index(args, name)
 	if index == -1 {
-		// MCP command not found
-		return nil, fmt.Errorf("MCP command name %q not found in command path %q", name, path)
+		return nil, fmt.Errorf("command %q not found in path %q", name, path)
 	}
 
 	// Return the slice from after the root command to the MCP command
