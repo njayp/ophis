@@ -16,14 +16,18 @@ Ophis automatically generates JSON schemas for MCP tools from Cobra commands.
 Each flag becomes a property with:
 
 **Type mapping:**
+
 - `bool` → `boolean`
-- `int`, `uint` → `integer`  
+- `int`, `uint` → `integer`
 - `float` → `number`
 - `string` → `string`
 - `stringSlice`, `intSlice` → `array`
 - `duration`, `ip`, `ipNet` → `string` with pattern validation
 
+Required flags are marked as required in the schema. Flags with a default value are given that default in the schema.
+
 **Example:**
+
 ```json
 {
   "flags": {
