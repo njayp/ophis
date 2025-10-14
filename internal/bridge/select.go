@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"github.com/njayp/ophis/internal/cfgmgr"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -81,7 +80,7 @@ func (s *Selector) cmdSelect(cmd *cobra.Command) bool {
 		return false
 	}
 
-	if CmdContains(cfgmgr.MCPCommandName, "help", "completion")(cmd) {
+	if CmdContains("mcp", "help", "completion")(cmd) {
 		return false
 	}
 
