@@ -146,7 +146,7 @@ func (m *Manager[S, C]) Print() {
 func (m *Manager[S, C]) backupConfig() error {
 	// Check if config file exists
 	if _, err := os.Stat(m.configPath); os.IsNotExist(err) {
-		// File doesn't exist - return nil to allow initialization
+		// File doesn't exist - nothing to backup
 		return nil
 	}
 

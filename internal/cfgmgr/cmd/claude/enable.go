@@ -62,7 +62,6 @@ func (f *enableFlags) run(cmd *cobra.Command) error {
 		f.serverName = manager.DeriveServerName(executablePath)
 	}
 
-	// Create config m
 	m, err := manager.NewClaudeManager(f.configPath)
 	if err != nil {
 		return err

@@ -66,7 +66,6 @@ func (f *enableFlags) run(cmd *cobra.Command) error {
 		f.serverName = manager.DeriveServerName(executablePath)
 	}
 
-	// Create config m
 	m, err := manager.NewVSCodeManager(f.configPath, f.workspace)
 	if err != nil {
 		return err

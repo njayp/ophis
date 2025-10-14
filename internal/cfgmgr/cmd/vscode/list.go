@@ -33,7 +33,6 @@ func listCommand() *cobra.Command {
 }
 
 func (f *listFlags) run() error {
-	// Create config manager
 	m, err := manager.NewVSCodeManager(f.configPath, f.workspace)
 	if err != nil {
 		return err

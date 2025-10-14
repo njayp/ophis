@@ -33,17 +33,15 @@ func disableCommand() *cobra.Command {
 }
 
 func (f *disableFlags) run() error {
-	// Get the current executable path
-	executablePath, err := os.Executable()
-	if err != nil {
-		return fmt.Errorf("failed to determine executable path: %w", err)
-	}
-
 	if f.serverName == "" {
+		executablePath, err := os.Executable()
+		if err != nil {
+			return fmt.Errorf("failed to determine executable path: %w", err)
+		}
+
 		f.serverName = manager.DeriveServerName(executablePath)
 	}
 
-	// Create config m
 	m, err := manager.NewClaudeManager(f.configPath)
 	if err != nil {
 		return err
