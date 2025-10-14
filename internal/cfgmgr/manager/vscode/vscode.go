@@ -5,14 +5,6 @@ import (
 	"path/filepath"
 )
 
-// Input represents a VSCode input variable configuration.
-type Input struct {
-	Type        string `json:"type"`
-	ID          string `json:"id"`
-	Description string `json:"description"`
-	Password    bool   `json:"password,omitempty"`
-}
-
 // ConfigPath returns the provided path if non-empty, otherwise returns the
 // platform-specific default path for VSCode configuration.
 // If workspace is true, returns workspace configuration path (.vscode/mcp.json),
@@ -21,6 +13,7 @@ func ConfigPath(workspace bool) string {
 	if workspace {
 		return getDefaultWorkspaceConfigPath()
 	}
+
 	return getDefaultVSCodeUserConfigPath()
 }
 

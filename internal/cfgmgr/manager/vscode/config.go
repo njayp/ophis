@@ -8,6 +8,14 @@ type Config struct {
 	Servers map[string]MCPServer `json:"servers"`
 }
 
+// Input represents a VSCode input variable configuration.
+type Input struct {
+	Type        string `json:"type"`
+	ID          string `json:"id"`
+	Description string `json:"description"`
+	Password    bool   `json:"password,omitempty"`
+}
+
 // AddServer adds or updates a server in the configuration.
 func (c *Config) AddServer(name string, server MCPServer) {
 	if c.Servers == nil {
