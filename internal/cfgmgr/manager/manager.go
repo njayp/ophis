@@ -3,8 +3,10 @@ package manager
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/njayp/ophis/internal/cfgmgr/manager/claude"
 	"github.com/njayp/ophis/internal/cfgmgr/manager/vscode"
@@ -123,6 +125,12 @@ func (m *Manager[S, C]) saveConfig() error {
 		return fmt.Errorf("failed to marshal configuration to JSON: %w", err)
 	}
 
+	// backup file
+	err = m.backupConfig()
+	if err != nil {
+		return err
+	}
+
 	if err := os.WriteFile(m.configPath, data, 0o644); err != nil {
 		return fmt.Errorf("failed to write configuration file at %q: %w", m.configPath, err)
 	}
@@ -133,4 +141,30 @@ func (m *Manager[S, C]) saveConfig() error {
 // Print calls Print on the underlying config
 func (m *Manager[S, C]) Print() {
 	m.config.Print()
+}
+
+func (m *Manager[S, C]) backupConfig() error {
+	// Check if config file exists
+	if _, err := os.Stat(m.configPath); os.IsNotExist(err) {
+		// File doesn't exist - return nil to allow initialization
+		return nil
+	}
+
+	sourceFile, err := os.Open(m.configPath)
+	if err != nil {
+		return err
+	}
+	defer sourceFile.Close()
+
+	ext := filepath.Ext(m.configPath)
+	dest := strings.TrimSuffix(m.configPath, ext) + ".backup.json"
+	fmt.Printf("Backing up config file at %q\n", dest)
+	destFile, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+
+	_, err = io.Copy(destFile, sourceFile)
+	return err
 }
