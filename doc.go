@@ -60,7 +60,8 @@
 //	        {
 //	            CmdSelector: ophis.AllowCmdsContaining("get", "list"),
 //	            // Control which flags are included for matched commands
-//	            FlagSelector: ophis.AllowFlags("namespace", "output"),
+//	            LocalFlagSelector: ophis.AllowFlags("namespace", "output"),
+//	            InheritedFlagSelector: ophis.NoFlags,  // Exclude persistent flags
 //	            // Optional: Add middleware hooks
 //	            PreRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.ToolInput) (context.Context, *mcp.CallToolRequest, bridge.ToolInput) {
 //	                // Add timeout, logging, auth checks, etc.
@@ -73,7 +74,8 @@
 //	        },
 //	        {
 //	            CmdSelector: ophis.AllowCmds("mycli delete"),
-//	            FlagSelector: ophis.ExcludeFlags("all", "force"),
+//	            LocalFlagSelector: ophis.ExcludeFlags("all", "force"),
+//	            InheritedFlagSelector: ophis.NoFlags,
 //	        },
 //	    },
 //
