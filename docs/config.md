@@ -7,12 +7,13 @@ Selectors control which commands and flags become MCP tools. Ophis evaluates sel
 ### Default Behavior
 
 - If `Config.Selectors` is nil/empty, all commands and flags are exposed
-- If `CmdSelector` is nil, the selector matches all commands  
+- If `CmdSelector` is nil, the selector matches all commands
 - If `LocalFlagSelector` or `InheritedFlagSelector` is nil, all flags are included
 
 ### Automatic Filtering
 
 Always filtered regardless of configuration:
+
 - Hidden and deprecated commands/flags
 - Non-runnable commands (no Run/RunE)
 - Built-in commands (mcp, help, completion)
@@ -66,15 +67,40 @@ config := &ophis.Config{
 }
 ```
 
+### Custom functions: Annotation-based exposure
+
+```go
+config := &ophis.Config{
+    Selectors: []ophis.Selector{
+        {
+            CmdSelector: func(cmd *cobra.Command) bool {
+                // Only expose commands that have been annotated as "mcp"
+                return cmd.Annotations["mcp"] == "true"
+            },
+
+            LocalFlagSelector: func(flag *pflag.Flag) bool {
+                return flag.Annotations["mcp"] == "true"
+            },
+
+            InheritedFlagSelector: func(flag *pflag.Flag) bool {
+                return flag.Annotations["mcp"] == "true"
+            },
+        },
+    },
+}
+```
+
 ## Built-in Selectors
 
 ### Commands
+
 - `AllowCmds(cmds ...string)` - Exact matches
 - `ExcludeCmds(cmds ...string)` - Exact exclusions
 - `AllowCmdsContaining(substrings ...string)` - Contains any
 - `ExcludeCmdsContaining(substrings ...string)` - Excludes all
 
-### Flags  
+### Flags
+
 - `AllowFlags(names ...string)` - Include only these
 - `ExcludeFlags(names ...string)` - Exclude these
 - `NoFlags` - Exclude all
@@ -104,12 +130,12 @@ Add behavior before/after execution:
 PreRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.ToolInput) (context.Context, *mcp.CallToolRequest, bridge.ToolInput) {
     // Add timeout
     ctx, _ = context.WithTimeout(ctx, 30*time.Second)
-    
+
     // Validate input
     if len(in.Args) > 10 {
         in.Args = in.Args[:10]
     }
-    
+
     return ctx, req, in
 }
 
@@ -118,7 +144,7 @@ PostRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.ToolInput
     if strings.Contains(out.StdOut, "SECRET") {
         out.StdOut = "[REDACTED]"
     }
-    
+
     return res, out, err
 }
 ```
