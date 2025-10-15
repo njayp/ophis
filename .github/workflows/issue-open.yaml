@@ -1,0 +1,30 @@
+name: issue open
+
+on:
+  issues:
+    types: [opened, reopened]
+
+jobs:
+  assign-owner:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+    - name: Assign issue to owner
+      uses: actions/github-script@v7
+      with:
+        script: |
+          // Only assign if the issue author is not the repository owner
+          if (context.payload.issue.user.login !== context.repo.owner) {
+            // Assign issue to owner
+            await github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              assignees: [context.repo.owner]
+            });
+            
+            console.log(`Successfully assigned issue #${context.issue.number} to ${context.repo.owner}`);
+          } else {
+            console.log('Skipping assignment: Issue author is the repository owner');
+          }

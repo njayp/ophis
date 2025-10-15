@@ -3,7 +3,6 @@ package ophis
 import (
 	"log/slog"
 
-	"github.com/njayp/ophis/internal/cfgmgr"
 	"github.com/spf13/cobra"
 )
 
@@ -16,7 +15,7 @@ type startCommandFlags struct {
 func startCommand(config *Config) *cobra.Command {
 	mcpFlags := &startCommandFlags{}
 	cmd := &cobra.Command{
-		Use:   cfgmgr.StartCommandName,
+		Use:   "start",
 		Short: "Start the MCP server",
 		Long:  `Start MCP server to expose CLI commands to AI assistants`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
