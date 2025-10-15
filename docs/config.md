@@ -67,7 +67,22 @@ config := &ophis.Config{
 }
 ```
 
-### Custom Functions: Annotation-Based Exposure
+## Selector Functions
+
+### Commands
+
+- `AllowCmds(cmds ...string)` - Exact matches
+- `ExcludeCmds(cmds ...string)` - Exact exclusions
+- `AllowCmdsContaining(substrings ...string)` - Contains any
+- `ExcludeCmdsContaining(substrings ...string)` - Excludes all
+
+### Flags
+
+- `AllowFlags(names ...string)` - Include only these
+- `ExcludeFlags(names ...string)` - Exclude these
+- `NoFlags` - Exclude all
+
+### Custom Selector Functions
 
 ```go
 config := &ophis.Config{
@@ -84,38 +99,6 @@ config := &ophis.Config{
 
             InheritedFlagSelector: func(flag *pflag.Flag) bool {
                 return flag.Annotations["mcp"] == "true"
-            },
-        },
-    },
-}
-```
-
-## Built-in Selectors
-
-### Commands
-
-- `AllowCmds(cmds ...string)` - Exact matches
-- `ExcludeCmds(cmds ...string)` - Exact exclusions
-- `AllowCmdsContaining(substrings ...string)` - Contains any
-- `ExcludeCmdsContaining(substrings ...string)` - Excludes all
-
-### Flags
-
-- `AllowFlags(names ...string)` - Include only these
-- `ExcludeFlags(names ...string)` - Exclude these
-- `NoFlags` - Exclude all
-
-## Custom Selectors
-
-```go
-config := &ophis.Config{
-    Selectors: []ophis.Selector{
-        {
-            CmdSelector: func(cmd *cobra.Command) bool {
-                return cmd.Annotations["mcp"] == "true"
-            },
-            LocalFlagSelector: func(flag *pflag.Flag) bool {
-                return flag.Annotations["internal"] != "true"
             },
         },
     },
@@ -162,5 +145,5 @@ config := &ophis.Config{
 Or via CLI:
 
 ```bash
-./my-cli mcp start --log-level debug
+./my-cli mcp vscode enable --log-level debug
 ```
