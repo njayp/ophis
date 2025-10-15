@@ -24,7 +24,7 @@ Each flag becomes a property with:
 - `stringSlice`, `intSlice` → `array`
 - `duration`, `ip`, `ipNet` → `string` with pattern validation
 
-Required flags are marked as required in the schema. Flags with a default value are given that default in the schema.
+Flags marked as required (via `cmd.MarkFlagRequired()`) are included in the schema's `required` array. Default values are included in the schema, except for empty strings (`""`) and empty arrays (`[]`).
 
 **Example:**
 
