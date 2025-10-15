@@ -15,6 +15,10 @@ type Manager struct {
 	Selectors []Selector
 	Server    *mcp.Server
 	Tools     []*mcp.Tool
+	// Registered prompts, resources, and templates are tracked for export commands
+	Prompts           []*mcp.Prompt
+	Resources         []*mcp.Resource
+	ResourceTemplates []*mcp.ResourceTemplate
 }
 
 // RegisterTools explores a cmd tree, making tools recursively out of the provided cmd and its children
