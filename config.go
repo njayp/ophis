@@ -9,6 +9,24 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Prompt binds an MCP Prompt to its handler for registration.
+type Prompt struct {
+	Prompt  *mcp.Prompt
+	Handler mcp.PromptHandler
+}
+
+// Resource binds an MCP Resource to its handler for registration.
+type Resource struct {
+	Resource *mcp.Resource
+	Handler  mcp.ResourceHandler
+}
+
+// ResourceTemplate binds an MCP ResourceTemplate to its handler for registration.
+type ResourceTemplate struct {
+	Template *mcp.ResourceTemplate
+	Handler  mcp.ResourceHandler
+}
+
 // Config customizes MCP server behavior and command-to-tool conversion.
 type Config struct {
 	// Selectors defines rules for converting commands to MCP tools.
@@ -36,6 +54,15 @@ type Config struct {
 
 	// Transport for stdio transport configuration.
 	Transport mcp.Transport
+
+	// Prompts to register with the MCP server.
+	Prompts []Prompt
+
+	// Resources to register with the MCP server.
+	Resources []Resource
+
+	// ResourceTemplates to register with the MCP server.
+	ResourceTemplates []ResourceTemplate
 }
 
 func (c *Config) serveStdio(cmd *cobra.Command) error {
@@ -48,6 +75,21 @@ func (c *Config) serveStdio(cmd *cobra.Command) error {
 
 func (c *Config) tools(cmd *cobra.Command) []*mcp.Tool {
 	return c.manager(cmd).Tools
+}
+
+// prompts returns the registered prompts for the current server.
+func (c *Config) prompts(cmd *cobra.Command) []*mcp.Prompt {
+	return c.manager(cmd).Prompts
+}
+
+// resources returns the registered resources for the current server.
+func (c *Config) resources(cmd *cobra.Command) []*mcp.Resource {
+	return c.manager(cmd).Resources
+}
+
+// resourceTemplates returns the registered resource templates for the current server.
+func (c *Config) resourceTemplates(cmd *cobra.Command) []*mcp.ResourceTemplate {
+	return c.manager(cmd).ResourceTemplates
 }
 
 // manager fully initializes a bridge.Manager
@@ -76,6 +118,30 @@ func (c *Config) manager(cmd *cobra.Command) *bridge.Manager {
 
 	// register tools
 	manager.RegisterTools(rootCmd)
+
+	// register prompts
+	for _, p := range c.Prompts {
+		if p.Prompt != nil && p.Handler != nil {
+			server.AddPrompt(p.Prompt, p.Handler)
+			manager.Prompts = append(manager.Prompts, p.Prompt)
+		}
+	}
+
+	// register resources
+	for _, r := range c.Resources {
+		if r.Resource != nil && r.Handler != nil {
+			server.AddResource(r.Resource, r.Handler)
+			manager.Resources = append(manager.Resources, r.Resource)
+		}
+	}
+
+	// register resource templates
+	for _, rt := range c.ResourceTemplates {
+		if rt.Template != nil && rt.Handler != nil {
+			server.AddResourceTemplate(rt.Template, rt.Handler)
+			manager.ResourceTemplates = append(manager.ResourceTemplates, rt.Template)
+		}
+	}
 	return manager
 }
 

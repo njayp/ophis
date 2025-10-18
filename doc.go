@@ -47,6 +47,10 @@
 // The Config struct provides fine-grained control over which commands and flags
 // are exposed as MCP tools through a powerful selector system.
 //
+// In addition to tools, Ophis can register MCP resources, resource templates,
+// and prompts using the Config.Prompts, Config.Resources, and
+// Config.ResourceTemplates fields.
+//
 // Basic filters are always applied automatically:
 //   - Hidden and deprecated commands/flags are excluded
 //   - Commands without executable functions are excluded

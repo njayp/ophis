@@ -16,6 +16,6 @@ func Command(config *Config) *cobra.Command {
 	}
 
 	// Add subcommands
-	cmd.AddCommand(startCommand(config), toolCommand(config), claude.Command(), vscode.Command())
+	cmd.AddCommand(startCommand(config), toolCommand(config), promptsCommand(config), resourcesCommand(config), claude.Command(), vscode.Command())
 	return cmd
 }
