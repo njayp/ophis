@@ -113,6 +113,14 @@ func buildFlagArgs(flagMap map[string]any) []string {
 			continue
 		}
 
+		if mapVal, ok := value.(map[string]any); ok {
+			for k, v := range mapVal {
+				args = append(args, fmt.Sprintf("--%s", name), fmt.Sprintf("%s=%v", k, v))
+			}
+
+			continue
+		}
+
 		args = append(args, parseFlagArgValue(name, value)...)
 	}
 

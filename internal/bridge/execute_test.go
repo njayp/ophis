@@ -69,6 +69,44 @@ func TestBuildFlagArgs(t *testing.T) {
 			expected: []string{"--verbose", "--output", "result.txt", "--count", "5", "--tags", "test", "--tags", "debug"},
 		},
 		{
+			name: "Map flags (stringToString)",
+			flags: map[string]any{
+				"labels": map[string]any{
+					"env":  "prod",
+					"team": "backend",
+				},
+			},
+			expected: []string{"--labels", "env=prod", "--labels", "team=backend"},
+		},
+		{
+			name: "Empty map",
+			flags: map[string]any{
+				"labels": map[string]any{},
+			},
+			expected: []string{},
+		},
+		{
+			name: "StringToInt map flags",
+			flags: map[string]any{
+				"ports": map[string]any{
+					"http":  8080,
+					"https": 8443,
+				},
+			},
+			expected: []string{"--ports", "http=8080", "--ports", "https=8443"},
+		},
+		{
+			name: "StringToInt64 map flags",
+			flags: map[string]any{
+				"sizes": map[string]any{
+					"small":  int64(1024),
+					"medium": int64(2048),
+					"large":  int64(4096),
+				},
+			},
+			expected: []string{"--sizes", "small=1024", "--sizes", "medium=2048", "--sizes", "large=4096"},
+		},
+		{
 			name: "Nil values",
 			flags: map[string]any{
 				"flag1": nil,
@@ -166,6 +204,21 @@ func TestBuildCommandArgs(t *testing.T) {
 				Args: []string{},
 			},
 			expectedArgs: []string{"cluster", "node", "list", "--output", "json", "--label", "env=prod", "--label", "team=backend"},
+		},
+		{
+			name:        "Command with map flags",
+			commandName: "root_deploy",
+			input: ToolInput{
+				Flags: map[string]any{
+					"labels": map[string]any{
+						"env":     "production",
+						"version": "v1.2.3",
+					},
+					"wait": true,
+				},
+				Args: []string{"my-app"},
+			},
+			expectedArgs: []string{"deploy", "--labels", "env=production", "--labels", "version=v1.2.3", "--wait", "my-app"},
 		},
 		{
 			name:        "Command with quoted arguments",

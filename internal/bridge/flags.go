@@ -35,6 +35,10 @@ func (s Selector) enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Comma
 			}
 		}
 	})
+
+	// Set AdditionalProperties to false
+	// See https://github.com/google/jsonschema-go/issues/13
+	schema.AdditionalProperties = &jsonschema.Schema{Not: &jsonschema.Schema{}}
 }
 
 // isFlagRequired checks if a flag has been marked as required by Cobra.
@@ -94,6 +98,14 @@ func addFlagToSchema(schema *jsonschema.Schema, flag *pflag.Flag) {
 	case "boolSlice":
 		flagSchema.Type = "array"
 		flagSchema.Items = &jsonschema.Schema{Type: "boolean"}
+	case "stringToString":
+		flagSchema.Type = "object"
+		flagSchema.AdditionalProperties = &jsonschema.Schema{Type: "string"}
+		flagSchema.Description += " (format: key-value pairs)"
+	case "stringToInt", "stringToInt64":
+		flagSchema.Type = "object"
+		flagSchema.AdditionalProperties = &jsonschema.Schema{Type: "integer"}
+		flagSchema.Description += " (format: key-value pairs with integer values)"
 	case "duration":
 		// Duration is represented as a string in Go's duration format
 		flagSchema.Type = "string"
