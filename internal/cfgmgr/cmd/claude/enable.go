@@ -13,6 +13,7 @@ type enableFlags struct {
 	configPath string
 	logLevel   string
 	serverName string
+	env        map[string]string
 }
 
 // enableCommand creates a Cobra command for adding an MCP server to Claude Desktop.
@@ -32,6 +33,7 @@ func enableCommand() *cobra.Command {
 	flags.StringVar(&f.logLevel, "log-level", "", "Log level (debug, info, warn, error)")
 	flags.StringVar(&f.configPath, "config-path", "", "Path to Claude config file")
 	flags.StringVar(&f.serverName, "server-name", "", "Name for the MCP server (default: derived from executable name)")
+	flags.StringToStringVarP(&f.env, "env", "e", nil, "Environment variables (e.g., --env KEY1=value1 --env KEY2=value2)")
 	return cmd
 }
 
@@ -56,6 +58,11 @@ func (f *enableFlags) run(cmd *cobra.Command) error {
 	// Add log level to args if specified
 	if f.logLevel != "" {
 		server.Args = append(server.Args, "--log-level", f.logLevel)
+	}
+
+	// Add environment variables if specified
+	if len(f.env) > 0 {
+		server.Env = f.env
 	}
 
 	if f.serverName == "" {
