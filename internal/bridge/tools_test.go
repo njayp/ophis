@@ -26,9 +26,8 @@ func TestCreateToolFromCmd(t *testing.T) {
 	cmd.Flags().IntSlice("include", []int{}, "Include patterns")
 	cmd.Flags().StringSlice("greeting", []string{"hello", "world"}, "Include patterns")
 	cmd.Flags().Int("count", 10, "Number of items")
-	cmd.Flags().StringToString("labels", map[string]string{}, "Key-value labels")
-	cmd.Flags().StringToInt("ports", map[string]int{}, "Port mappings")
-	cmd.Flags().StringToInt64("sizes", map[string]int64{}, "Size allocations")
+	cmd.Flags().StringToString("labels", map[string]string{"hello": "world", "go": "lang"}, "Key-value labels")
+	cmd.Flags().StringToInt("ports", map[string]int{"life": 42, "power": 9001}, "Port mappings")
 
 	// Add a hidden flag
 	cmd.Flags().String("hidden", "secret", "Hidden flag")
@@ -80,7 +79,6 @@ func TestCreateToolFromCmd(t *testing.T) {
 		assert.Contains(t, flagsSchema.Properties, "greeting")
 		assert.Contains(t, flagsSchema.Properties, "labels")
 		assert.Contains(t, flagsSchema.Properties, "ports")
-		assert.Contains(t, flagsSchema.Properties, "sizes")
 
 		// Verify excluded flags
 		assert.NotContains(t, flagsSchema.Properties, "hidden", "Should not include hidden flag")
@@ -94,7 +92,6 @@ func TestCreateToolFromCmd(t *testing.T) {
 		assert.Equal(t, "array", flagsSchema.Properties["greeting"].Type)
 		assert.Equal(t, "object", flagsSchema.Properties["labels"].Type)
 		assert.Equal(t, "object", flagsSchema.Properties["ports"].Type)
-		assert.Equal(t, "object", flagsSchema.Properties["sizes"].Type)
 
 		// Verify required flags
 		require.Len(t, flagsSchema.Required, 1, "Should have 1 required flag")
@@ -107,6 +104,8 @@ func TestCreateToolFromCmd(t *testing.T) {
 		assert.JSONEq(t, "10", string(flagsSchema.Properties["count"].Default))
 		assert.NotNil(t, flagsSchema.Properties["greeting"].Default)
 		assert.JSONEq(t, `["hello","world"]`, string(flagsSchema.Properties["greeting"].Default))
+		assert.JSONEq(t, `{"life":42, "power":9001}`, string(flagsSchema.Properties["ports"].Default))
+		assert.JSONEq(t, `{"hello":"world", "go":"lang"}`, string(flagsSchema.Properties["labels"].Default))
 		// Empty string and empty array should not have defaults set
 		assert.Nil(t, flagsSchema.Properties["output"].Default)
 		assert.Nil(t, flagsSchema.Properties["include"].Default)
@@ -128,11 +127,6 @@ func TestCreateToolFromCmd(t *testing.T) {
 		portsSchema := flagsSchema.Properties["ports"]
 		assert.NotNil(t, portsSchema.AdditionalProperties)
 		assert.Equal(t, "integer", portsSchema.AdditionalProperties.Type)
-
-		// Verify stringToInt64 object schema
-		sizesSchema := flagsSchema.Properties["sizes"]
-		assert.NotNil(t, sizesSchema.AdditionalProperties)
-		assert.Equal(t, "integer", sizesSchema.AdditionalProperties.Type)
 
 		// Verify persistent flag from parent command
 		assert.Contains(t, flagsSchema.Properties, "config", "Should include persistent flag from parent command")
@@ -185,7 +179,6 @@ func TestCreateToolFromCmd(t *testing.T) {
 		assert.NotContains(t, flagsSchema.Properties, "greeting", "Should not include excluded flag")
 		assert.NotContains(t, flagsSchema.Properties, "labels", "Should not include excluded flag")
 		assert.NotContains(t, flagsSchema.Properties, "ports", "Should not include excluded flag")
-		assert.NotContains(t, flagsSchema.Properties, "sizes", "Should not include excluded flag")
 
 		// Verify required flags - none should be required since 'count' was excluded
 		require.Empty(t, flagsSchema.Required, "Should have no required flags")

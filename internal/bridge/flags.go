@@ -171,9 +171,12 @@ func setDefaultFromFlag(flagSchema *jsonschema.Schema, flag *pflag.Flag) {
 	case "string":
 		setDefault(defValue)
 	case "array":
-		// Handle array types (slices)
 		if arr := parseArray(defValue, flagSchema.Items); arr != nil {
 			setDefault(arr)
+		}
+	case "object":
+		if obj := parseObject(defValue, flagSchema.AdditionalProperties); obj != nil {
+			setDefault(obj)
 		}
 	}
 }
@@ -185,7 +188,7 @@ func setDefaultFromFlag(flagSchema *jsonschema.Schema, flag *pflag.Flag) {
 //   - Does not support nested arrays
 //   - Does not handle quoted strings containing commas
 //   - Expects simple comma-separated values
-func parseArray(defValue string, itemSchema *jsonschema.Schema) any {
+func parseArray(defValue string, schema *jsonschema.Schema) any {
 	// pflag represents empty slices as "[]"
 	if defValue == "[]" {
 		return nil
@@ -205,13 +208,9 @@ func parseArray(defValue string, itemSchema *jsonschema.Schema) any {
 
 	// Split by comma
 	parts := strings.Split(inner, ",")
-	if itemSchema == nil {
-		slog.Error("nil item schema for array default value", "value", defValue)
-		return nil
-	}
 
 	// Parse based on item type
-	switch itemSchema.Type {
+	switch schema.Type {
 	case "integer":
 		return parseIntArray(parts)
 	case "number":
@@ -221,7 +220,7 @@ func parseArray(defValue string, itemSchema *jsonschema.Schema) any {
 	case "string":
 		return parseStringArray(parts)
 	default:
-		slog.Warn("unsupported array item type for default value", "type", itemSchema.Type, "value", defValue)
+		slog.Warn("unsupported array item type for default value", "type", schema.Type, "value", defValue)
 		return nil
 	}
 }
@@ -285,6 +284,64 @@ func parseStringArray(parts []string) []string {
 	result := make([]string, 0, len(parts))
 	for _, p := range parts {
 		result = append(result, strings.TrimSpace(p))
+	}
+	return result
+}
+
+func parseObject(defValue string, schema *jsonschema.Schema) any {
+	if defValue == "[]" {
+		return nil
+	}
+
+	// Verify array format
+	if !strings.HasPrefix(defValue, "[") || !strings.HasSuffix(defValue, "]") {
+		slog.Warn("malformed array default value: must start with '[' and end with ']'", "value", defValue)
+		return nil
+	}
+
+	// Remove brackets and check for empty array
+	inner := defValue[1 : len(defValue)-1]
+	if inner == "" {
+		return nil
+	}
+
+	// Split by comma
+	parts := strings.Split(inner, ",")
+
+	// Parse based on item type
+	switch schema.Type {
+	case "integer":
+		return parseIntObj(parts)
+	case "string":
+		return parseStringObj(parts)
+	default:
+		slog.Warn("unsupported object item type for default value", "type", schema.Type, "value", defValue)
+		return nil
+	}
+}
+
+func parseIntObj(parts []string) map[string]int64 {
+	result := make(map[string]int64)
+	for i, p := range parts {
+		trimmed := strings.TrimSpace(p)
+		split := strings.Split(trimmed, "=")
+		if val, err := strconv.ParseInt(split[1], 10, 64); err == nil {
+			result[split[0]] = val
+		} else {
+			slog.Warn("skipping invalid integer in array default value",
+				"index", i,
+				"value", p,
+				"error", err)
+		}
+	}
+	return result
+}
+
+func parseStringObj(parts []string) map[string]string {
+	result := make(map[string]string)
+	for _, p := range parts {
+		split := strings.Split(p, "=")
+		result[split[0]] = split[1]
 	}
 	return result
 }

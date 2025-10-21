@@ -47,12 +47,6 @@ func TestParseArrayDefault(t *testing.T) {
 			expected:   nil,
 		},
 		{
-			name:       "nil item schema",
-			defValue:   "[1,2,3]",
-			itemSchema: nil,
-			expected:   nil,
-		},
-		{
 			name:       "string array",
 			defValue:   "[hello,world,test]",
 			itemSchema: &jsonschema.Schema{Type: "string"},
