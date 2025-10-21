@@ -418,6 +418,89 @@ func TestSetDefaultFromFlag_ArrayTypes(t *testing.T) {
 	}
 }
 
+func TestParseObjectEdgeCases(t *testing.T) {
+	tests := []struct {
+		name     string
+		parts    []string
+		schema   *jsonschema.Schema
+		expected any
+	}{
+		{
+			name:   "string object with whitespace in key and value",
+			parts:  []string{" key1 = value1 ", " key2 = value2 "},
+			schema: &jsonschema.Schema{Type: "string"},
+			expected: map[string]string{
+				"key1": "value1",
+				"key2": "value2",
+			},
+		},
+		{
+			name:   "integer object with whitespace",
+			parts:  []string{" port = 8080 ", " timeout = 30 "},
+			schema: &jsonschema.Schema{Type: "integer"},
+			expected: map[string]int64{
+				"port":    8080,
+				"timeout": 30,
+			},
+		},
+		{
+			name:     "all malformed string entries returns nil",
+			parts:    []string{"invalid", "also-invalid"},
+			schema:   &jsonschema.Schema{Type: "string"},
+			expected: map[string]string(nil),
+		},
+		{
+			name:     "all malformed int entries returns nil",
+			parts:    []string{"invalid", "also-invalid"},
+			schema:   &jsonschema.Schema{Type: "integer"},
+			expected: map[string]int64(nil),
+		},
+		{
+			name:   "value containing equals sign",
+			parts:  []string{"url=https://example.com/path?query=value"},
+			schema: &jsonschema.Schema{Type: "string"},
+			expected: map[string]string{
+				"url": "https://example.com/path?query=value",
+			},
+		},
+		{
+			name:   "mixed valid and invalid integer entries",
+			parts:  []string{"valid=123", "invalid", "another=456"},
+			schema: &jsonschema.Schema{Type: "integer"},
+			expected: map[string]int64{
+				"valid":   123,
+				"another": 456,
+			},
+		},
+		{
+			name:   "mixed valid and invalid string entries",
+			parts:  []string{"valid=value", "invalid", "another=value2"},
+			schema: &jsonschema.Schema{Type: "string"},
+			expected: map[string]string{
+				"valid":   "value",
+				"another": "value2",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var result any
+			switch tt.schema.Type {
+			case "string":
+				result = parseStringObj(tt.parts)
+			case "integer":
+				result = parseIntObj(tt.parts)
+			}
+			if tt.expected == nil || (tt.expected != nil && result == nil) {
+				assert.Nil(t, result)
+			} else {
+				assert.Equal(t, tt.expected, result)
+			}
+		})
+	}
+}
+
 func TestSetDefaultFromFlag_ScalarTypes(t *testing.T) {
 	tests := []struct {
 		name              string

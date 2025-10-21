@@ -318,14 +318,16 @@ func parseIntObj(parts []string) map[string]int64 {
 	result := make(map[string]int64)
 	for i, p := range parts {
 		trimmed := strings.TrimSpace(p)
-		split := strings.Split(trimmed, "=")
+		split := strings.SplitN(trimmed, "=", 2)
 		if len(split) != 2 {
 			slog.Warn("malformed flag default value object", "value", p)
 			continue
 		}
 
-		if val, err := strconv.ParseInt(split[1], 10, 64); err == nil {
-			result[split[0]] = val
+		key := strings.TrimSpace(split[0])
+		valStr := strings.TrimSpace(split[1])
+		if val, err := strconv.ParseInt(valStr, 10, 64); err == nil {
+			result[key] = val
 		} else {
 			slog.Warn("skipping invalid integer obj in array default value",
 				"index", i,
@@ -333,19 +335,30 @@ func parseIntObj(parts []string) map[string]int64 {
 				"error", err)
 		}
 	}
+
+	if len(result) == 0 {
+		return nil
+	}
 	return result
 }
 
 func parseStringObj(parts []string) map[string]string {
 	result := make(map[string]string)
 	for _, p := range parts {
-		split := strings.Split(p, "=")
+		trimmed := strings.TrimSpace(p)
+		split := strings.SplitN(trimmed, "=", 2)
 		if len(split) != 2 {
 			slog.Warn("malformed flag default value object", "value", p)
 			continue
 		}
 
-		result[split[0]] = split[1]
+		key := strings.TrimSpace(split[0])
+		val := strings.TrimSpace(split[1])
+		result[key] = val
+	}
+
+	if len(result) == 0 {
+		return nil
 	}
 	return result
 }
