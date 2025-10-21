@@ -200,11 +200,8 @@ func parseArray(defValue string, schema *jsonschema.Schema) any {
 		return nil
 	}
 
-	// Remove brackets and check for empty array
+	// Remove brackets
 	inner := defValue[1 : len(defValue)-1]
-	if inner == "" {
-		return nil
-	}
 
 	// Split by comma
 	parts := strings.Split(inner, ",")
@@ -299,11 +296,8 @@ func parseObject(defValue string, schema *jsonschema.Schema) any {
 		return nil
 	}
 
-	// Remove brackets and check for empty array
+	// Remove brackets
 	inner := defValue[1 : len(defValue)-1]
-	if inner == "" {
-		return nil
-	}
 
 	// Split by comma
 	parts := strings.Split(inner, ",")
@@ -325,10 +319,15 @@ func parseIntObj(parts []string) map[string]int64 {
 	for i, p := range parts {
 		trimmed := strings.TrimSpace(p)
 		split := strings.Split(trimmed, "=")
+		if len(split) != 2 {
+			slog.Warn("malformed flag default value object", "value", p)
+			continue
+		}
+
 		if val, err := strconv.ParseInt(split[1], 10, 64); err == nil {
 			result[split[0]] = val
 		} else {
-			slog.Warn("skipping invalid integer in array default value",
+			slog.Warn("skipping invalid integer obj in array default value",
 				"index", i,
 				"value", p,
 				"error", err)
@@ -341,6 +340,11 @@ func parseStringObj(parts []string) map[string]string {
 	result := make(map[string]string)
 	for _, p := range parts {
 		split := strings.Split(p, "=")
+		if len(split) != 2 {
+			slog.Warn("malformed flag default value object", "value", p)
+			continue
+		}
+
 		result[split[0]] = split[1]
 	}
 	return result
