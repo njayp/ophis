@@ -33,7 +33,7 @@ func startCommand(config *Config) *cobra.Command {
 				config.SloggerOptions.Level = level
 			}
 
-			// Create and start the bridge
+			// Create and start the server
 			return config.serveStdio(cmd)
 		},
 	}

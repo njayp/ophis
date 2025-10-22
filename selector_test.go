@@ -1,4 +1,4 @@
-package bridge
+package ophis
 
 import (
 	"testing"
@@ -103,7 +103,7 @@ func TestCmdSelect(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cmd := buildCommandTree(tt.commandNames...)
 			selector := Selector{
-				CmdSelector: CmdContains(tt.allowPhrases...),
+				CmdSelector: AllowCmdsContaining(tt.allowPhrases...),
 			}
 			result := selector.cmdSelect(cmd)
 			assert.Equal(t, tt.expected, result)

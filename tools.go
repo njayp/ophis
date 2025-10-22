@@ -34,8 +34,6 @@ func toolCommand(config *Config) *cobra.Command {
 				config.SloggerOptions.Level = parseLogLevel(toolFlags.logLevel)
 			}
 
-			tools := config.tools(cmd)
-
 			file, err := os.OpenFile("mcp-tools.json", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
 			if err != nil {
 				return fmt.Errorf("failed to create or open mcp-tools.json file: %w", err)
@@ -48,12 +46,13 @@ func toolCommand(config *Config) *cobra.Command {
 
 			encoder := json.NewEncoder(file)
 			encoder.SetIndent("", "  ")
-			err = encoder.Encode(tools)
+			config.registerTools(cmd)
+			err = encoder.Encode(config.tools)
 			if err != nil {
 				return fmt.Errorf("failed to encode MCP tools to JSON: %w", err)
 			}
 
-			cmd.Printf("Successfully exported %d tools to mcp-tools.json\n", len(tools))
+			cmd.Printf("Successfully exported %d tools to mcp-tools.json\n", len(config.tools))
 			return nil
 		},
 	}

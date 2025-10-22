@@ -53,7 +53,7 @@ config := &ophis.Config{
         {
             // Read ops: timeout
             CmdSelector: ophis.AllowCmdsContaining("get", "list"),
-            PreRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.ToolInput) (context.Context, *mcp.CallToolRequest, bridge.ToolInput) {
+            PreRun: func(ctx context.Context, req *mcp.CallToolRequest, in ophis.ToolInput) (context.Context, *mcp.CallToolRequest, ophis.ToolInput) {
                 ctx, _ = context.WithTimeout(ctx, time.Minute)
                 return ctx, req, in
             },
@@ -110,7 +110,7 @@ config := &ophis.Config{
 Add behavior before/after execution:
 
 ```go
-PreRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.ToolInput) (context.Context, *mcp.CallToolRequest, bridge.ToolInput) {
+PreRun: func(ctx context.Context, req *mcp.CallToolRequest, in ophis.ToolInput) (context.Context, *mcp.CallToolRequest, ophis.ToolInput) {
     // Add timeout
     ctx, _ = context.WithTimeout(ctx, 30*time.Second)
 
@@ -122,7 +122,7 @@ PreRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.ToolInput)
     return ctx, req, in
 }
 
-PostRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.ToolInput, res *mcp.CallToolResult, out bridge.ToolOutput, err error) (*mcp.CallToolResult, bridge.ToolOutput, error) {
+PostRun: func(ctx context.Context, req *mcp.CallToolRequest, in ophis.ToolInput, res *mcp.CallToolResult, out ophis.ToolOutput, err error) (*mcp.CallToolResult, ophis.ToolOutput, error) {
     // Filter output
     if strings.Contains(out.StdOut, "SECRET") {
         out.StdOut = "[REDACTED]"

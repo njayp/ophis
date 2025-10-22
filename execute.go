@@ -1,4 +1,4 @@
-package bridge
+package ophis
 
 import (
 	"bytes"
@@ -23,27 +23,7 @@ func initExecPath() string {
 	return path
 }
 
-func (s *Selector) execute(ctx context.Context, request *mcp.CallToolRequest, input ToolInput) (result *mcp.CallToolResult, output ToolOutput, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("panic: %v", r)
-		}
-	}()
-
-	if s.PreRun != nil {
-		ctx, request, input = s.PreRun(ctx, request, input)
-	}
-
-	result, output, err = execute(ctx, request, input)
-
-	if s.PostRun != nil {
-		result, output, err = s.PostRun(ctx, request, input, result, output, err)
-	}
-
-	return result, output, err
-}
-
-// execute runs the underlying CLI command.
+// Execute runs the underlying CLI command.
 func execute(ctx context.Context, request *mcp.CallToolRequest, input ToolInput) (*mcp.CallToolResult, ToolOutput, error) {
 	name := request.Params.Name
 	slog.Info("mcp tool request received", "request", name)

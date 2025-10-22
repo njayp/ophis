@@ -1,10 +1,12 @@
-package bridge
+package ophis
 
 import (
 	"context"
-	"strings"
+	"fmt"
 
+	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/njayp/ophis/internal/bridge/flags"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -80,7 +82,7 @@ func (s *Selector) cmdSelect(cmd *cobra.Command) bool {
 		return false
 	}
 
-	if CmdContains("mcp", "help", "completion")(cmd) {
+	if AllowCmdsContaining("mcp", "help", "completion")(cmd) {
 		return false
 	}
 
@@ -89,20 +91,6 @@ func (s *Selector) cmdSelect(cmd *cobra.Command) bool {
 	}
 
 	return true
-}
-
-// CmdContains creates a selector that only accepts commands whose path contains a listed phrase.
-// Example: CmdContains("get", "helm list") includes "kubectl get pods" and "helm list".
-func CmdContains(substrings ...string) CmdSelector {
-	return func(cmd *cobra.Command) bool {
-		for _, s := range substrings {
-			if strings.Contains(cmd.CommandPath(), s) {
-				return true
-			}
-		}
-
-		return false
-	}
 }
 
 func defaultFlagSelect(flag *pflag.Flag) bool {
@@ -133,4 +121,68 @@ func (s *Selector) inheritedFlagSelect(flag *pflag.Flag) bool {
 	}
 
 	return true
+}
+
+// enhanceFlagsSchema adds detailed flag information to the flags property.
+func (s Selector) enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Command) {
+	// Ensure properties map exists
+	if schema.Properties == nil {
+		schema.Properties = make(map[string]*jsonschema.Schema)
+	}
+
+	// Process local flags
+	cmd.LocalFlags().VisitAll(func(flag *pflag.Flag) {
+		if s.localFlagSelect(flag) {
+			flags.AddFlagToSchema(schema, flag)
+		}
+	})
+
+	// Process inherited flags
+	cmd.InheritedFlags().VisitAll(func(flag *pflag.Flag) {
+		if s.inheritedFlagSelect(flag) {
+			// Skip if already added as local flag
+			if _, exists := schema.Properties[flag.Name]; !exists {
+				flags.AddFlagToSchema(schema, flag)
+			}
+		}
+	})
+
+	// Set AdditionalProperties to false
+	// See https://github.com/google/jsonschema-go/issues/13
+	schema.AdditionalProperties = &jsonschema.Schema{Not: &jsonschema.Schema{}}
+}
+
+// createToolFromCmd creates an MCP tool from a Cobra command.
+func (s Selector) createToolFromCmd(cmd *cobra.Command) *mcp.Tool {
+	schema := inputSchema.Copy()
+	s.enhanceFlagsSchema(schema.Properties["flags"], cmd)
+	enhanceArgsSchema(schema.Properties["args"], cmd)
+
+	// Create the tool
+	return &mcp.Tool{
+		Name:         toolName(cmd),
+		Description:  toolDescription(cmd),
+		InputSchema:  schema,
+		OutputSchema: outputSchema.Copy(),
+	}
+}
+
+func (s *Selector) execute(ctx context.Context, request *mcp.CallToolRequest, input ToolInput) (result *mcp.CallToolResult, output ToolOutput, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic: %v", r)
+		}
+	}()
+
+	if s.PreRun != nil {
+		ctx, request, input = s.PreRun(ctx, request, input)
+	}
+
+	result, output, err = execute(ctx, request, input)
+
+	if s.PostRun != nil {
+		result, output, err = s.PostRun(ctx, request, input, result, output, err)
+	}
+
+	return result, output, err
 }

@@ -3,29 +3,9 @@ package ophis
 import (
 	"testing"
 
-	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 )
-
-// buildCommandTree creates a command tree from a list of command names.
-// The first command becomes the root, and subsequent commands are nested.
-func buildCommandTree(names ...string) *cobra.Command {
-	if len(names) == 0 {
-		return nil
-	}
-
-	root := &cobra.Command{Use: names[0]}
-	parent := root
-
-	for _, name := range names[1:] {
-		child := &cobra.Command{Use: name}
-		parent.AddCommand(child)
-		parent = child
-	}
-
-	return parent
-}
 
 func TestAllowCmdsContaining(t *testing.T) {
 	tests := []struct {

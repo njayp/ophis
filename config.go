@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"github.com/njayp/ophis/internal/bridge"
 	"github.com/spf13/cobra"
 )
 
@@ -36,6 +35,9 @@ type Config struct {
 
 	// Transport for stdio transport configuration.
 	Transport mcp.Transport
+
+	server *mcp.Server
+	tools  []*mcp.Tool
 }
 
 func (c *Config) serveStdio(cmd *cobra.Command) error {
@@ -43,15 +45,12 @@ func (c *Config) serveStdio(cmd *cobra.Command) error {
 		c.Transport = &mcp.StdioTransport{}
 	}
 
-	return c.manager(cmd).Server.Run(cmd.Context(), c.Transport)
+	c.registerTools(cmd)
+	return c.server.Run(cmd.Context(), c.Transport)
 }
 
-func (c *Config) tools(cmd *cobra.Command) []*mcp.Tool {
-	return c.manager(cmd).Tools
-}
-
-// manager fully initializes a bridge.Manager
-func (c *Config) manager(cmd *cobra.Command) *bridge.Manager {
+// registerTools fully initializes a MCP server
+func (c *Config) registerTools(cmd *cobra.Command) {
 	// slog to stderr
 	handler := slog.NewTextHandler(os.Stderr, c.SloggerOptions)
 	slog.SetDefault(slog.New(handler))
@@ -63,40 +62,42 @@ func (c *Config) manager(cmd *cobra.Command) *bridge.Manager {
 	}
 
 	// make server
-	server := mcp.NewServer(&mcp.Implementation{
+	c.server = mcp.NewServer(&mcp.Implementation{
 		Name:    rootCmd.Name(),
 		Version: rootCmd.Version,
 	}, c.ServerOptions)
 
-	// make manager
-	manager := &bridge.Manager{
-		Selectors: c.selectors(),
-		Server:    server,
+	// ensure at least one selector exists for tool creation logic
+	if len(c.Selectors) == 0 {
+		c.Selectors = []Selector{{}}
 	}
 
 	// register tools
-	manager.RegisterTools(rootCmd)
-	return manager
+	c.registerToolsRecursive(rootCmd)
 }
 
-// selectors converts Config.Selectors to bridge.Selectors
-func (c *Config) selectors() []bridge.Selector {
-	// if selectors is empty or nil, return default selector
-	length := len(c.Selectors)
-	if length == 0 {
-		return []bridge.Selector{{}}
+// registerTools explores a cmd tree, making tools recursively out of the provided cmd and its children
+func (c *Config) registerToolsRecursive(cmd *cobra.Command) {
+	// register all subcommands
+	for _, subCmd := range cmd.Commands() {
+		c.registerToolsRecursive(subCmd)
 	}
 
-	selectors := make([]bridge.Selector, length)
+	// cycle through selectors until one matches the cmd
 	for i, s := range c.Selectors {
-		selectors[i] = bridge.Selector{
-			CmdSelector:           bridge.CmdSelector(s.CmdSelector),
-			LocalFlagSelector:     bridge.FlagSelector(s.LocalFlagSelector),
-			InheritedFlagSelector: bridge.FlagSelector(s.InheritedFlagSelector),
-			PreRun:                bridge.PreRunFunc(s.PreRun),
-			PostRun:               bridge.PostRunFunc(s.PostRun),
+		if s.cmdSelect(cmd) {
+			// create tool from cmd
+			tool := s.createToolFromCmd(cmd)
+			slog.Debug("created tool", "tool_name", tool.Name, "selector_index", i)
+
+			// register tool with server
+			mcp.AddTool(c.server, tool, s.execute)
+
+			// add tool to manager's tool list (for `tools` command)
+			c.tools = append(c.tools, tool)
+
+			// only the first matching selector is used
+			break
 		}
 	}
-
-	return selectors
 }

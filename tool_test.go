@@ -1,4 +1,4 @@
-package bridge
+package ophis
 
 import (
 	"slices"
@@ -16,7 +16,7 @@ func TestCreateToolFromCmd(t *testing.T) {
 	cmd := &cobra.Command{
 		Use:     "test [file]",
 		Short:   "Test command",
-		Long:    "This is a test command for testing the bridge package",
+		Long:    "This is a test command for testing the ophis package",
 		Example: "test file.txt --output result.txt",
 	}
 
@@ -54,7 +54,7 @@ func TestCreateToolFromCmd(t *testing.T) {
 
 	t.Run("Default Selector", func(t *testing.T) {
 		// Create tool from command with a selector that accepts all flags
-		tool := Selector{}.CreateToolFromCmd(cmd)
+		tool := Selector{}.createToolFromCmd(cmd)
 
 		// Verify tool properties
 		assert.Equal(t, "parent_test", tool.Name)
@@ -149,7 +149,7 @@ func TestCreateToolFromCmd(t *testing.T) {
 		}
 
 		// Create tool from command with the restricted selector
-		tool := selector.CreateToolFromCmd(cmd)
+		tool := selector.createToolFromCmd(cmd)
 
 		// Verify tool properties
 		assert.Equal(t, "parent_test", tool.Name)

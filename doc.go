@@ -63,11 +63,11 @@
 //	            LocalFlagSelector: ophis.AllowFlags("namespace", "output"),
 //	            InheritedFlagSelector: ophis.NoFlags,  // Exclude persistent flags
 //	            // Optional: Add middleware hooks
-//	            PreRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.ToolInput) (context.Context, *mcp.CallToolRequest, bridge.ToolInput) {
+//	            PreRun: func(ctx context.Context, req *mcp.CallToolRequest, in ophis.ToolInput) (context.Context, *mcp.CallToolRequest, ophis.ToolInput) {
 //	                // Add timeout, logging, auth checks, etc.
 //	                return ctx, req, in
 //	            },
-//	            PostRun: func(ctx context.Context, req *mcp.CallToolRequest, in bridge.ToolInput, res *mcp.CallToolResult, out bridge.ToolOutput, err error) (*mcp.CallToolResult, bridge.ToolOutput, error) {
+//	            PostRun: func(ctx context.Context, req *mcp.CallToolRequest, in ophis.ToolInput, res *mcp.CallToolResult, out ophis.ToolOutput, err error) (*mcp.CallToolResult, ophis.ToolOutput, error) {
 //	                // Error handling, response filtering, metrics
 //	                return res, out, err
 //	            },
