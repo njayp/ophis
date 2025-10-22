@@ -49,7 +49,7 @@ func (c *Config) serveStdio(cmd *cobra.Command) error {
 	return c.server.Run(cmd.Context(), c.Transport)
 }
 
-// registerTools fully initializes a MCP server
+// registerTools fully initializes a MCP server and populates c.tools
 func (c *Config) registerTools(cmd *cobra.Command) {
 	// slog to stderr
 	handler := slog.NewTextHandler(os.Stderr, c.SloggerOptions)
