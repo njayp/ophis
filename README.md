@@ -74,6 +74,12 @@ config := &ophis.Config{
             CmdSelector: ophis.AllowCmdsContaining("get", "list"),
             LocalFlagSelector: ophis.ExcludeFlags("token", "secret"),
             InheritedFlagSelector: ophis.NoFlags,  // Exclude persistent flags
+
+            // Add timeout for these commands
+            PreRun: func(ctx context.Context, ctr *mcp.CallToolRequest, ti ophis.ToolInput) (context.Context, *mcp.CallToolRequest, ophis.ToolInput) {
+                ctx, _ = context.WithTimeout(ctx, time.Minute)
+                return ctx, ctr, ti
+            },
         },
     },
 }
