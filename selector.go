@@ -94,36 +94,6 @@ func (s *Selector) cmdSelect(cmd *cobra.Command) bool {
 	return true
 }
 
-func defaultFlagSelect(flag *pflag.Flag) bool {
-	return !flag.Hidden && flag.Deprecated == ""
-}
-
-// localFlagSelect returns true if the flag passes default filters and this selector's FlagSelector (if any).
-func (s *Selector) localFlagSelect(flag *pflag.Flag) bool {
-	if !defaultFlagSelect(flag) {
-		return false
-	}
-
-	if s.LocalFlagSelector != nil {
-		return s.LocalFlagSelector(flag)
-	}
-
-	return true
-}
-
-// flagSelect returns true if the flag passes default filters and this selector's FlagSelector (if any).
-func (s *Selector) inheritedFlagSelect(flag *pflag.Flag) bool {
-	if !defaultFlagSelect(flag) {
-		return false
-	}
-
-	if s.InheritedFlagSelector != nil {
-		return s.InheritedFlagSelector(flag)
-	}
-
-	return true
-}
-
 // enhanceFlagsSchema adds detailed flag information to the flags property.
 func (s Selector) enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Command) {
 	// Ensure properties map exists
@@ -131,21 +101,39 @@ func (s Selector) enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Comma
 		schema.Properties = make(map[string]*jsonschema.Schema)
 	}
 
+	filter := func(flag *pflag.Flag) bool {
+		return flag.Hidden || flag.Deprecated != ""
+	}
+
 	// Process local flags
 	cmd.LocalFlags().VisitAll(func(flag *pflag.Flag) {
-		if s.localFlagSelect(flag) {
-			flags.AddFlagToSchema(schema, flag)
+		if filter(flag) {
+			return
 		}
+
+		if s.LocalFlagSelector != nil && !s.LocalFlagSelector(flag) {
+			return
+		}
+
+		flags.AddFlagToSchema(schema, flag)
 	})
 
 	// Process inherited flags
 	cmd.InheritedFlags().VisitAll(func(flag *pflag.Flag) {
-		if s.inheritedFlagSelect(flag) {
-			// Skip if already added as local flag
-			if _, exists := schema.Properties[flag.Name]; !exists {
-				flags.AddFlagToSchema(schema, flag)
-			}
+		// Skip if already added as local flag
+		if _, exists := schema.Properties[flag.Name]; exists {
+			return
 		}
+
+		if filter(flag) {
+			return
+		}
+
+		if s.InheritedFlagSelector != nil && !s.InheritedFlagSelector(flag) {
+			return
+		}
+
+		flags.AddFlagToSchema(schema, flag)
 	})
 
 	// Set AdditionalProperties to false
