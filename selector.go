@@ -73,27 +73,6 @@ type Selector struct {
 	PostRun PostRunFunc
 }
 
-// cmdSelect returns true if the command passes default filters and this selector's CmdSelector (if any).
-func (s *Selector) cmdSelect(cmd *cobra.Command) bool {
-	if cmd.Hidden || cmd.Deprecated != "" {
-		return false
-	}
-
-	if cmd.Run == nil && cmd.RunE == nil && cmd.PreRun == nil && cmd.PreRunE == nil {
-		return false
-	}
-
-	if AllowCmdsContaining("mcp", "help", "completion")(cmd) {
-		return false
-	}
-
-	if s.CmdSelector != nil {
-		return s.CmdSelector(cmd)
-	}
-
-	return true
-}
-
 // enhanceFlagsSchema adds detailed flag information to the flags property.
 func (s Selector) enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Command) {
 	// Ensure properties map exists
@@ -101,6 +80,7 @@ func (s Selector) enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Comma
 		schema.Properties = make(map[string]*jsonschema.Schema)
 	}
 
+	// basic filters
 	filter := func(flag *pflag.Flag) bool {
 		return flag.Hidden || flag.Deprecated != ""
 	}

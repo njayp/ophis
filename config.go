@@ -83,21 +83,41 @@ func (c *Config) registerToolsRecursive(cmd *cobra.Command) {
 		c.registerToolsRecursive(subCmd)
 	}
 
+	// apply basic filters
+	if cmdFilter(cmd) {
+		return
+	}
+
 	// cycle through selectors until one matches the cmd
 	for i, s := range c.Selectors {
-		if s.cmdSelect(cmd) {
-			// create tool from cmd
-			tool := s.createToolFromCmd(cmd)
-			slog.Debug("created tool", "tool_name", tool.Name, "selector_index", i)
-
-			// register tool with server
-			mcp.AddTool(c.server, tool, s.execute)
-
-			// add tool to manager's tool list (for `tools` command)
-			c.tools = append(c.tools, tool)
-
-			// only the first matching selector is used
-			break
+		if s.CmdSelector != nil && !s.CmdSelector(cmd) {
+			continue
 		}
+
+		// create tool from cmd
+		tool := s.createToolFromCmd(cmd)
+		slog.Debug("created tool", "tool_name", tool.Name, "selector_index", i)
+
+		// register tool with server
+		mcp.AddTool(c.server, tool, s.execute)
+
+		// add tool to manager's tool list (for `tools` command)
+		c.tools = append(c.tools, tool)
+
+		// only the first matching selector is used
+		break
 	}
+}
+
+// cmdFilter returns true if cmd should be filtered out
+func cmdFilter(cmd *cobra.Command) bool {
+	if cmd.Hidden || cmd.Deprecated != "" {
+		return true
+	}
+
+	if cmd.Run == nil && cmd.RunE == nil && cmd.PreRun == nil && cmd.PreRunE == nil {
+		return true
+	}
+
+	return AllowCmdsContaining("mcp", "help", "completion")(cmd)
 }
