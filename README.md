@@ -2,7 +2,7 @@
 
 **Transform any Cobra CLI into an MCP server**
 
-Ophis automatically converts your Cobra commands into MCP tools with CLI commands for integration with Claude Desktop and VSCode.
+Ophis automatically converts your Cobra commands into MCP tools, and provides CLI commands for integration with Claude Desktop and VSCode.
 
 ## Quick Start
 
