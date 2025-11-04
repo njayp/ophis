@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// startCommandFlags holds flags for the start command.
+// streamCommand holds flags for the stream command.
 type streamCommandFlags struct {
 	logLevel string
 	host     string
