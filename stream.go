@@ -1,23 +1,26 @@
 package ophis
 
 import (
+	"fmt"
 	"log/slog"
 
 	"github.com/spf13/cobra"
 )
 
-// startCommandFlags holds flags for the start command.
-type startCommandFlags struct {
+// streamCommand holds flags for the stream command.
+type streamCommandFlags struct {
 	logLevel string
+	host     string
+	port     int
 }
 
 // startCommand creates the 'mcp start' command.
-func startCommand(config *Config) *cobra.Command {
-	f := &startCommandFlags{}
+func streamCommand(config *Config) *cobra.Command {
+	f := &streamCommandFlags{}
 	cmd := &cobra.Command{
-		Use:   "start",
-		Short: "Start the MCP server",
-		Long:  `Start stdio server to expose CLI commands to AI assistants`,
+		Use:   "stream",
+		Short: "Stream the MCP server over HTTP",
+		Long:  `Start HTTP server to expose CLI commands to AI assistants`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if config == nil {
 				config = &Config{}
@@ -34,12 +37,14 @@ func startCommand(config *Config) *cobra.Command {
 			}
 
 			// Create and start the server
-			return config.serveStdio(cmd)
+			return config.serveHTTP(cmd, fmt.Sprintf("%s:%d", f.host, f.port))
 		},
 	}
 
 	// Add flags
 	flags := cmd.Flags()
 	flags.StringVar(&f.logLevel, "log-level", "", "Log level (debug, info, warn, error)")
+	flags.StringVar(&f.host, "host", "", "host to listen on")
+	flags.IntVar(&f.port, "port", 8080, "port number to listen on")
 	return cmd
 }

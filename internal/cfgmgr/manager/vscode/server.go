@@ -5,7 +5,7 @@ import "fmt"
 // MCPServer represents an MCP server configuration entry for VSCode.
 type MCPServer struct {
 	Type    string            `json:"type,omitempty"`
-	Command string            `json:"command"`
+	Command string            `json:"command,omitempty"`
 	Args    []string          `json:"args,omitempty"`
 	Env     map[string]string `json:"env,omitempty"`
 	URL     string            `json:"url,omitempty"`

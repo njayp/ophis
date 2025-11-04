@@ -1,8 +1,13 @@
 package ophis
 
 import (
+	"context"
 	"log/slog"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/cobra"
@@ -47,6 +52,36 @@ func (c *Config) serveStdio(cmd *cobra.Command) error {
 
 	c.registerTools(cmd)
 	return c.server.Run(cmd.Context(), c.Transport)
+}
+
+func (c *Config) serveHTTP(cmd *cobra.Command, addr string) error {
+	c.registerTools(cmd)
+
+	// Create the streamable HTTP handler.
+	handler := mcp.NewStreamableHTTPHandler(func(_ *http.Request) *mcp.Server {
+		return c.server
+	}, nil)
+
+	server := &http.Server{Addr: addr, Handler: handler}
+
+	// Shutdown gracefully
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		select {
+		case <-ch:
+		case <-cmd.Context().Done():
+		}
+		signal.Stop(ch)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := server.Shutdown(ctx); err != nil {
+			slog.Error("error shutting down server", "error", err)
+		}
+	}()
+
+	return server.ListenAndServe()
 }
 
 // registerTools fully initializes a MCP server and populates c.tools
