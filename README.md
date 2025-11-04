@@ -45,6 +45,14 @@ func main() {
 
 Your CLI commands are now available as MCP tools!
 
+### Stream over HTTP
+
+Expose your MCP server over HTTP for remote access:
+
+```bash
+./my-cli mcp stream --host localhost --port 8080
+```
+
 ## Commands
 
 The `ophis.Command(nil)` adds these subcommands to your CLI:
@@ -52,6 +60,7 @@ The `ophis.Command(nil)` adds these subcommands to your CLI:
 ```
 mcp
 ├── start            # Start MCP server on stdio
+├── stream           # Stream MCP server over HTTP
 ├── tools            # Export available MCP tools as JSON
 ├── claude
 │   ├── enable       # Add server to Claude Desktop config
