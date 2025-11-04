@@ -2,6 +2,7 @@ package ophis
 
 import (
 	"log/slog"
+	"net/http"
 	"os"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -47,6 +48,17 @@ func (c *Config) serveStdio(cmd *cobra.Command) error {
 
 	c.registerTools(cmd)
 	return c.server.Run(cmd.Context(), c.Transport)
+}
+
+func (c *Config) serveHTTP(cmd *cobra.Command, addr string) error {
+	c.registerTools(cmd)
+
+	// Create the streamable HTTP handler.
+	handler := mcp.NewStreamableHTTPHandler(func(_ *http.Request) *mcp.Server {
+		return c.server
+	}, nil)
+
+	return http.ListenAndServe(addr, handler)
 }
 
 // registerTools fully initializes a MCP server and populates c.tools
