@@ -28,7 +28,7 @@ func TestClaudeManager(t *testing.T) {
 		m, err := NewClaudeManager(configPath)
 		require.NoError(t, err)
 
-		server := claude.MCPServer{
+		server := claude.Server{
 			Command: "/usr/local/bin/myapp",
 			Args:    []string{"mcp", "start"},
 		}
@@ -53,7 +53,7 @@ func TestClaudeManager(t *testing.T) {
 		m, err := NewClaudeManager(configPath)
 		require.NoError(t, err)
 
-		originalServer := claude.MCPServer{
+		originalServer := claude.Server{
 			Command: "/usr/local/bin/myapp",
 			Args:    []string{"mcp", "start"},
 		}
@@ -61,7 +61,7 @@ func TestClaudeManager(t *testing.T) {
 		err = m.EnableServer("test-server", originalServer)
 		require.NoError(t, err)
 
-		updatedServer := claude.MCPServer{
+		updatedServer := claude.Server{
 			Command: "/usr/local/bin/myapp",
 			Args:    []string{"mcp", "start", "--log-level", "debug"},
 		}
@@ -79,7 +79,7 @@ func TestClaudeManager(t *testing.T) {
 		m, err := NewClaudeManager(configPath)
 		require.NoError(t, err)
 
-		server := claude.MCPServer{
+		server := claude.Server{
 			Command: "/usr/local/bin/myapp",
 			Args:    []string{"mcp", "start"},
 		}
@@ -129,7 +129,7 @@ func TestClaudeManager(t *testing.T) {
 		m, err := NewClaudeManager(backupTestPath)
 		require.NoError(t, err)
 
-		server := claude.MCPServer{
+		server := claude.Server{
 			Command: "/usr/local/bin/myapp",
 			Args:    []string{"mcp", "start"},
 		}
@@ -164,7 +164,7 @@ func TestVSCodeManager(t *testing.T) {
 		m, err := NewVSCodeManager(configPath, false)
 		require.NoError(t, err)
 
-		server := vscode.MCPServer{
+		server := vscode.Server{
 			Type:    "stdio",
 			Command: "/usr/local/bin/myapp",
 			Args:    []string{"mcp", "start"},
@@ -190,7 +190,7 @@ func TestVSCodeManager(t *testing.T) {
 		m, err := NewVSCodeManager(configPath, false)
 		require.NoError(t, err)
 
-		server := vscode.MCPServer{
+		server := vscode.Server{
 			Type:    "stdio",
 			Command: "/usr/local/bin/myapp",
 			Args:    []string{"mcp", "start"},
@@ -213,7 +213,7 @@ func TestVSCodeManager(t *testing.T) {
 		m, err := NewVSCodeManager(configPath, false)
 		require.NoError(t, err)
 
-		server := vscode.MCPServer{
+		server := vscode.Server{
 			Type:    "stdio",
 			Command: "/usr/local/bin/myapp",
 			Args:    []string{"mcp", "start"},
@@ -233,13 +233,13 @@ func TestVSCodeManager(t *testing.T) {
 		m, err := NewVSCodeManager(configPath, false)
 		require.NoError(t, err)
 
-		server1 := vscode.MCPServer{
+		server1 := vscode.Server{
 			Type:    "stdio",
 			Command: "/usr/local/bin/app1",
 			Args:    []string{"mcp", "start"},
 		}
 
-		server2 := vscode.MCPServer{
+		server2 := vscode.Server{
 			Type:    "stdio",
 			Command: "/usr/local/bin/app2",
 			Args:    []string{"mcp", "start"},

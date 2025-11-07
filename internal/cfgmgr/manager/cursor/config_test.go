@@ -1,4 +1,4 @@
-package claude
+package cursor
 
 import (
 	"testing"
@@ -10,6 +10,7 @@ func TestConfig(t *testing.T) {
 	t.Run("AddServer adds new server", func(t *testing.T) {
 		config := &Config{}
 		server := Server{
+			Type:    "stdio",
 			Command: "/usr/local/bin/myapp",
 			Args:    []string{"mcp", "start"},
 		}
@@ -25,6 +26,7 @@ func TestConfig(t *testing.T) {
 		assert.Nil(t, config.Servers)
 
 		server := Server{
+			Type:    "stdio",
 			Command: "/usr/local/bin/myapp",
 		}
 
@@ -37,12 +39,14 @@ func TestConfig(t *testing.T) {
 		config := &Config{}
 
 		originalServer := Server{
+			Type:    "stdio",
 			Command: "/usr/local/bin/myapp",
 			Args:    []string{"start"},
 		}
 		config.AddServer("test", originalServer)
 
 		updatedServer := Server{
+			Type:    "stdio",
 			Command: "/usr/local/bin/myapp",
 			Args:    []string{"start", "--verbose"},
 		}
@@ -91,6 +95,26 @@ func TestConfig(t *testing.T) {
 		assert.True(t, config.HasServer("server1"))
 	})
 
+	t.Run("Config with inputs", func(t *testing.T) {
+		config := &Config{
+			Inputs: []Input{
+				{
+					Type:        "promptString",
+					ID:          "api-key",
+					Description: "Enter API key",
+					Password:    true,
+				},
+			},
+			Servers: map[string]Server{
+				"server1": {Command: "/bin/app"},
+			},
+		}
+
+		assert.Equal(t, 1, len(config.Inputs))
+		assert.Equal(t, "api-key", config.Inputs[0].ID)
+		assert.True(t, config.Inputs[0].Password)
+	})
+
 	t.Run("Multiple servers can be managed", func(t *testing.T) {
 		config := &Config{}
 
@@ -98,9 +122,9 @@ func TestConfig(t *testing.T) {
 			name   string
 			server Server
 		}{
-			{"kubectl", Server{Command: "/usr/local/bin/kubectl"}},
-			{"helm", Server{Command: "/usr/local/bin/helm"}},
-			{"argocd", Server{Command: "/usr/local/bin/argocd"}},
+			{"kubectl", Server{Type: "stdio", Command: "/usr/local/bin/kubectl"}},
+			{"helm", Server{Type: "stdio", Command: "/usr/local/bin/helm"}},
+			{"argocd", Server{Type: "stdio", Command: "/usr/local/bin/argocd"}},
 		}
 
 		for _, s := range servers {
@@ -119,18 +143,22 @@ func TestConfig(t *testing.T) {
 }
 
 func TestMCPServer(t *testing.T) {
-	t.Run("Server with command only", func(t *testing.T) {
+	t.Run("Server with stdio type", func(t *testing.T) {
 		server := Server{
+			Type:    "stdio",
 			Command: "/usr/local/bin/myapp",
 		}
 
+		assert.Equal(t, "stdio", server.Type)
 		assert.Equal(t, "/usr/local/bin/myapp", server.Command)
 		assert.Empty(t, server.Args)
 		assert.Empty(t, server.Env)
+		assert.Empty(t, server.URL)
 	})
 
 	t.Run("Server with args", func(t *testing.T) {
 		server := Server{
+			Type:    "stdio",
 			Command: "/usr/local/bin/myapp",
 			Args:    []string{"mcp", "start", "--log-level", "debug"},
 		}
@@ -142,6 +170,7 @@ func TestMCPServer(t *testing.T) {
 
 	t.Run("Server with environment variables", func(t *testing.T) {
 		server := Server{
+			Type:    "stdio",
 			Command: "/usr/local/bin/myapp",
 			Env: map[string]string{
 				"DEBUG":    "true",
@@ -154,8 +183,25 @@ func TestMCPServer(t *testing.T) {
 		assert.Equal(t, "/var/log/app.log", server.Env["LOG_FILE"])
 	})
 
+	t.Run("Server with HTTP type", func(t *testing.T) {
+		server := Server{
+			Type: "http",
+			URL:  "https://api.example.com/mcp",
+			Headers: map[string]string{
+				"Authorization": "Bearer token",
+				"Content-Type":  "application/json",
+			},
+		}
+
+		assert.Equal(t, "http", server.Type)
+		assert.Equal(t, "https://api.example.com/mcp", server.URL)
+		assert.Equal(t, 2, len(server.Headers))
+		assert.Equal(t, "Bearer token", server.Headers["Authorization"])
+	})
+
 	t.Run("Server with all fields", func(t *testing.T) {
 		server := Server{
+			Type:    "stdio",
 			Command: "/usr/local/bin/myapp",
 			Args:    []string{"mcp", "start"},
 			Env: map[string]string{
@@ -163,8 +209,56 @@ func TestMCPServer(t *testing.T) {
 			},
 		}
 
+		assert.NotEmpty(t, server.Type)
 		assert.NotEmpty(t, server.Command)
 		assert.NotEmpty(t, server.Args)
 		assert.NotEmpty(t, server.Env)
+	})
+}
+
+func TestInput(t *testing.T) {
+	t.Run("Input with password flag", func(t *testing.T) {
+		input := Input{
+			Type:        "promptString",
+			ID:          "password",
+			Description: "Enter password",
+			Password:    true,
+		}
+
+		assert.Equal(t, "promptString", input.Type)
+		assert.Equal(t, "password", input.ID)
+		assert.True(t, input.Password)
+	})
+
+	t.Run("Input without password flag", func(t *testing.T) {
+		input := Input{
+			Type:        "promptString",
+			ID:          "username",
+			Description: "Enter username",
+		}
+
+		assert.Equal(t, "promptString", input.Type)
+		assert.Equal(t, "username", input.ID)
+		assert.False(t, input.Password)
+	})
+
+	t.Run("Multiple inputs", func(t *testing.T) {
+		inputs := []Input{
+			{
+				Type:        "promptString",
+				ID:          "api-key",
+				Description: "API Key",
+				Password:    true,
+			},
+			{
+				Type:        "promptString",
+				ID:          "region",
+				Description: "AWS Region",
+			},
+		}
+
+		assert.Equal(t, 2, len(inputs))
+		assert.True(t, inputs[0].Password)
+		assert.False(t, inputs[1].Password)
 	})
 }

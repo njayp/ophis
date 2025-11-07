@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/njayp/ophis/internal/cfgmgr/manager/claude"
+	"github.com/njayp/ophis/internal/cfgmgr/manager/cursor"
 	"github.com/njayp/ophis/internal/cfgmgr/manager/vscode"
 )
 
@@ -36,12 +37,12 @@ type Manager[S Server, C Config[S]] struct {
 // NewVSCodeManager creates a new Manager configured for VSCode MCP servers.
 // If workspace is true, uses workspace configuration (.vscode/mcp.json),
 // otherwise uses user-level configuration.
-func NewVSCodeManager(configPath string, workspace bool) (*Manager[vscode.MCPServer, *vscode.Config], error) {
+func NewVSCodeManager(configPath string, workspace bool) (*Manager[vscode.Server, *vscode.Config], error) {
 	if configPath == "" {
 		configPath = vscode.ConfigPath(workspace)
 	}
 
-	m := &Manager[vscode.MCPServer, *vscode.Config]{
+	m := &Manager[vscode.Server, *vscode.Config]{
 		config:     &vscode.Config{},
 		configPath: configPath,
 	}
@@ -49,13 +50,29 @@ func NewVSCodeManager(configPath string, workspace bool) (*Manager[vscode.MCPSer
 	return m, m.loadConfig()
 }
 
+// NewCursorManager creates a new Manager configured for Cursor MCP servers.
+// If workspace is true, uses workspace configuration (.cursor/mcp.json),
+// otherwise uses user-level configuration.
+func NewCursorManager(configPath string, workspace bool) (*Manager[cursor.Server, *cursor.Config], error) {
+	if configPath == "" {
+		configPath = cursor.ConfigPath(workspace)
+	}
+
+	m := &Manager[cursor.Server, *cursor.Config]{
+		config:     &cursor.Config{},
+		configPath: configPath,
+	}
+
+	return m, m.loadConfig()
+}
+
 // NewClaudeManager creates a new Manager configured for Claude Desktop MCP servers.
-func NewClaudeManager(configPath string) (*Manager[claude.MCPServer, *claude.Config], error) {
+func NewClaudeManager(configPath string) (*Manager[claude.Server, *claude.Config], error) {
 	if configPath == "" {
 		configPath = claude.ConfigPath()
 	}
 
-	m := &Manager[claude.MCPServer, *claude.Config]{
+	m := &Manager[claude.Server, *claude.Config]{
 		config:     &claude.Config{},
 		configPath: configPath,
 	}

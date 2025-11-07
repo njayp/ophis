@@ -81,6 +81,7 @@ func (c *Config) serveHTTP(cmd *cobra.Command, addr string) error {
 		}
 	}()
 
+	cmd.Printf("MCP server listening on address %q\n", addr)
 	return server.ListenAndServe()
 }
 
