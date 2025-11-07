@@ -5,7 +5,7 @@ import "fmt"
 // Config represents the structure of Cursor's MCP configuration file.
 type Config struct {
 	Inputs  []Input           `json:"inputs,omitempty"`
-	Servers map[string]Server `json:"servers"`
+	Servers map[string]Server `json:"mcpServers"`
 }
 
 // Input represents a Cursor input variable configuration.

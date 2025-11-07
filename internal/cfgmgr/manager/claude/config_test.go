@@ -17,19 +17,19 @@ func TestConfig(t *testing.T) {
 		config.AddServer("test", server)
 
 		assert.True(t, config.HasServer("test"))
-		assert.Equal(t, 1, len(config.MCPServers))
+		assert.Equal(t, 1, len(config.Servers))
 	})
 
 	t.Run("AddServer initializes map if nil", func(t *testing.T) {
 		config := &Config{}
-		assert.Nil(t, config.MCPServers)
+		assert.Nil(t, config.Servers)
 
 		server := Server{
 			Command: "/usr/local/bin/myapp",
 		}
 
 		config.AddServer("test", server)
-		assert.NotNil(t, config.MCPServers)
+		assert.NotNil(t, config.Servers)
 		assert.True(t, config.HasServer("test"))
 	})
 
@@ -48,13 +48,13 @@ func TestConfig(t *testing.T) {
 		}
 		config.AddServer("test", updatedServer)
 
-		assert.Equal(t, 1, len(config.MCPServers))
-		assert.Equal(t, 2, len(config.MCPServers["test"].Args))
+		assert.Equal(t, 1, len(config.Servers))
+		assert.Equal(t, 2, len(config.Servers["test"].Args))
 	})
 
 	t.Run("HasServer returns false for non-existent server", func(t *testing.T) {
 		config := &Config{
-			MCPServers: map[string]Server{
+			Servers: map[string]Server{
 				"server1": {Command: "/bin/app"},
 			},
 		}
@@ -65,7 +65,7 @@ func TestConfig(t *testing.T) {
 
 	t.Run("RemoveServer removes existing server", func(t *testing.T) {
 		config := &Config{
-			MCPServers: map[string]Server{
+			Servers: map[string]Server{
 				"server1": {Command: "/bin/app1"},
 				"server2": {Command: "/bin/app2"},
 			},
@@ -75,19 +75,19 @@ func TestConfig(t *testing.T) {
 
 		assert.False(t, config.HasServer("server1"))
 		assert.True(t, config.HasServer("server2"))
-		assert.Equal(t, 1, len(config.MCPServers))
+		assert.Equal(t, 1, len(config.Servers))
 	})
 
 	t.Run("RemoveServer handles non-existent server", func(t *testing.T) {
 		config := &Config{
-			MCPServers: map[string]Server{
+			Servers: map[string]Server{
 				"server1": {Command: "/bin/app"},
 			},
 		}
 
 		config.RemoveServer("non-existent")
 
-		assert.Equal(t, 1, len(config.MCPServers))
+		assert.Equal(t, 1, len(config.Servers))
 		assert.True(t, config.HasServer("server1"))
 	})
 
@@ -107,13 +107,13 @@ func TestConfig(t *testing.T) {
 			config.AddServer(s.name, s.server)
 		}
 
-		assert.Equal(t, 3, len(config.MCPServers))
+		assert.Equal(t, 3, len(config.Servers))
 		for _, s := range servers {
 			assert.True(t, config.HasServer(s.name))
 		}
 
 		config.RemoveServer("helm")
-		assert.Equal(t, 2, len(config.MCPServers))
+		assert.Equal(t, 2, len(config.Servers))
 		assert.False(t, config.HasServer("helm"))
 	})
 }
