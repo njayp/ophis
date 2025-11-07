@@ -1,4 +1,4 @@
-package vscode
+package cursor
 
 import (
 	"testing"

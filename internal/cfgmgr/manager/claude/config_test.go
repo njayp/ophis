@@ -9,7 +9,7 @@ import (
 func TestConfig(t *testing.T) {
 	t.Run("AddServer adds new server", func(t *testing.T) {
 		config := &Config{}
-		server := MCPServer{
+		server := Server{
 			Command: "/usr/local/bin/myapp",
 			Args:    []string{"mcp", "start"},
 		}
@@ -24,7 +24,7 @@ func TestConfig(t *testing.T) {
 		config := &Config{}
 		assert.Nil(t, config.MCPServers)
 
-		server := MCPServer{
+		server := Server{
 			Command: "/usr/local/bin/myapp",
 		}
 
@@ -36,13 +36,13 @@ func TestConfig(t *testing.T) {
 	t.Run("AddServer updates existing server", func(t *testing.T) {
 		config := &Config{}
 
-		originalServer := MCPServer{
+		originalServer := Server{
 			Command: "/usr/local/bin/myapp",
 			Args:    []string{"start"},
 		}
 		config.AddServer("test", originalServer)
 
-		updatedServer := MCPServer{
+		updatedServer := Server{
 			Command: "/usr/local/bin/myapp",
 			Args:    []string{"start", "--verbose"},
 		}
@@ -54,7 +54,7 @@ func TestConfig(t *testing.T) {
 
 	t.Run("HasServer returns false for non-existent server", func(t *testing.T) {
 		config := &Config{
-			MCPServers: map[string]MCPServer{
+			MCPServers: map[string]Server{
 				"server1": {Command: "/bin/app"},
 			},
 		}
@@ -65,7 +65,7 @@ func TestConfig(t *testing.T) {
 
 	t.Run("RemoveServer removes existing server", func(t *testing.T) {
 		config := &Config{
-			MCPServers: map[string]MCPServer{
+			MCPServers: map[string]Server{
 				"server1": {Command: "/bin/app1"},
 				"server2": {Command: "/bin/app2"},
 			},
@@ -80,7 +80,7 @@ func TestConfig(t *testing.T) {
 
 	t.Run("RemoveServer handles non-existent server", func(t *testing.T) {
 		config := &Config{
-			MCPServers: map[string]MCPServer{
+			MCPServers: map[string]Server{
 				"server1": {Command: "/bin/app"},
 			},
 		}
@@ -96,11 +96,11 @@ func TestConfig(t *testing.T) {
 
 		servers := []struct {
 			name   string
-			server MCPServer
+			server Server
 		}{
-			{"kubectl", MCPServer{Command: "/usr/local/bin/kubectl"}},
-			{"helm", MCPServer{Command: "/usr/local/bin/helm"}},
-			{"argocd", MCPServer{Command: "/usr/local/bin/argocd"}},
+			{"kubectl", Server{Command: "/usr/local/bin/kubectl"}},
+			{"helm", Server{Command: "/usr/local/bin/helm"}},
+			{"argocd", Server{Command: "/usr/local/bin/argocd"}},
 		}
 
 		for _, s := range servers {
@@ -120,7 +120,7 @@ func TestConfig(t *testing.T) {
 
 func TestMCPServer(t *testing.T) {
 	t.Run("Server with command only", func(t *testing.T) {
-		server := MCPServer{
+		server := Server{
 			Command: "/usr/local/bin/myapp",
 		}
 
@@ -130,7 +130,7 @@ func TestMCPServer(t *testing.T) {
 	})
 
 	t.Run("Server with args", func(t *testing.T) {
-		server := MCPServer{
+		server := Server{
 			Command: "/usr/local/bin/myapp",
 			Args:    []string{"mcp", "start", "--log-level", "debug"},
 		}
@@ -141,7 +141,7 @@ func TestMCPServer(t *testing.T) {
 	})
 
 	t.Run("Server with environment variables", func(t *testing.T) {
-		server := MCPServer{
+		server := Server{
 			Command: "/usr/local/bin/myapp",
 			Env: map[string]string{
 				"DEBUG":    "true",
@@ -155,7 +155,7 @@ func TestMCPServer(t *testing.T) {
 	})
 
 	t.Run("Server with all fields", func(t *testing.T) {
-		server := MCPServer{
+		server := Server{
 			Command: "/usr/local/bin/myapp",
 			Args:    []string{"mcp", "start"},
 			Env: map[string]string{

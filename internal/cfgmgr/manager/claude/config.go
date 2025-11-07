@@ -4,13 +4,13 @@ import "fmt"
 
 // Config represents the structure of Claude Desktop's configuration file.
 type Config struct {
-	MCPServers map[string]MCPServer `json:"mcpServers"`
+	MCPServers map[string]Server `json:"mcpServers"`
 }
 
 // AddServer adds or updates a server in the configuration.
-func (c *Config) AddServer(name string, server MCPServer) {
+func (c *Config) AddServer(name string, server Server) {
 	if c.MCPServers == nil {
-		c.MCPServers = make(map[string]MCPServer)
+		c.MCPServers = make(map[string]Server)
 	}
 	c.MCPServers[name] = server
 }

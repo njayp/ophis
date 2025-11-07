@@ -1,11 +1,11 @@
-package claude
+package cursor
 
 import (
 	"fmt"
 	"os"
 
 	"github.com/njayp/ophis/internal/cfgmgr/manager"
-	"github.com/njayp/ophis/internal/cfgmgr/manager/claude"
+	"github.com/njayp/ophis/internal/cfgmgr/manager/cursor"
 	"github.com/spf13/cobra"
 )
 
@@ -13,16 +13,17 @@ type enableFlags struct {
 	configPath string
 	logLevel   string
 	serverName string
+	workspace  bool
 	env        map[string]string
 }
 
-// enableCommand creates a Cobra command for adding an MCP server to Claude Desktop.
+// enableCommand creates a Cobra command for adding an MCP server to Cursor.
 func enableCommand() *cobra.Command {
 	f := &enableFlags{}
 	cmd := &cobra.Command{
 		Use:   "enable",
-		Short: "Add server to Claude config",
-		Long:  "Add this application as an MCP server in Claude Desktop",
+		Short: "Add server to Cursor config",
+		Long:  "Add this application as an MCP server in Cursor",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return f.run(cmd)
 		},
@@ -31,9 +32,11 @@ func enableCommand() *cobra.Command {
 	// Add flags
 	flags := cmd.Flags()
 	flags.StringVar(&f.logLevel, "log-level", "", "Log level (debug, info, warn, error)")
-	flags.StringVar(&f.configPath, "config-path", "", "Path to Claude config file")
+	flags.StringVar(&f.configPath, "config-path", "", "Path to Cursor config file")
 	flags.StringVar(&f.serverName, "server-name", "", "Name for the MCP server (default: derived from executable name)")
+	flags.BoolVar(&f.workspace, "workspace", false, "Add to workspace settings (.cursor/mcp.json) instead of user settings")
 	flags.StringToStringVarP(&f.env, "env", "e", nil, "Environment variables (e.g., --env KEY1=value1 --env KEY2=value2)")
+
 	return cmd
 }
 
@@ -50,7 +53,8 @@ func (f *enableFlags) run(cmd *cobra.Command) error {
 		return fmt.Errorf("failed to determine MCP command path: %w", err)
 	}
 
-	server := claude.Server{
+	server := cursor.Server{
+		Type:    "stdio",
 		Command: executablePath,
 		Args:    append(mcpPath, "start"),
 	}
@@ -69,7 +73,7 @@ func (f *enableFlags) run(cmd *cobra.Command) error {
 		f.serverName = manager.DeriveServerName(executablePath)
 	}
 
-	m, err := manager.NewClaudeManager(f.configPath)
+	m, err := manager.NewCursorManager(f.configPath, f.workspace)
 	if err != nil {
 		return err
 	}

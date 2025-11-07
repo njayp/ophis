@@ -53,7 +53,7 @@ func (f *enableFlags) run(cmd *cobra.Command) error {
 		return fmt.Errorf("failed to determine MCP command path: %w", err)
 	}
 
-	server := vscode.MCPServer{
+	server := vscode.Server{
 		Type:    "stdio",
 		Command: executablePath,
 		Args:    append(mcpPath, "start"),

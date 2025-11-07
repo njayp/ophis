@@ -1,14 +1,14 @@
-package vscode
+package cursor
 
 import "fmt"
 
-// Config represents the structure of VSCode's MCP configuration file.
+// Config represents the structure of Cursor's MCP configuration file.
 type Config struct {
 	Inputs  []Input           `json:"inputs,omitempty"`
 	Servers map[string]Server `json:"servers"`
 }
 
-// Input represents a VSCode input variable configuration.
+// Input represents a Cursor input variable configuration.
 type Input struct {
 	Type        string `json:"type"`
 	ID          string `json:"id"`

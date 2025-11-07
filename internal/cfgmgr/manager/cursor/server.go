@@ -1,8 +1,8 @@
-package vscode
+package cursor
 
 import "fmt"
 
-// Server represents an MCP server configuration entry for VSCode.
+// Server represents an MCP server configuration entry for Cursor.
 type Server struct {
 	Type    string            `json:"type,omitempty"`
 	Command string            `json:"command,omitempty"`
