@@ -24,14 +24,9 @@ type CmdSelector func(*cobra.Command) bool
 // This selector is only applied to commands that match the associated CmdSelector.
 type FlagSelector func(*pflag.Flag) bool
 
-// PreRunFunc is middleware hook that runs before each tool call
-// Return a cancelled context to prevent execution.
-// Common uses: add timeouts, rate limiting, auth checks, metrics.
-type PreRunFunc func(context.Context, *mcp.CallToolRequest, ToolInput) (context.Context, *mcp.CallToolRequest, ToolInput)
-
-// PostRunFunc is middleware hook that runs after each tool call
+// MiddlewareFunc is middleware hook that runs after each tool call
 // Common uses: error handling, response filtering, metrics collection.
-type PostRunFunc func(context.Context, *mcp.CallToolRequest, ToolInput, *mcp.CallToolResult, ToolOutput, error) (*mcp.CallToolResult, ToolOutput, error)
+type MiddlewareFunc func(context.Context, *mcp.CallToolRequest, ToolInput, func(context.Context, *mcp.CallToolRequest, ToolInput) (*mcp.CallToolResult, ToolOutput, error)) (*mcp.CallToolResult, ToolOutput, error)
 
 // Selector contains selectors for filtering commands and flags.
 // When multiple selectors are configured, they are evaluated in order.
@@ -63,14 +58,7 @@ type Selector struct {
 	// Cannot be used to bypass safety filters (hidden, deprecated flags).
 	InheritedFlagSelector FlagSelector
 
-	// PreRun is middleware hook that runs before each tool call
-	// Return a cancelled context to prevent execution.
-	// Common uses: add timeouts, rate limiting, auth checks, metrics.
-	PreRun PreRunFunc
-
-	// PostRun is middleware hook that runs after each tool call
-	// Common uses: error handling, response filtering, metrics collection.
-	PostRun PostRunFunc
+	Middleware MiddlewareFunc
 }
 
 // enhanceFlagsSchema adds detailed flag information to the flags property.
@@ -183,22 +171,16 @@ func toolDescription(cmd *cobra.Command) string {
 	return strings.Join(parts, "\n")
 }
 
-func (s *Selector) execute(ctx context.Context, request *mcp.CallToolRequest, input ToolInput) (result *mcp.CallToolResult, output ToolOutput, err error) {
+func (s *Selector) execute(ctx context.Context, request *mcp.CallToolRequest, input ToolInput) (_ *mcp.CallToolResult, _ ToolOutput, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("panic: %v", r)
 		}
 	}()
 
-	if s.PreRun != nil {
-		ctx, request, input = s.PreRun(ctx, request, input)
+	if s.Middleware != nil {
+		return s.Middleware(ctx, request, input, execute)
 	}
 
-	result, output, err = execute(ctx, request, input)
-
-	if s.PostRun != nil {
-		result, output, err = s.PostRun(ctx, request, input, result, output, err)
-	}
-
-	return result, output, err
+	return execute(ctx, request, input)
 }
