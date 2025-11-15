@@ -34,7 +34,7 @@ func buildCommandTree(names ...string) *cobra.Command {
 	return parent
 }
 
-type SomeJsonObject struct {
+type SomeJSONObject struct {
 	Foo    string
 	Bar    int
 	FooBar struct {
@@ -42,7 +42,7 @@ type SomeJsonObject struct {
 	}
 }
 
-type SomeJsonArray []SomeJsonObject
+type SomeJSONArray []SomeJSONObject
 
 func TestCreateToolFromCmd(t *testing.T) {
 	// Create a simple test command
@@ -63,9 +63,9 @@ func TestCreateToolFromCmd(t *testing.T) {
 	cmd.Flags().StringToInt("ports", map[string]int{"life": 42, "power": 9001}, "Port mappings")
 
 	// generate schema for a test object
-	aJsonObjSchema, err := jsonschema.For[SomeJsonObject](nil)
+	aJSONObjSchema, err := jsonschema.For[SomeJSONObject](nil)
 	require.NoError(t, err)
-	bytes, err := aJsonObjSchema.MarshalJSON()
+	bytes, err := aJSONObjSchema.MarshalJSON()
 	require.NoError(t, err)
 
 	// now create flag that has a json schema that represents a json object
@@ -75,9 +75,9 @@ func TestCreateToolFromCmd(t *testing.T) {
 	jsonobj.Annotations["jsonschema"] = []string{string(bytes)}
 
 	// generate schema for a test array
-	aJsonArraySchema, err := jsonschema.For[SomeJsonArray](nil)
+	aJSONArraySchema, err := jsonschema.For[SomeJSONArray](nil)
 	require.NoError(t, err)
-	bytes, err = aJsonArraySchema.MarshalJSON()
+	bytes, err = aJSONArraySchema.MarshalJSON()
 	require.NoError(t, err)
 
 	// now create flag that has a json schema that represents a json array
@@ -178,7 +178,7 @@ func TestCreateToolFromCmd(t *testing.T) {
 
 		// verify json obj schemas
 		parsedJsonObjSchema := flagsSchema.Properties["a_json_obj"]
-		assert.Equal(t, aJsonObjSchema, parsedJsonObjSchema)
+		assert.Equal(t, aJSONObjSchema, parsedJsonObjSchema)
 
 		// Verify array items schema
 		includeSchema := flagsSchema.Properties["include"]
