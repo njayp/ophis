@@ -177,8 +177,8 @@ func TestCreateToolFromCmd(t *testing.T) {
 		assert.Nil(t, flagsSchema.Properties["a_json_array"].Default)
 
 		// verify json obj schemas
-		parsedJsonObjSchema := flagsSchema.Properties["a_json_obj"]
-		assert.Equal(t, aJSONObjSchema, parsedJsonObjSchema)
+		parsedJSONObjSchema := flagsSchema.Properties["a_json_obj"]
+		assert.Equal(t, aJSONObjSchema, parsedJSONObjSchema)
 
 		// Verify array items schema
 		includeSchema := flagsSchema.Properties["include"]
