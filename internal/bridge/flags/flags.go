@@ -64,8 +64,9 @@ func AddFlagToSchema(schema *jsonschema.Schema, flag *pflag.Flag) {
 					if err != nil {
 						slog.Error(fmt.Sprintf("Error when decoding JSON schema for flag %s (%v), treating as type string", flag.Name, err))
 						flagSchema.Type = "string"
+					} else {
+						flagSchema = &aSchema
 					}
-					flagSchema = &aSchema
 				}
 			} else {
 				slog.Debug(fmt.Sprintf("No annotation called jsonschema for flag %s, treating as type string", flag.Name))
