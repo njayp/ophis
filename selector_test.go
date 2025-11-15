@@ -34,6 +34,16 @@ func buildCommandTree(names ...string) *cobra.Command {
 	return parent
 }
 
+type SomeJsonObject struct {
+	Foo    string
+	Bar    int
+	FooBar struct {
+		Baz string
+	}
+}
+
+type SomeJsonArray []SomeJsonObject
+
 func TestCreateToolFromCmd(t *testing.T) {
 	// Create a simple test command
 	cmd := &cobra.Command{
@@ -52,9 +62,34 @@ func TestCreateToolFromCmd(t *testing.T) {
 	cmd.Flags().StringToString("labels", map[string]string{"hello": "world", "go": "lang"}, "Key-value labels")
 	cmd.Flags().StringToInt("ports", map[string]int{"life": 42, "power": 9001}, "Port mappings")
 
+	// generate schema for a test object
+	aJsonObjSchema, err := jsonschema.For[SomeJsonObject](nil)
+	require.NoError(t, err)
+	bytes, err := aJsonObjSchema.MarshalJSON()
+	require.NoError(t, err)
+
+	// now create flag that has a json schema that represents a json object
+	cmd.Flags().String("a_json_obj", "", "Some JSON Object")
+	jsonobj := cmd.Flags().Lookup("a_json_obj")
+	jsonobj.Annotations = make(map[string][]string)
+	jsonobj.Annotations["jsonschema"] = []string{string(bytes)}
+
+	// generate schema for a test array
+	aJsonArraySchema, err := jsonschema.For[SomeJsonArray](nil)
+	require.NoError(t, err)
+	bytes, err = aJsonArraySchema.MarshalJSON()
+	require.NoError(t, err)
+
+	// now create flag that has a json schema that represents a json array
+	// note that we can supply a default for the flag here but it's not mapped to the schema default
+	cmd.Flags().String("a_json_array", "[]", "Some JSON Array")
+	jsonarray := cmd.Flags().Lookup("a_json_array")
+	jsonarray.Annotations = make(map[string][]string)
+	jsonarray.Annotations["jsonschema"] = []string{string(bytes)}
+
 	// Add a hidden flag
 	cmd.Flags().String("hidden", "secret", "Hidden flag")
-	err := cmd.Flags().MarkHidden("hidden")
+	err = cmd.Flags().MarkHidden("hidden")
 	require.NoError(t, err)
 
 	// Add a deprecated flag
@@ -102,6 +137,8 @@ func TestCreateToolFromCmd(t *testing.T) {
 		assert.Contains(t, flagsSchema.Properties, "greeting")
 		assert.Contains(t, flagsSchema.Properties, "labels")
 		assert.Contains(t, flagsSchema.Properties, "ports")
+		assert.Contains(t, flagsSchema.Properties, "a_json_obj")
+		assert.Contains(t, flagsSchema.Properties, "a_json_array")
 
 		// Verify excluded flags
 		assert.NotContains(t, flagsSchema.Properties, "hidden", "Should not include hidden flag")
@@ -115,6 +152,8 @@ func TestCreateToolFromCmd(t *testing.T) {
 		assert.Equal(t, "array", flagsSchema.Properties["greeting"].Type)
 		assert.Equal(t, "object", flagsSchema.Properties["labels"].Type)
 		assert.Equal(t, "object", flagsSchema.Properties["ports"].Type)
+		assert.Equal(t, "object", flagsSchema.Properties["a_json_obj"].Type)
+		assert.Equal(t, "array", flagsSchema.Properties["a_json_array"].Type)
 
 		// Verify required flags
 		require.Len(t, flagsSchema.Required, 1, "Should have 1 required flag")
@@ -132,6 +171,14 @@ func TestCreateToolFromCmd(t *testing.T) {
 		// Empty string and empty array should not have defaults set
 		assert.Nil(t, flagsSchema.Properties["output"].Default)
 		assert.Nil(t, flagsSchema.Properties["include"].Default)
+
+		// json schema defaults are not populated
+		assert.Nil(t, flagsSchema.Properties["a_json_obj"].Default)
+		assert.Nil(t, flagsSchema.Properties["a_json_array"].Default)
+
+		// verify json obj schemas
+		parsedJsonObjSchema := flagsSchema.Properties["a_json_obj"]
+		assert.Equal(t, aJsonObjSchema, parsedJsonObjSchema)
 
 		// Verify array items schema
 		includeSchema := flagsSchema.Properties["include"]
