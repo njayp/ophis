@@ -65,7 +65,7 @@ type SomeJsonObject struct {
 	}
 }
 
-// generate schema for a our object
+// generate schema for our object
 aJsonObjSchema, err := jsonschema.For[SomeJsonObject](nil)
 if err != nil {
 	// do something better than this in prod
