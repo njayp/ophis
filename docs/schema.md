@@ -21,6 +21,7 @@ Each flag becomes a property with:
 - `int`, `uint` → `integer`
 - `float` → `number`
 - `string` → `string`
+- `string` → `<JSON schema>` if the flag has an annotation called `jsonschema` with a value that is the JSON string representation of the schema
 - `stringSlice`, `intSlice` → `array`
 - `duration`, `ip`, `ipNet` → `string` with pattern validation
 
@@ -50,6 +51,37 @@ Flags marked as required (via `cmd.MarkFlagRequired()`) are included in the sche
     "required": ["namespace"]
   }
 }
+```
+
+Example showing JSON schema:
+
+```golang
+
+type SomeJsonObject struct {
+	Foo    string
+	Bar    int
+	FooBar struct {
+		Baz string
+	}
+}
+
+// generate schema for a our object
+aJsonObjSchema, err := jsonschema.For[SomeJsonObject](nil)
+if err != nil {
+	// do something better than this in prod
+	panic(err)
+}
+bytes, err := aJsonObjSchema.MarshalJSON()
+if err != nil {
+    // do something better than this in prod
+    panic(err)
+}
+// now create flag that has a json schema that represents a json object
+cmd.Flags().String("a_json_obj", "", "Some JSON Object")
+jsonobj := cmd.Flags().Lookup("a_json_obj")
+jsonobj.Annotations = make(map[string][]string)
+jsonobj.Annotations["jsonschema"] = []string{string(bytes)}
+
 ```
 
 ### Arguments
