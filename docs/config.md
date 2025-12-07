@@ -53,9 +53,10 @@ config := &ophis.Config{
         {
             // Read ops: timeout
             CmdSelector: ophis.AllowCmdsContaining("get", "list"),
-            PreRun: func(ctx context.Context, req *mcp.CallToolRequest, in ophis.ToolInput) (context.Context, *mcp.CallToolRequest, ophis.ToolInput) {
-                ctx, _ = context.WithTimeout(ctx, time.Minute)
-                return ctx, req, in
+            Middleware: func(ctx context.Context, req *mcp.CallToolRequest, in ophis.ToolInput, next func(context.Context, *mcp.CallToolRequest, ophis.ToolInput) (*mcp.CallToolResult, ophis.ToolOutput, error)) (*mcp.CallToolResult, ophis.ToolOutput, error) {
+                ctx, cancel := context.WithTimeout(ctx, time.Minute)
+                defer cancel()
+                return next(ctx, req, in)
             },
         },
         {
@@ -107,23 +108,23 @@ config := &ophis.Config{
 
 ## Middleware
 
-Add behavior before/after execution:
+Wrap execution with custom logic:
 
 ```go
-PreRun: func(ctx context.Context, req *mcp.CallToolRequest, in ophis.ToolInput) (context.Context, *mcp.CallToolRequest, ophis.ToolInput) {
-    // Add timeout
-    ctx, _ = context.WithTimeout(ctx, 30*time.Second)
+Middleware: func(ctx context.Context, req *mcp.CallToolRequest, in ophis.ToolInput, next func(context.Context, *mcp.CallToolRequest, ophis.ToolInput) (*mcp.CallToolResult, ophis.ToolOutput, error)) (*mcp.CallToolResult, ophis.ToolOutput, error) {
+    // Pre-execution: Add timeout
+    ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+    defer cancel()
 
-    // Validate input
+    // Pre-execution: Validate input
     if len(in.Args) > 10 {
         in.Args = in.Args[:10]
     }
 
-    return ctx, req, in
-}
+    // Execute the command
+    res, out, err := next(ctx, req, in)
 
-PostRun: func(ctx context.Context, req *mcp.CallToolRequest, in ophis.ToolInput, res *mcp.CallToolResult, out ophis.ToolOutput, err error) (*mcp.CallToolResult, ophis.ToolOutput, error) {
-    // Filter output
+    // Post-execution: Filter output
     if strings.Contains(out.StdOut, "SECRET") {
         out.StdOut = "[REDACTED]"
     }
