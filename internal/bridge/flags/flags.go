@@ -53,7 +53,29 @@ func AddFlagToSchema(schema *jsonschema.Schema, flag *pflag.Flag) {
 	case "float32", "float64":
 		flagSchema.Type = "number"
 	case "string":
-		flagSchema.Type = "string"
+		if flag.Annotations != nil {
+			if schemaStrArray, ok := flag.Annotations["jsonschema"]; ok {
+				if len(schemaStrArray) == 0 {
+					slog.Warn(fmt.Sprintf("No value for jsonschema annotation for flag %s, treating as type string", flag.Name))
+					flagSchema.Type = "string"
+				} else {
+					var aSchema jsonschema.Schema
+					err := aSchema.UnmarshalJSON([]byte(schemaStrArray[0]))
+					if err != nil {
+						slog.Error(fmt.Sprintf("Error when decoding JSON schema for flag %s (%v), treating as type string", flag.Name, err))
+						flagSchema.Type = "string"
+					} else {
+						flagSchema = &aSchema
+					}
+				}
+			} else {
+				slog.Debug(fmt.Sprintf("No annotation called jsonschema for flag %s, treating as type string", flag.Name))
+				flagSchema.Type = "string"
+			}
+		} else {
+			flagSchema.Type = "string"
+		}
+
 	case "stringSlice", "stringArray":
 		flagSchema.Type = "array"
 		flagSchema.Items = &jsonschema.Schema{Type: "string"}
