@@ -5,9 +5,9 @@ go 1.25.0
 replace github.com/njayp/ophis => ../../
 
 require (
-	github.com/argoproj/argo-cd/v3 v3.2.0
+	github.com/argoproj/argo-cd/v3 v3.2.1
 	github.com/njayp/ophis v0.0.0-00010101000000-000000000000
-	github.com/spf13/cobra v1.10.1
+	github.com/spf13/cobra v1.10.2
 	k8s.io/klog/v2 v2.130.1
 )
 
@@ -34,7 +34,7 @@ require (
 	github.com/RocketChat/Rocket.Chat.Go.SDK v0.0.0-20240116134246-a8cbe886bab0 // indirect
 	github.com/TomOnTime/utfutil v1.0.0 // indirect
 	github.com/alicebob/miniredis/v2 v2.35.0 // indirect
-	github.com/argoproj/gitops-engine v0.7.1-0.20251006172252-b89b0871b414 // indirect
+	github.com/argoproj/gitops-engine v0.7.1-0.20251108235403-13d5172d3ee2 // indirect
 	github.com/argoproj/notifications-engine v0.4.1-0.20250908182349-da04400446ff // indirect
 	github.com/argoproj/pkg v0.13.6 // indirect
 	github.com/argoproj/pkg/v2 v2.0.1 // indirect
@@ -221,7 +221,7 @@ require (
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.42.0 // indirect
 	golang.org/x/net v0.44.0 // indirect
-	golang.org/x/oauth2 v0.32.0 // indirect
+	golang.org/x/oauth2 v0.33.0 // indirect
 	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/term v0.35.0 // indirect
