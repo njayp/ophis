@@ -62,13 +62,14 @@
 //	            // Control which flags are included for matched commands
 //	            LocalFlagSelector: ophis.AllowFlags("namespace", "output"),
 //	            InheritedFlagSelector: ophis.NoFlags,  // Exclude persistent flags
-//	            // Optional: Add middleware hooks
-//	            PreRun: func(ctx context.Context, req *mcp.CallToolRequest, in ophis.ToolInput) (context.Context, *mcp.CallToolRequest, ophis.ToolInput) {
-//	                // Add timeout, logging, auth checks, etc.
-//	                return ctx, req, in
-//	            },
-//	            PostRun: func(ctx context.Context, req *mcp.CallToolRequest, in ophis.ToolInput, res *mcp.CallToolResult, out ophis.ToolOutput, err error) (*mcp.CallToolResult, ophis.ToolOutput, error) {
-//	                // Error handling, response filtering, metrics
+//	            // Optional: Add middleware to wrap execution
+//	            Middleware: func(ctx context.Context, req *mcp.CallToolRequest, in ophis.ToolInput, next func(context.Context, *mcp.CallToolRequest, ophis.ToolInput) (*mcp.CallToolResult, ophis.ToolOutput, error)) (*mcp.CallToolResult, ophis.ToolOutput, error) {
+//	                // Pre-execution: timeout, logging, auth checks, etc.
+//	                ctx, cancel := context.WithTimeout(ctx, time.Minute)
+//	                defer cancel()
+//	                // Execute the command
+//	                res, out, err := next(ctx, req, in)
+//	                // Post-execution: error handling, response filtering, metrics
 //	                return res, out, err
 //	            },
 //	        },
@@ -86,7 +87,7 @@
 //	}
 //
 // The selector system allows different commands to have different flag filtering
-// rules and middleware hooks, enabling precise control over the exposed tool surface.
+// rules and middleware, enabling precise control over the exposed tool surface.
 // Each selector defines which commands to match, which flags to include, and optional
-// PreRun/PostRun hooks for middleware functionality like timeouts, logging, and filtering.
+// middleware for wrapping execution with timeouts, logging, and response filtering.
 package ophis

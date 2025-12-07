@@ -26,7 +26,10 @@ type FlagSelector func(*pflag.Flag) bool
 
 // MiddlewareFunc is middleware hook that runs after each tool call
 // Common uses: error handling, response filtering, metrics collection.
-type MiddlewareFunc func(context.Context, *mcp.CallToolRequest, ToolInput, func(context.Context, *mcp.CallToolRequest, ToolInput) (*mcp.CallToolResult, ToolOutput, error)) (*mcp.CallToolResult, ToolOutput, error)
+type MiddlewareFunc func(context.Context, *mcp.CallToolRequest, ToolInput, ExecuteFunc) (*mcp.CallToolResult, ToolOutput, error)
+
+// ExecuteFunc defines the function signature for executing a tool.
+type ExecuteFunc func(context.Context, *mcp.CallToolRequest, ToolInput) (*mcp.CallToolResult, ToolOutput, error)
 
 // Selector contains selectors for filtering commands and flags.
 // When multiple selectors are configured, they are evaluated in order.
@@ -58,6 +61,9 @@ type Selector struct {
 	// Cannot be used to bypass safety filters (hidden, deprecated flags).
 	InheritedFlagSelector FlagSelector
 
+	// Middleware is an optional middleware hook that wraps around tool execution.
+	// Common uses: error handling, response filtering, metrics collection.
+	// If nil, no middleware is applied.
 	Middleware MiddlewareFunc
 }
 

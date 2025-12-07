@@ -91,10 +91,11 @@ config := &ophis.Config{
             LocalFlagSelector: ophis.ExcludeFlags("token", "secret"),
             InheritedFlagSelector: ophis.NoFlags,  // Exclude persistent flags
 
-            // Add timeout for these commands
-            PreRun: func(ctx context.Context, ctr *mcp.CallToolRequest, ti ophis.ToolInput) (context.Context, *mcp.CallToolRequest, ophis.ToolInput) {
-                ctx, _ = context.WithTimeout(ctx, time.Minute)
-                return ctx, ctr, ti
+            // Middleware wraps command execution
+            Middleware: func(ctx context.Context, req *mcp.CallToolRequest, in ophis.ToolInput, next func(context.Context, *mcp.CallToolRequest, ophis.ToolInput) (*mcp.CallToolResult, ophis.ToolOutput, error)) (*mcp.CallToolResult, ophis.ToolOutput, error) {
+                ctx, cancel := context.WithTimeout(ctx, time.Minute)
+                defer cancel()
+                return next(ctx, req, in)
             },
         },
     },

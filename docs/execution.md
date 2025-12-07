@@ -4,9 +4,8 @@ When an AI assistant calls an MCP tool, Ophis executes your CLI as a subprocess.
 
 ## Execution Flow
 
-1. **PreRun Middleware** (optional) - Runs before execution
+1. **Middleware** (optional) - Wraps execution with custom logic
 2. **Command Execution** - Spawns CLI subprocess, captures output
-3. **PostRun Middleware** (optional) - Runs after execution
 
 ## Command Construction
 
@@ -54,7 +53,7 @@ Non-zero exit codes indicate command errors (not execution failures).
 ## Cancellation
 
 Execution can be cancelled by:
-- PreRun returning cancelled context
+- Middleware returning early without calling next
 - MCP client cancelling request
 - Parent context timeout
 
