@@ -112,7 +112,7 @@ func TestCreateToolFromCmd(t *testing.T) {
 
 	t.Run("Default Selector", func(t *testing.T) {
 		// Create tool from command with a selector that accepts all flags
-		tool := Selector{}.createToolFromCmd(cmd)
+		tool, _ := Selector{}.createToolFromCmd(cmd)
 
 		// Verify tool properties
 		assert.Equal(t, "parent_test", tool.Name)
@@ -219,7 +219,7 @@ func TestCreateToolFromCmd(t *testing.T) {
 		}
 
 		// Create tool from command with the restricted selector
-		tool := selector.createToolFromCmd(cmd)
+		tool, _ := selector.createToolFromCmd(cmd)
 
 		// Verify tool properties
 		assert.Equal(t, "parent_test", tool.Name)

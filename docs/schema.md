@@ -57,12 +57,13 @@ Example showing JSON schema:
 
 ```golang
 
+// note that we want to pass in descriptions of the nested fields to the LLM so we can do that with the jsonschema annotation
 type SomeJsonObject struct {
-	Foo    string
-	Bar    int
+	Foo    string `json:"foo" jsonschema:"Description of Foo field"`
+	Bar    int `json:"foo" jsonschema:"Description of Bar field"`
 	FooBar struct {
-		Baz string
-	}
+		Baz string `json:"baz" jsonschema:"Description of Baz field"`
+	} `json:"foo_bar" jsonschema:"Description of FooBar field"`
 }
 
 // generate schema for our object
@@ -71,16 +72,31 @@ if err != nil {
 	// do something better than this in prod
 	panic(err)
 }
+// we want a description on the schema for the LLM to use and we'd like to re-use it for Cobra too
+flagDescription := "This flag is used to supply a JSON string representation of an instance of a SomeJsonObject"
+aJsoObjSchema.Description = flagDescription
 bytes, err := aJsonObjSchema.MarshalJSON()
 if err != nil {
     // do something better than this in prod
     panic(err)
 }
 // now create flag that has a json schema that represents a json object
-cmd.Flags().String("a_json_obj", "", "Some JSON Object")
+cmd.Flags().String("a_json_obj", "", flagDescription)
 jsonobj := cmd.Flags().Lookup("a_json_obj")
 jsonobj.Annotations = make(map[string][]string)
 jsonobj.Annotations["jsonschema"] = []string{string(bytes)}
+
+// within the Cobra environment, fetch the flag value then deserialize into your struct
+var myFlagObj SomeJsonObject
+value, err := cmd.Flags().GetString("a_json_obj")
+if err != nil {
+	panic(err)
+}
+err = json.Unmarshal([]byte(value), &myFlagObj)
+if err != nil {
+	panic(err)
+}
+// now do something with your object
 
 ```
 

@@ -68,11 +68,14 @@ type Selector struct {
 }
 
 // enhanceFlagsSchema adds detailed flag information to the flags property.
-func (s Selector) enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Command) {
+// Returns flag metadata for tracking which flags have JSON schemas
+func (s Selector) enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Command) FlagMetadataByFlagName {
 	// Ensure properties map exists
 	if schema.Properties == nil {
 		schema.Properties = make(map[string]*jsonschema.Schema)
 	}
+
+	metadata := make(FlagMetadataByFlagName)
 
 	// basic filters
 	filter := func(flag *pflag.Flag) bool {
@@ -90,6 +93,7 @@ func (s Selector) enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Comma
 		}
 
 		flags.AddFlagToSchema(schema, flag)
+		metadata[flag.Name] = FlagMetadata{HasJSONSchema: flags.HasJSONSchemaAnnotation(flag)}
 	})
 
 	// Process inherited flags
@@ -108,26 +112,31 @@ func (s Selector) enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Comma
 		}
 
 		flags.AddFlagToSchema(schema, flag)
+		metadata[flag.Name] = FlagMetadata{HasJSONSchema: flags.HasJSONSchemaAnnotation(flag)}
 	})
 
 	// Set AdditionalProperties to false
 	// See https://github.com/google/jsonschema-go/issues/13
 	schema.AdditionalProperties = &jsonschema.Schema{Not: &jsonschema.Schema{}}
+
+	return metadata
 }
 
 // createToolFromCmd creates an MCP tool from a Cobra command.
-func (s Selector) createToolFromCmd(cmd *cobra.Command) *mcp.Tool {
+func (s Selector) createToolFromCmd(cmd *cobra.Command) (*mcp.Tool, FlagMetadataByFlagName) {
 	schema := inputSchema.Copy()
-	s.enhanceFlagsSchema(schema.Properties["flags"], cmd)
+	metadata := s.enhanceFlagsSchema(schema.Properties["flags"], cmd)
 	enhanceArgsSchema(schema.Properties["args"], cmd)
 
 	// Create the tool
-	return &mcp.Tool{
+	tool := &mcp.Tool{
 		Name:         toolName(cmd),
 		Description:  toolDescription(cmd),
 		InputSchema:  schema,
 		OutputSchema: outputSchema.Copy(),
 	}
+
+	return tool, metadata
 }
 
 // enhanceArgsSchema adds detailed argument information to the args property.

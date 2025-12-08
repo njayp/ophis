@@ -131,8 +131,11 @@ func (c *Config) registerToolsRecursive(cmd *cobra.Command) {
 		}
 
 		// create tool from cmd
-		tool := s.createToolFromCmd(cmd)
+		tool, metadata := s.createToolFromCmd(cmd)
 		slog.Debug("created tool", "tool_name", tool.Name, "selector_index", i)
+
+		// store flag metadata in registry for proper serialization
+		globalFlagRegistry.Register(tool.Name, metadata)
 
 		// register tool with server
 		mcp.AddTool(c.server, tool, s.execute)
