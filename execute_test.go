@@ -1,6 +1,7 @@
 package ophis
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -8,14 +9,17 @@ import (
 
 func TestBuildFlagArgs(t *testing.T) {
 	tests := []struct {
-		name     string
-		flags    map[string]any
-		expected []string
+		name  string
+		flags map[string]any
+		// names of flags that have json annotations
+		jsonFlagNames []string
+		expected      []string
 	}{
 		{
-			name:     "Empty flags",
-			flags:    map[string]any{},
-			expected: []string{},
+			name:          "Empty flags",
+			flags:         map[string]any{},
+			jsonFlagNames: []string{},
+			expected:      []string{},
 		},
 		{
 			name: "Boolean flags",
@@ -24,7 +28,8 @@ func TestBuildFlagArgs(t *testing.T) {
 				"quiet":   false,
 				"debug":   true,
 			},
-			expected: []string{"--verbose", "--debug"},
+			jsonFlagNames: []string{},
+			expected:      []string{"--verbose", "--debug"},
 		},
 		{
 			name: "String flags",
@@ -32,7 +37,8 @@ func TestBuildFlagArgs(t *testing.T) {
 				"output": "result.txt",
 				"format": "json",
 			},
-			expected: []string{"--output", "result.txt", "--format", "json"},
+			jsonFlagNames: []string{},
+			expected:      []string{"--output", "result.txt", "--format", "json"},
 		},
 		{
 			name: "Integer flags",
@@ -40,7 +46,8 @@ func TestBuildFlagArgs(t *testing.T) {
 				"count":   10,
 				"timeout": 30,
 			},
-			expected: []string{"--count", "10", "--timeout", "30"},
+			jsonFlagNames: []string{},
+			expected:      []string{"--count", "10", "--timeout", "30"},
 		},
 		{
 			name: "Float flags",
@@ -48,7 +55,8 @@ func TestBuildFlagArgs(t *testing.T) {
 				"ratio":     0.75,
 				"threshold": 1.5,
 			},
-			expected: []string{"--ratio", "0.75", "--threshold", "1.5"},
+			jsonFlagNames: []string{},
+			expected:      []string{"--ratio", "0.75", "--threshold", "1.5"},
 		},
 		{
 			name: "Array flags",
@@ -56,7 +64,8 @@ func TestBuildFlagArgs(t *testing.T) {
 				"include": []any{"*.go", "*.md"},
 				"exclude": []any{"vendor"},
 			},
-			expected: []string{"--include", "*.go", "--include", "*.md", "--exclude", "vendor"},
+			jsonFlagNames: []string{},
+			expected:      []string{"--include", "*.go", "--include", "*.md", "--exclude", "vendor"},
 		},
 		{
 			name: "Mixed types",
@@ -66,7 +75,8 @@ func TestBuildFlagArgs(t *testing.T) {
 				"count":   5,
 				"tags":    []any{"test", "debug"},
 			},
-			expected: []string{"--verbose", "--output", "result.txt", "--count", "5", "--tags", "test", "--tags", "debug"},
+			jsonFlagNames: []string{},
+			expected:      []string{"--verbose", "--output", "result.txt", "--count", "5", "--tags", "test", "--tags", "debug"},
 		},
 		{
 			name: "Map flags (stringToString)",
@@ -76,14 +86,16 @@ func TestBuildFlagArgs(t *testing.T) {
 					"team": "backend",
 				},
 			},
-			expected: []string{"--labels", "env=prod", "--labels", "team=backend"},
+			jsonFlagNames: []string{},
+			expected:      []string{"--labels", "env=prod", "--labels", "team=backend"},
 		},
 		{
 			name: "Empty map",
 			flags: map[string]any{
 				"labels": map[string]any{},
 			},
-			expected: []string{},
+			jsonFlagNames: []string{},
+			expected:      []string{},
 		},
 		{
 			name: "StringToInt map flags",
@@ -93,7 +105,8 @@ func TestBuildFlagArgs(t *testing.T) {
 					"https": 8443,
 				},
 			},
-			expected: []string{"--ports", "http=8080", "--ports", "https=8443"},
+			jsonFlagNames: []string{},
+			expected:      []string{"--ports", "http=8080", "--ports", "https=8443"},
 		},
 		{
 			name: "StringToInt64 map flags",
@@ -104,7 +117,8 @@ func TestBuildFlagArgs(t *testing.T) {
 					"large":  int64(4096),
 				},
 			},
-			expected: []string{"--sizes", "small=1024", "--sizes", "medium=2048", "--sizes", "large=4096"},
+			jsonFlagNames: []string{},
+			expected:      []string{"--sizes", "small=1024", "--sizes", "medium=2048", "--sizes", "large=4096"},
 		},
 		{
 			name: "Nil values",
@@ -113,7 +127,8 @@ func TestBuildFlagArgs(t *testing.T) {
 				"flag2": "value",
 				"flag3": nil,
 			},
-			expected: []string{"--flag2", "value"},
+			jsonFlagNames: []string{},
+			expected:      []string{"--flag2", "value"},
 		},
 		{
 			name: "Empty flag name",
@@ -121,13 +136,81 @@ func TestBuildFlagArgs(t *testing.T) {
 				"":      "value",
 				"valid": "value",
 			},
-			expected: []string{"--valid", "value"},
+			jsonFlagNames: []string{},
+			expected:      []string{"--valid", "value"},
+		},
+		{
+			name: "JSON schema object flag - simple",
+			flags: map[string]any{
+				"test-flag": map[string]any{
+					"Name": "test",
+				},
+			},
+			jsonFlagNames: []string{"test-flag"},
+			expected:      []string{"--test-flag", `{"Name":"test"}`},
+		},
+		{
+			name: "JSON schema object flag - complex nested",
+			flags: map[string]any{
+				"test-flag": map[string]any{
+					"Name": "test",
+					"Bar":  123,
+					"Foobar": map[string]interface{}{
+						"Baz": "nested",
+					},
+				},
+			},
+			jsonFlagNames: []string{"test-flag"},
+			expected:      []string{"--test-flag", `{"Bar":123,"Foobar":{"Baz":"nested"},"Name":"test"}`},
+		},
+		{
+			name: "JSON schema array flag",
+			flags: map[string]any{
+				"test-flag": []any{
+					map[string]any{
+						"Foo": "item1", "Bar": 1,
+					},
+					map[string]any{
+						"Foo": "item2", "Bar": 2,
+					},
+				},
+			},
+			jsonFlagNames: []string{"test-flag"},
+			expected:      []string{"--test-flag", `[{"Bar":1,"Foo":"item1"},{"Bar":2,"Foo":"item2"}]`},
+		},
+		{
+			name: "mixed regular and JSON flags",
+			flags: map[string]any{
+				"test-flag": map[string]any{
+					"Name": "test",
+					"Bar":  123,
+					"Foobar": map[string]interface{}{
+						"Baz": "nested",
+					},
+				},
+				"not-json": "some-value",
+			},
+			jsonFlagNames: []string{"test-flag"},
+			expected: []string{
+				"--not-json", "some-value",
+				"--test-flag", `{"Bar":123,"Foobar":{"Baz":"nested"},"Name":"test"}`,
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := buildFlagArgs(tt.flags)
+			testToolName := "foo"
+			metadata := make(FlagMetadataByFlagName)
+			for name := range tt.flags {
+				if slices.Contains(tt.jsonFlagNames, name) {
+					metadata[name] = FlagMetadata{HasJSONSchema: true}
+				} else {
+					metadata[name] = FlagMetadata{HasJSONSchema: false}
+				}
+			}
+			globalFlagRegistry.Register(testToolName, metadata)
+			result := buildFlagArgs(testToolName, tt.flags)
 			// Sort both slices for comparison since map iteration order is not guaranteed
 			assert.ElementsMatch(t, tt.expected, result)
 		})

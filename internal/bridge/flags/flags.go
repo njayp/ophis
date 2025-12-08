@@ -26,6 +26,19 @@ func isFlagRequired(flag *pflag.Flag) bool {
 	return false
 }
 
+// HasJSONSchemaAnnotation checks if a flag has a JSON schema annotation
+// Returns true if the flag has a non-empty jsonschema annotation that was successfully parsed
+func HasJSONSchemaAnnotation(flag *pflag.Flag) bool {
+	if flag.Annotations == nil {
+		return false
+	}
+	schemaStrArray, ok := flag.Annotations["jsonschema"]
+	if !ok || len(schemaStrArray) == 0 {
+		return false
+	}
+	return true
+}
+
 // AddFlagToSchema adds a single flag to the schema properties.
 func AddFlagToSchema(schema *jsonschema.Schema, flag *pflag.Flag) {
 	flagSchema := &jsonschema.Schema{

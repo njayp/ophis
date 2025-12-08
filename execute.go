@@ -3,6 +3,7 @@ package ophis
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -68,8 +69,8 @@ func buildCommandArgs(name string, input ToolInput) []string {
 	// And remove the root command prefix
 	args := strings.Split(name, "_")[1:]
 
-	// Add flags
-	flagArgs := buildFlagArgs(input.Flags)
+	// Add flags (pass tool name for metadata lookup)
+	flagArgs := buildFlagArgs(name, input.Flags)
 	args = append(args, flagArgs...)
 
 	// Add positional arguments
@@ -77,7 +78,8 @@ func buildCommandArgs(name string, input ToolInput) []string {
 }
 
 // buildFlagArgs converts MCP flags to CLI flag arguments.
-func buildFlagArgs(flagMap map[string]any) []string {
+// toolName is used to look up flag metadata for proper serialization
+func buildFlagArgs(toolName string, flagMap map[string]any) []string {
 	var args []string
 
 	for name, value := range flagMap {
@@ -86,16 +88,37 @@ func buildFlagArgs(flagMap map[string]any) []string {
 		}
 
 		if items, ok := value.([]any); ok {
-			for _, item := range items {
-				args = append(args, parseFlagArgValue(name, item)...)
+			// check if this flag has a JSON schema annotation
+			if globalFlagRegistry.HasJSONSchema(toolName, name) {
+				// marshal schema to JSON string
+				jsonBytes, err := json.Marshal(items)
+				if err != nil {
+					slog.Error("failed to marshal flag schema to JSON, ignoring", "flag", name, "error", err)
+					continue
+				}
+				args = append(args, fmt.Sprintf("--%s", name), string(jsonBytes))
+			} else {
+				for _, item := range items {
+					args = append(args, parseFlagArgValue(name, item)...)
+				}
 			}
 
 			continue
 		}
 
 		if mapVal, ok := value.(map[string]any); ok {
-			for k, v := range mapVal {
-				args = append(args, fmt.Sprintf("--%s", name), fmt.Sprintf("%s=%v", k, v))
+			if globalFlagRegistry.HasJSONSchema(toolName, name) {
+				// marshal schema to JSON string
+				jsonBytes, err := json.Marshal(mapVal)
+				if err != nil {
+					slog.Error("failed to marshal flag schema to JSON, ignoring", "flag", name, "error", err)
+					continue
+				}
+				args = append(args, fmt.Sprintf("--%s", name), string(jsonBytes))
+			} else {
+				for k, v := range mapVal {
+					args = append(args, fmt.Sprintf("--%s", name), fmt.Sprintf("%s=%v", k, v))
+				}
 			}
 
 			continue
