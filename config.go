@@ -31,6 +31,14 @@ type Config struct {
 	// If nil or empty, defaults to exposing all commands with all flags.
 	Selectors []Selector
 
+	// ToolNamePrefix replaces the root command name in tool names.
+	// This is useful for shortening tool names to comply with API limits (e.g., Claude's 64 char limit).
+	// For example, if root command is "omnistrate-ctl" and ToolNamePrefix is "omctl",
+	// a command "omnistrate-ctl cost by-cell list" becomes "omctl_cost_by-cell_list" instead of
+	// "omnistrate-ctl_cost_by-cell_list".
+	// If empty, the root command name is used as-is.
+	ToolNamePrefix string
+
 	// SloggerOptions configures logging to stderr.
 	// Default: Info level logging.
 	SloggerOptions *slog.HandlerOptions
@@ -41,8 +49,9 @@ type Config struct {
 	// Transport for stdio transport configuration.
 	Transport mcp.Transport
 
-	server *mcp.Server
-	tools  []*mcp.Tool
+	server         *mcp.Server
+	tools          []*mcp.Tool
+	toolNamePrefix string // resolved prefix (either ToolNamePrefix or root command name)
 }
 
 func (c *Config) serveStdio(cmd *cobra.Command) error {
@@ -97,6 +106,13 @@ func (c *Config) registerTools(cmd *cobra.Command) {
 		rootCmd = rootCmd.Parent()
 	}
 
+	// resolve tool name prefix
+	if c.ToolNamePrefix != "" {
+		c.toolNamePrefix = c.ToolNamePrefix
+	} else {
+		c.toolNamePrefix = rootCmd.Name()
+	}
+
 	// make server
 	c.server = mcp.NewServer(&mcp.Implementation{
 		Name:    rootCmd.Name(),
@@ -131,7 +147,7 @@ func (c *Config) registerToolsRecursive(cmd *cobra.Command) {
 		}
 
 		// create tool from cmd
-		tool := s.createToolFromCmd(cmd)
+		tool := s.createToolFromCmd(cmd, c.toolNamePrefix)
 		slog.Debug("created tool", "tool_name", tool.Name, "selector_index", i)
 
 		// register tool with server

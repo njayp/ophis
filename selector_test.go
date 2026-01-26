@@ -112,7 +112,7 @@ func TestCreateToolFromCmd(t *testing.T) {
 
 	t.Run("Default Selector", func(t *testing.T) {
 		// Create tool from command with a selector that accepts all flags
-		tool := Selector{}.createToolFromCmd(cmd)
+		tool := Selector{}.createToolFromCmd(cmd, "parent")
 
 		// Verify tool properties
 		assert.Equal(t, "parent_test", tool.Name)
@@ -219,7 +219,7 @@ func TestCreateToolFromCmd(t *testing.T) {
 		}
 
 		// Create tool from command with the restricted selector
-		tool := selector.createToolFromCmd(cmd)
+		tool := selector.createToolFromCmd(cmd, "parent")
 
 		// Verify tool properties
 		assert.Equal(t, "parent_test", tool.Name)
@@ -274,8 +274,51 @@ func TestGenerateToolName(t *testing.T) {
 
 	root.AddCommand(child)
 	child.AddCommand(grandchild)
-	name := toolName(grandchild)
-	assert.Equal(t, "root_child_grandchild", name)
+
+	t.Run("Default prefix (uses root name)", func(t *testing.T) {
+		name := toolName(grandchild, "root")
+		assert.Equal(t, "root_child_grandchild", name)
+	})
+
+	t.Run("Custom short prefix", func(t *testing.T) {
+		name := toolName(grandchild, "r")
+		assert.Equal(t, "r_child_grandchild", name)
+	})
+
+	t.Run("Root command only", func(t *testing.T) {
+		name := toolName(root, "root")
+		assert.Equal(t, "root", name)
+	})
+
+	t.Run("Root command with custom prefix", func(t *testing.T) {
+		name := toolName(root, "myprefix")
+		assert.Equal(t, "myprefix", name)
+	})
+
+	t.Run("Omnistrate use case - shortening long tool names", func(t *testing.T) {
+		// Simulates: omnistrate-ctl cost by-instance-type in-provider
+		// Without prefix: omnistrate-ctl_cost_by-instance-type_in-provider (51 chars)
+		// With prefix "omctl": omctl_cost_by-instance-type_in-provider (44 chars)
+		omctl := &cobra.Command{Use: "omnistrate-ctl"}
+		cost := &cobra.Command{Use: "cost"}
+		byInstanceType := &cobra.Command{Use: "by-instance-type"}
+		inProvider := &cobra.Command{Use: "in-provider", Run: func(_ *cobra.Command, _ []string) {}}
+
+		omctl.AddCommand(cost)
+		cost.AddCommand(byInstanceType)
+		byInstanceType.AddCommand(inProvider)
+
+		// Using full root name (original behavior)
+		fullName := toolName(inProvider, "omnistrate-ctl")
+		assert.Equal(t, "omnistrate-ctl_cost_by-instance-type_in-provider", fullName)
+		assert.Len(t, fullName, 51, "Full name should be 51 characters")
+
+		// Using shortened prefix
+		shortName := toolName(inProvider, "omctl")
+		assert.Equal(t, "omctl_cost_by-instance-type_in-provider", shortName)
+		assert.Len(t, shortName, 40, "Short name should be 40 characters")
+		assert.Less(t, len(shortName), 64, "Short name should be under Claude's 64-char limit")
+	})
 }
 
 func TestGenerateToolDescription(t *testing.T) {

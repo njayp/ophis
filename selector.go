@@ -116,14 +116,15 @@ func (s Selector) enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Comma
 }
 
 // createToolFromCmd creates an MCP tool from a Cobra command.
-func (s Selector) createToolFromCmd(cmd *cobra.Command) *mcp.Tool {
+// The toolNamePrefix is used to replace the root command name in the tool name.
+func (s Selector) createToolFromCmd(cmd *cobra.Command, toolNamePrefix string) *mcp.Tool {
 	schema := inputSchema.Copy()
 	s.enhanceFlagsSchema(schema.Properties["flags"], cmd)
 	enhanceArgsSchema(schema.Properties["args"], cmd)
 
 	// Create the tool
 	return &mcp.Tool{
-		Name:         toolName(cmd),
+		Name:         toolName(cmd, toolNamePrefix),
 		Description:  toolDescription(cmd),
 		InputSchema:  schema,
 		OutputSchema: outputSchema.Copy(),
@@ -151,8 +152,22 @@ func enhanceArgsSchema(schema *jsonschema.Schema, cmd *cobra.Command) {
 }
 
 // toolName creates a tool name from the command path.
-func toolName(cmd *cobra.Command) string {
+// The toolNamePrefix replaces the root command name in the path.
+// For example, if the command path is "omnistrate-ctl cost by-cell list" and
+// toolNamePrefix is "omctl", the result is "omctl_cost_by-cell_list".
+func toolName(cmd *cobra.Command, toolNamePrefix string) string {
 	path := cmd.CommandPath()
+
+	// Replace the root command name with the prefix
+	// The root command name is the first word in the path
+	if spaceIdx := strings.IndexByte(path, ' '); spaceIdx != -1 {
+		// Replace root command name with prefix, keep the rest
+		path = toolNamePrefix + path[spaceIdx:]
+	} else {
+		// Single command (root command itself)
+		path = toolNamePrefix
+	}
+
 	return strings.ReplaceAll(path, " ", "_")
 }
 
