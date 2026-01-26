@@ -297,8 +297,6 @@ func TestGenerateToolName(t *testing.T) {
 
 	t.Run("Omnistrate use case - shortening long tool names", func(t *testing.T) {
 		// Simulates: omnistrate-ctl cost by-instance-type in-provider
-		// Without prefix: omnistrate-ctl_cost_by-instance-type_in-provider (51 chars)
-		// With prefix "omctl": omctl_cost_by-instance-type_in-provider (44 chars)
 		omctl := &cobra.Command{Use: "omnistrate-ctl"}
 		cost := &cobra.Command{Use: "cost"}
 		byInstanceType := &cobra.Command{Use: "by-instance-type"}
@@ -311,12 +309,11 @@ func TestGenerateToolName(t *testing.T) {
 		// Using full root name (original behavior)
 		fullName := toolName(inProvider, "omnistrate-ctl")
 		assert.Equal(t, "omnistrate-ctl_cost_by-instance-type_in-provider", fullName)
-		assert.Len(t, fullName, 51, "Full name should be 51 characters")
 
-		// Using shortened prefix
+		// Using shortened prefix - saves 9 characters (len("omnistrate-ctl") - len("omctl") = 14 - 5 = 9)
 		shortName := toolName(inProvider, "omctl")
 		assert.Equal(t, "omctl_cost_by-instance-type_in-provider", shortName)
-		assert.Len(t, shortName, 40, "Short name should be 40 characters")
+		assert.Less(t, len(shortName), len(fullName), "Short name should be shorter than full name")
 		assert.Less(t, len(shortName), 64, "Short name should be under Claude's 64-char limit")
 	})
 }
