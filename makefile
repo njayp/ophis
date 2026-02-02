@@ -1,6 +1,6 @@
 .PHONY: all
 all: up lint test
-	go run github.com/magefile/mage@latest all
+	cd examples/make && make
 
 .PHONY: up
 up:
@@ -15,10 +15,6 @@ lint:
 .PHONY: test
 test:
 	go test ./...
-
-.PHONY: build
-build:
-	go run github.com/magefile/mage@latest build
 
 .PHONY: release
 release: all

@@ -114,21 +114,6 @@ Ophis bridges Cobra commands and the Model Context Protocol:
 2. **Schema Generation**: Creates JSON schemas from command flags and arguments ([docs/schema.md](docs/schema.md))
 3. **Tool Execution**: Spawns your CLI as a subprocess and captures output ([docs/execution.md](docs/execution.md))
 
-## Examples
-
-Build all examples:
-
-```bash
-make build
-```
-
-Example projects using Ophis:
-
-- [kubectl](./examples/kubectl/)
-- [helm](./examples/helm/)
-- [argocd](./examples/argocd/)
-- [make](./examples/make/)
-
 ## Contributing
 
 Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md).

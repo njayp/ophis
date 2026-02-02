@@ -110,8 +110,11 @@ func Tools(t *testing.T, cmd *cobra.Command, expectedNames ...string) {
 
 				// Validate "args" property if present
 				if prop, ok := schema.Properties["args"]; ok {
-					if prop.Type != "array" || prop.Items.Type != "string" {
-						t.Errorf("Tool %q: expected 'args' property type 'array', got %q, %q", tool.Name, prop.Type, prop.Items.Type)
+					isArgArray := prop.Type == "array" || slices.Contains(prop.Types, "array")
+					hasStringItems := prop.Items != nil && (prop.Items.Type == "string" || slices.Contains(prop.Items.Types, "string"))
+					if !isArgArray || !hasStringItems {
+						t.Errorf("Tool %q: expected 'args' property type 'array' with string items, got Type=%q, Types=%v, Items=%+v",
+							tool.Name, prop.Type, prop.Types, prop.Items)
 					}
 				}
 			}
