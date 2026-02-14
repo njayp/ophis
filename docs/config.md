@@ -133,6 +133,46 @@ Middleware: func(ctx context.Context, req *mcp.CallToolRequest, in ophis.ToolInp
 }
 ```
 
+## Tool Annotations
+
+Set MCP [tool annotations](https://modelcontextprotocol.io/specification/2025-06-18/server/tools#tool-annotations) on Cobra commands using `cmd.Annotations`. These hints help AI clients make informed decisions about tool invocation.
+
+### Available Annotation Keys
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `ophis.AnnotationTitle` (`"title"`) | string | Human-readable title for the tool |
+| `ophis.AnnotationReadOnly` (`"readOnlyHint"`) | bool | Tool does not modify its environment |
+| `ophis.AnnotationDestructive` (`"destructiveHint"`) | bool | Tool may perform destructive updates |
+| `ophis.AnnotationIdempotent` (`"idempotentHint"`) | bool | Repeated calls have no additional effect |
+| `ophis.AnnotationOpenWorld` (`"openWorldHint"`) | bool | Tool may interact with external entities |
+
+Boolean values are parsed with `strconv.ParseBool` (`"true"`, `"1"`, `"t"`, `"false"`, `"0"`, `"f"`, etc.). Invalid values are skipped with a warning.
+
+### Example
+
+```go
+listCmd := &cobra.Command{
+    Use:   "list",
+    Short: "List all resources",
+    Annotations: map[string]string{
+        ophis.AnnotationTitle:    "List Resources",
+        ophis.AnnotationReadOnly: "true",
+    },
+}
+
+deleteCmd := &cobra.Command{
+    Use:   "delete [id]",
+    Short: "Delete a resource",
+    Annotations: map[string]string{
+        ophis.AnnotationTitle:       "Delete Resource",
+        ophis.AnnotationDestructive: "true",
+        ophis.AnnotationIdempotent:  "true",
+        ophis.AnnotationOpenWorld:   "false",
+    },
+}
+```
+
 ## Logging
 
 ```go

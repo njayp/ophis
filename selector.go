@@ -128,6 +128,7 @@ func (s Selector) createToolFromCmd(cmd *cobra.Command, toolNamePrefix string) *
 		Description:  toolDescription(cmd),
 		InputSchema:  schema,
 		OutputSchema: outputSchema.Copy(),
+		Annotations:  toolAnnotations(cmd),
 	}
 }
 
