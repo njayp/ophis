@@ -1,6 +1,6 @@
 .PHONY: all
 all: up lint test
-	cd examples/make && make
+	cd examples/make && make all
 
 .PHONY: up
 up:
