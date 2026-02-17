@@ -16,7 +16,7 @@ Always filtered regardless of configuration:
 
 - Hidden and deprecated commands/flags
 - Non-runnable commands (no Run/RunE)
-- Built-in commands (mcp, help, completion)
+- Built-in commands (the ophis command, help, completion). The ophis command name defaults to "mcp" but can be changed via Config.CommandName
 
 ## Examples
 

@@ -19,24 +19,25 @@ func DeriveServerName(executablePath string) string {
 	return serverName
 }
 
-// GetCmdPath builds the command path to the MCP command.
-// It returns the slice of command names from after the root command up to and including "mcp".
+// GetCmdPath builds the command path to the ophis command.
+// It returns the slice of command names from after the root command up to and
+// including the command identified by commandName.
 //
-// Example: for command path "myapp alpha mcp start", returns ["alpha", "mcp"].
+// Example: for command path "myapp agent claude enable" with commandName "agent",
+// returns ["agent"].
 //
 // The returned slice can be used as arguments when invoking the executable.
-// Returns an error if "mcp" is not found in the command path.
-func GetCmdPath(cmd *cobra.Command) ([]string, error) {
+// Returns an error if commandName is not found in the command path.
+func GetCmdPath(cmd *cobra.Command, commandName string) ([]string, error) {
 	path := cmd.CommandPath()
 	args := strings.Fields(path)
 
-	// Find the index of "mcp" in the command path
-	name := "mcp"
-	index := slices.Index(args, name)
+	// Find the index of the ophis command in the command path
+	index := slices.Index(args, commandName)
 	if index == -1 {
-		return nil, fmt.Errorf("command %q not found in path %q", name, path)
+		return nil, fmt.Errorf("command %q not found in path %q", commandName, path)
 	}
 
-	// Return the slice from after the root command to the MCP command
+	// Return the slice from after the root command to the ophis command
 	return args[1 : index+1], nil
 }

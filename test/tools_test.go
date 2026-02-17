@@ -68,3 +68,68 @@ func TestCmdNamesToToolNames(t *testing.T) {
 	toolNames := CmdPathsToToolNames(cmdNames)
 	assert.Equal(t, expectedToolNames, toolNames, "Tool names should match expected format")
 }
+
+// createCustomNameCommand creates a test command tree where the ophis command
+// is named "agent" instead of the default "mcp". This mirrors the devenv use
+// case where "mcp" is already taken by a business service.
+func createCustomNameCommand() *cobra.Command {
+	root := &cobra.Command{
+		Use:   "myapp",
+		Short: "Test CLI with custom ophis command name",
+	}
+
+	// A service called "mcp" — the reason we need to rename ophis.
+	mcpService := &cobra.Command{
+		Use:   "mcp",
+		Short: "MCP business service",
+	}
+	mcpInstall := &cobra.Command{
+		Use:   "install",
+		Short: "Install the mcp service",
+		Run:   func(_ *cobra.Command, _ []string) {},
+	}
+	mcpService.AddCommand(mcpInstall)
+
+	status := &cobra.Command{
+		Use:   "status",
+		Short: "Show status",
+		Run:   func(_ *cobra.Command, _ []string) {},
+	}
+
+	root.AddCommand(mcpService, status)
+	root.AddCommand(ophis.Command(&ophis.Config{CommandName: "agent"}))
+
+	return root
+}
+
+func TestCustomCommandName(t *testing.T) {
+	cmd := createCustomNameCommand()
+
+	// Verify the ophis command is named "agent" in the tree.
+	var agentFound, mcpFound bool
+	for _, sub := range cmd.Commands() {
+		switch sub.Name() {
+		case "agent":
+			agentFound = true
+		case "mcp":
+			mcpFound = true
+		}
+	}
+	assert.True(t, agentFound, "expected 'agent' subcommand from ophis")
+	assert.True(t, mcpFound, "expected 'mcp' subcommand (business service)")
+
+	// Get the tool list via the renamed command.
+	tools := GetToolsForCommand(t, cmd, "agent")
+
+	// Should expose mcp_install and status — NOT ophis internals.
+	ToolNames(t, tools, "myapp_mcp_install", "myapp_status")
+
+	// Explicitly verify no ophis subcommands leaked into the tool list.
+	for _, tool := range tools {
+		assert.NotContains(t, tool.Name, "agent", "ophis subcommand %q should not be exposed as a tool", tool.Name)
+		assert.NotContains(t, tool.Name, "start", "ophis 'start' should not be exposed as a tool")
+		assert.NotContains(t, tool.Name, "claude", "ophis 'claude' should not be exposed as a tool")
+		assert.NotContains(t, tool.Name, "cursor", "ophis 'cursor' should not be exposed as a tool")
+		assert.NotContains(t, tool.Name, "vscode", "ophis 'vscode' should not be exposed as a tool")
+	}
+}

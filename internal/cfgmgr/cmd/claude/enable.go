@@ -10,15 +10,16 @@ import (
 )
 
 type enableFlags struct {
-	configPath string
-	logLevel   string
-	serverName string
-	env        map[string]string
+	commandName string
+	configPath  string
+	logLevel    string
+	serverName  string
+	env         map[string]string
 }
 
 // enableCommand creates a Cobra command for adding an MCP server to Claude Desktop.
-func enableCommand() *cobra.Command {
-	f := &enableFlags{}
+func enableCommand(commandName string) *cobra.Command {
+	f := &enableFlags{commandName: commandName}
 	cmd := &cobra.Command{
 		Use:   "enable",
 		Short: "Add server to Claude config",
@@ -45,7 +46,7 @@ func (f *enableFlags) run(cmd *cobra.Command) error {
 	}
 
 	// Build server configuration
-	mcpPath, err := manager.GetCmdPath(cmd)
+	mcpPath, err := manager.GetCmdPath(cmd, f.commandName)
 	if err != nil {
 		return fmt.Errorf("failed to determine MCP command path: %w", err)
 	}
