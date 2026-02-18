@@ -7,7 +7,8 @@ import (
 // Command creates a new Cobra command for managing Claude Desktop MCP servers.
 // commandName is the name of the ophis root command (e.g. "mcp" or "agent"),
 // used by enable to build the correct command path for editor config files.
-func Command(commandName string) *cobra.Command {
+// defaultEnv is merged into the server env on enable; user --env values take precedence.
+func Command(commandName string, defaultEnv map[string]string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "claude",
 		Short: "Manage Claude Desktop MCP servers",
@@ -15,6 +16,6 @@ func Command(commandName string) *cobra.Command {
 	}
 
 	// Add subcommands
-	cmd.AddCommand(enableCommand(commandName), disableCommand(), listCommand())
+	cmd.AddCommand(enableCommand(commandName, defaultEnv), disableCommand(), listCommand())
 	return cmd
 }

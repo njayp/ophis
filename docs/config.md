@@ -7,6 +7,7 @@ Selectors control which commands and flags become MCP tools. Ophis evaluates sel
 ### Default Behavior
 
 - If `Config.Selectors` is nil/empty, all commands and flags are exposed
+- If `Config.DefaultEnv` is nil, no default environment variables are added to editor configs
 - If `CmdSelector` is nil, the selector matches all commands
 - If `LocalFlagSelector` or `InheritedFlagSelector` is nil, all flags are included
 
@@ -17,6 +18,48 @@ Always filtered regardless of configuration:
 - Hidden and deprecated commands/flags
 - Non-runnable commands (no Run/RunE)
 - Built-in commands (the ophis command, help, completion). The ophis command name defaults to "mcp" but can be changed via Config.CommandName
+
+## DefaultEnv
+
+Editors like Claude Desktop, VSCode, and Cursor launch MCP server subprocesses with a minimal environment. On macOS this typically means a PATH of just `/usr/bin:/bin:/usr/sbin:/sbin`, which cannot find executables managed by mise, asdf, homebrew, nix, or installed to non-standard paths.
+
+`DefaultEnv` specifies environment variables that are automatically included when `enable` writes a server config for any editor. These are merged with user-provided `--env` values; user values take precedence on conflict.
+
+### Capture PATH
+
+The most common use is to capture the current shell's PATH so the MCP server subprocess can find tools like `helm`, `kubectl`, `docker`, `terraform`, etc.:
+
+```go
+config := &ophis.Config{
+    DefaultEnv: map[string]string{
+        "PATH": os.Getenv("PATH"),
+    },
+}
+```
+
+### Multiple Variables
+
+```go
+config := &ophis.Config{
+    DefaultEnv: map[string]string{
+        "PATH":       os.Getenv("PATH"),
+        "KUBECONFIG": os.Getenv("KUBECONFIG"),
+        "HOME":       os.Getenv("HOME"),
+    },
+}
+```
+
+### User Override
+
+User-provided `--env` values always take precedence over `DefaultEnv`:
+
+```bash
+# Uses DefaultEnv PATH
+./my-cli mcp claude enable
+
+# Overrides DefaultEnv PATH with user value, keeps other DefaultEnv vars
+./my-cli mcp claude enable --env PATH=/custom/path
+```
 
 ## Examples
 
@@ -139,13 +182,13 @@ Set MCP [tool annotations](https://modelcontextprotocol.io/specification/2025-06
 
 ### Available Annotation Keys
 
-| Key | Type | Description |
-|-----|------|-------------|
-| `ophis.AnnotationTitle` (`"title"`) | string | Human-readable title for the tool |
-| `ophis.AnnotationReadOnly` (`"readOnlyHint"`) | bool | Tool does not modify its environment |
-| `ophis.AnnotationDestructive` (`"destructiveHint"`) | bool | Tool may perform destructive updates |
-| `ophis.AnnotationIdempotent` (`"idempotentHint"`) | bool | Repeated calls have no additional effect |
-| `ophis.AnnotationOpenWorld` (`"openWorldHint"`) | bool | Tool may interact with external entities |
+| Key                                                 | Type   | Description                              |
+| --------------------------------------------------- | ------ | ---------------------------------------- |
+| `ophis.AnnotationTitle` (`"title"`)                 | string | Human-readable title for the tool        |
+| `ophis.AnnotationReadOnly` (`"readOnlyHint"`)       | bool   | Tool does not modify its environment     |
+| `ophis.AnnotationDestructive` (`"destructiveHint"`) | bool   | Tool may perform destructive updates     |
+| `ophis.AnnotationIdempotent` (`"idempotentHint"`)   | bool   | Repeated calls have no additional effect |
+| `ophis.AnnotationOpenWorld` (`"openWorldHint"`)     | bool   | Tool may interact with external entities |
 
 Boolean values are parsed with `strconv.ParseBool` (`"true"`, `"1"`, `"t"`, `"false"`, `"0"`, `"f"`, etc.). Invalid values are skipped with a warning.
 

@@ -37,6 +37,23 @@ type Config struct {
 	// If nil or empty, defaults to exposing all commands with all flags.
 	Selectors []Selector
 
+	// DefaultEnv specifies environment variables that are automatically
+	// included when `enable` writes a server config for any editor.
+	// These are merged with user-provided --env values; user values
+	// take precedence on conflict.
+	//
+	// A common use is to capture PATH so the MCP server subprocess can
+	// find executables that live outside the system PATH:
+	//
+	//   &ophis.Config{
+	//       DefaultEnv: map[string]string{
+	//           "PATH": os.Getenv("PATH"),
+	//       },
+	//   }
+	//
+	// If nil, no default environment variables are added (current behavior).
+	DefaultEnv map[string]string
+
 	// ToolNamePrefix replaces the root command name in tool names.
 	// This is useful for shortening tool names to comply with API limits (e.g., Claude's 64 char limit).
 	// For example, if root command is "omnistrate-ctl" and ToolNamePrefix is "omctl",
