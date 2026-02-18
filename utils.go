@@ -6,8 +6,8 @@ import (
 )
 
 // parseLogLevel converts a string log level to slog.Level.
-// Supported levels are: debug, info, warn, error (case-insensitive).
-// Defaults to info for unknown levels.
+// Supported levels: debug, info, warn, error (case-insensitive).
+// Returns slog.LevelInfo for unrecognized values.
 func parseLogLevel(level string) slog.Level {
 	// Parse log level
 	slogLevel := slog.LevelInfo
