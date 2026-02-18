@@ -22,3 +22,8 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            Review this PR. Don't nitpick style. Either:
+            - Approve if there are no significant issues
+            - Leave comments for minor suggestions
+            - Request changes for bugs, security issues, or significant design problems
