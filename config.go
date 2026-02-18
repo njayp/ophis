@@ -15,13 +15,19 @@ import (
 
 // Config customizes MCP server behavior and command-to-tool conversion.
 type Config struct {
+	// CommandName is the Use name for the top-level command returned by Command().
+	// It is also used by GetCmdPath to locate the ophis command in the Cobra tree
+	// and by cmdFilter to exclude ophis subcommands from tool exposure.
+	// Default: "mcp".
+	CommandName string
+
 	// Selectors defines rules for converting commands to MCP tools.
 	// Each selector specifies which commands to match and which flags to include.
 	//
 	// Basic safety filters are always applied first:
 	//   - Hidden/deprecated commands and flags are excluded
 	//   - Non-runnable commands are excluded
-	//   - Built-in commands (mcp, help, completion) are excluded
+	//   - Built-in commands (the ophis command, help, completion) are excluded
 	//
 	// Then selectors are evaluated in order for each command:
 	//   1. The first selector whose CmdSelector returns true is used
@@ -52,6 +58,14 @@ type Config struct {
 	server         *mcp.Server
 	tools          []*mcp.Tool
 	toolNamePrefix string // resolved prefix (either ToolNamePrefix or root command name)
+}
+
+// commandName returns the configured CommandName, defaulting to "mcp".
+func (c *Config) commandName() string {
+	if c != nil && c.CommandName != "" {
+		return c.CommandName
+	}
+	return "mcp"
 }
 
 func (c *Config) serveStdio(cmd *cobra.Command) error {
@@ -136,7 +150,7 @@ func (c *Config) registerToolsRecursive(cmd *cobra.Command) {
 	}
 
 	// apply basic filters
-	if cmdFilter(cmd) {
+	if c.cmdFilter(cmd) {
 		return
 	}
 
@@ -161,8 +175,10 @@ func (c *Config) registerToolsRecursive(cmd *cobra.Command) {
 	}
 }
 
-// cmdFilter returns true if cmd should be filtered out
-func cmdFilter(cmd *cobra.Command) bool {
+// cmdFilter returns true if cmd should be filtered out.
+// It uses the configured CommandName (defaulting to "mcp") to exclude
+// the ophis command group from being exposed as MCP tools.
+func (c *Config) cmdFilter(cmd *cobra.Command) bool {
 	if cmd.Hidden || cmd.Deprecated != "" {
 		return true
 	}
@@ -171,5 +187,5 @@ func cmdFilter(cmd *cobra.Command) bool {
 		return true
 	}
 
-	return AllowCmdsContaining("mcp", "help", "completion")(cmd)
+	return AllowCmdsContaining(c.commandName(), "help", "completion")(cmd)
 }

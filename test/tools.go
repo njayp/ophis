@@ -12,10 +12,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// GetTools runs `mcp tools` command and returns the parsed list of tools
-// It fails if ophis.Command is not a root level subcommand
-func GetTools(t *testing.T, cmd *cobra.Command) []*mcp.Tool {
-	cmd.SetArgs([]string{"mcp", "tools"})
+// GetToolsForCommand runs `<commandName> tools` and returns the parsed list of tools.
+// commandName is the Use name of the ophis command in the Cobra tree (e.g. "mcp" or "agent").
+func GetToolsForCommand(t *testing.T, cmd *cobra.Command, commandName string) []*mcp.Tool {
+	cmd.SetArgs([]string{commandName, "tools"})
 	err := cmd.Execute()
 	if err != nil {
 		t.Fatalf("Failed to generate tools: %v", err)
@@ -38,6 +38,13 @@ func GetTools(t *testing.T, cmd *cobra.Command) []*mcp.Tool {
 	}
 
 	return tools
+}
+
+// GetTools runs `mcp tools` command and returns the parsed list of tools.
+// It assumes the ophis command uses the default name "mcp".
+// For custom command names, use GetToolsForCommand.
+func GetTools(t *testing.T, cmd *cobra.Command) []*mcp.Tool {
+	return GetToolsForCommand(t, cmd, "mcp")
 }
 
 // GetInputSchema extracts and returns the input schema from a tool
@@ -83,10 +90,10 @@ func CmdPathsToToolNames(paths []string) []string {
 	return names
 }
 
-// Tools runs `mcp tools` and checks the output tool names against expectedNames
-// It fails if ophis.Command is not a root level subcommand
-func Tools(t *testing.T, cmd *cobra.Command, expectedNames ...string) {
-	tools := GetTools(t, cmd)
+// ToolsForCommand runs `<commandName> tools` and checks the output tool names against expectedNames.
+// commandName is the Use name of the ophis command in the Cobra tree.
+func ToolsForCommand(t *testing.T, cmd *cobra.Command, commandName string, expectedNames ...string) {
+	tools := GetToolsForCommand(t, cmd, commandName)
 
 	t.Run("Expected Tools", func(t *testing.T) {
 		ToolNames(t, tools, expectedNames...)
@@ -120,4 +127,11 @@ func Tools(t *testing.T, cmd *cobra.Command, expectedNames ...string) {
 			}
 		}
 	})
+}
+
+// Tools runs `mcp tools` and checks the output tool names against expectedNames.
+// It assumes the ophis command uses the default name "mcp".
+// For custom command names, use ToolsForCommand.
+func Tools(t *testing.T, cmd *cobra.Command, expectedNames ...string) {
+	ToolsForCommand(t, cmd, "mcp", expectedNames...)
 }

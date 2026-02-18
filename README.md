@@ -58,7 +58,7 @@ Expose your MCP server over HTTP for remote access:
 
 ## Commands
 
-The `ophis.Command(nil)` adds these subcommands to your CLI:
+The `ophis.Command(nil)` adds these subcommands to your CLI (the default command name is `mcp`, configurable via `Config.CommandName`):
 
 ```
 mcp
@@ -103,6 +103,20 @@ config := &ophis.Config{
 
 rootCmd.AddCommand(ophis.Command(config))
 ```
+
+### Custom Command Name
+
+By default the ophis command is named `mcp`. If your CLI already uses `mcp` for something else, set `CommandName` to avoid the collision:
+
+```go
+config := &ophis.Config{
+    CommandName: "agent",
+}
+
+rootCmd.AddCommand(ophis.Command(config))
+```
+
+The command tree, editor config (`enable`/`disable`), and internal filters all use the configured name automatically.
 
 See [docs/config.md](docs/config.md) for detailed configuration options.
 

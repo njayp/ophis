@@ -54,36 +54,71 @@ func TestGetCmdPath(t *testing.T) {
 	tests := []struct {
 		name         string
 		cmdPath      string
+		commandName  string
 		expectedPath []string
 		expectError  bool
 	}{
 		{
 			name:         "root mcp command",
 			cmdPath:      "myapp mcp",
+			commandName:  "mcp",
 			expectedPath: []string{"mcp"},
 			expectError:  false,
 		},
 		{
 			name:         "nested mcp command",
 			cmdPath:      "myapp alpha mcp",
+			commandName:  "mcp",
 			expectedPath: []string{"alpha", "mcp"},
 			expectError:  false,
 		},
 		{
 			name:         "deeply nested mcp command",
 			cmdPath:      "myapp alpha beta mcp start",
+			commandName:  "mcp",
 			expectedPath: []string{"alpha", "beta", "mcp"},
 			expectError:  false,
 		},
 		{
 			name:         "no mcp in path",
 			cmdPath:      "myapp start",
+			commandName:  "mcp",
 			expectedPath: nil,
 			expectError:  true,
 		},
 		{
 			name:         "mcp as root returns empty slice",
 			cmdPath:      "mcp start",
+			commandName:  "mcp",
+			expectedPath: []string{},
+			expectError:  false,
+		},
+		// Custom command name tests
+		{
+			name:         "renamed to agent",
+			cmdPath:      "devenv agent claude enable",
+			commandName:  "agent",
+			expectedPath: []string{"agent"},
+			expectError:  false,
+		},
+		{
+			name:         "renamed to agent nested",
+			cmdPath:      "myapp sub agent vscode enable",
+			commandName:  "agent",
+			expectedPath: []string{"sub", "agent"},
+			expectError:  false,
+		},
+		{
+			name:         "renamed but searching for mcp fails",
+			cmdPath:      "devenv agent claude enable",
+			commandName:  "mcp",
+			expectedPath: nil,
+			expectError:  true,
+		},
+		{
+			name:         "custom name as root returns empty slice",
+			cmdPath:      "agent start",
+			commandName:  "agent",
 			expectedPath: []string{},
 			expectError:  false,
 		},
@@ -94,7 +129,7 @@ func TestGetCmdPath(t *testing.T) {
 			// Build a command tree that matches the path
 			cmd := buildMockCommandTree(tt.cmdPath)
 
-			result, err := GetCmdPath(cmd)
+			result, err := GetCmdPath(cmd, tt.commandName)
 
 			if tt.expectError {
 				require.Error(t, err)

@@ -5,7 +5,9 @@ import (
 )
 
 // Command creates a new Cobra command for managing Cursor MCP servers.
-func Command() *cobra.Command {
+// commandName is the Use name of the ophis root command (e.g. "mcp" or "agent"),
+// threaded through to enableCommand so that GetCmdPath can locate it.
+func Command(commandName string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "cursor",
 		Short: "Manage Cursor MCP servers",
@@ -13,6 +15,6 @@ func Command() *cobra.Command {
 	}
 
 	// Add subcommands
-	cmd.AddCommand(enableCommand(), disableCommand(), listCommand())
+	cmd.AddCommand(enableCommand(commandName), disableCommand(), listCommand())
 	return cmd
 }
