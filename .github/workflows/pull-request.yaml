@@ -30,7 +30,7 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          show_full_output: true
+          claude_args: '--allowedTools "Bash"'
           prompt: |
             Review this PR. Don't nitpick style. Either:
             - Approve if there are no significant issues
