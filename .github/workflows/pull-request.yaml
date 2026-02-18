@@ -3,19 +3,27 @@ name: pull request
 on:
   pull_request:
     branches: [ main ]
+  pull_request_target:
+    branches: [ main ]
 
 jobs:
   smoke-test:
+    if: github.event_name == 'pull_request'
     uses: ./.github/workflows/smoke-test.yaml
 
   review:
+    if: github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       pull-requests: write
     steps:
-      - name: Checkout repository
+      - name: Checkout PR head
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
 
       - name: Claude Code Review
         uses: anthropics/claude-code-action@v1
