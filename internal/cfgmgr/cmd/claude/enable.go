@@ -11,6 +11,7 @@ import (
 
 type enableFlags struct {
 	commandName string
+	defaultEnv  map[string]string
 	configPath  string
 	logLevel    string
 	serverName  string
@@ -18,8 +19,9 @@ type enableFlags struct {
 }
 
 // enableCommand creates a Cobra command for adding an MCP server to Claude Desktop.
-func enableCommand(commandName string) *cobra.Command {
-	f := &enableFlags{commandName: commandName}
+// defaultEnv is merged into the server env; user-provided --env values take precedence.
+func enableCommand(commandName string, defaultEnv map[string]string) *cobra.Command {
+	f := &enableFlags{commandName: commandName, defaultEnv: defaultEnv}
 	cmd := &cobra.Command{
 		Use:   "enable",
 		Short: "Add server to Claude config",
@@ -61,9 +63,17 @@ func (f *enableFlags) run(cmd *cobra.Command) error {
 		server.Args = append(server.Args, "--log-level", f.logLevel)
 	}
 
-	// Add environment variables if specified
-	if len(f.env) > 0 {
-		server.Env = f.env
+	// Merge default env with user-provided env.
+	// User values take precedence on conflict.
+	env := make(map[string]string)
+	for k, v := range f.defaultEnv {
+		env[k] = v
+	}
+	for k, v := range f.env {
+		env[k] = v
+	}
+	if len(env) > 0 {
+		server.Env = env
 	}
 
 	if f.serverName == "" {

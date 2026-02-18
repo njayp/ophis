@@ -118,6 +118,22 @@ rootCmd.AddCommand(ophis.Command(config))
 
 The command tree, editor config (`enable`/`disable`), and internal filters all use the configured name automatically.
 
+### Default Environment Variables
+
+Editors launch MCP server subprocesses with a minimal environment. On macOS this means a PATH of just `/usr/bin:/bin:/usr/sbin:/sbin`, so tools like `helm`, `kubectl`, or `docker` installed via mise/homebrew/nix won't be found. Use `DefaultEnv` to capture the current PATH (or any other variables) at `enable` time:
+
+```go
+config := &ophis.Config{
+    DefaultEnv: map[string]string{
+        "PATH": os.Getenv("PATH"),
+    },
+}
+
+rootCmd.AddCommand(ophis.Command(config))
+```
+
+These are merged into the editor config written by `enable`. User-provided `--env` values take precedence on conflict.
+
 See [docs/config.md](docs/config.md) for detailed configuration options.
 
 ## How It Works

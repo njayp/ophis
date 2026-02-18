@@ -11,6 +11,12 @@ import (
 // Pass nil for default configuration or provide a Config for customization.
 func Command(config *Config) *cobra.Command {
 	name := config.commandName()
+
+	var defaultEnv map[string]string
+	if config != nil {
+		defaultEnv = config.DefaultEnv
+	}
+
 	cmd := &cobra.Command{
 		Use:   name,
 		Short: "MCP server management",
@@ -22,9 +28,9 @@ func Command(config *Config) *cobra.Command {
 		startCommand(config),
 		toolCommand(config),
 		streamCommand(config),
-		claude.Command(name),
-		vscode.Command(name),
-		cursor.Command(name),
+		claude.Command(name, defaultEnv),
+		vscode.Command(name, defaultEnv),
+		cursor.Command(name, defaultEnv),
 	)
 	return cmd
 }
