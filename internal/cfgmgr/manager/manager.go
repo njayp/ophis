@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -35,12 +36,24 @@ type Preprocessor interface {
 	Preprocess(data []byte) ([]byte, error)
 }
 
+// Serializer is an optional interface that a Config may implement to
+// serialize itself back to disk while preserving the original file format.
+// When implemented, Serialize is called instead of json.MarshalIndent during
+// save, and receives the raw file bytes that were loaded before any
+// preprocessing (e.g. the original JSONC with comments and trailing commas).
+// If original is empty (new file), the implementation should fall back to
+// standard JSON output.
+type Serializer interface {
+	Serialize(original []byte) ([]byte, error)
+}
+
 // Manager provides generic configuration management for MCP servers.
 // It handles loading, saving, and modifying MCP server configurations.
 // It is not thread-safe.
 type Manager[S Server, C Config[S]] struct {
-	configPath string
-	config     C
+	configPath   string
+	config       C
+	originalData []byte // raw file bytes before any preprocessing; passed to Serializer on save
 }
 
 // NewVSCodeManager creates a new Manager configured for VSCode MCP servers.
@@ -147,6 +160,11 @@ func (m *Manager[S, C]) loadConfig() error {
 	if err != nil {
 		return fmt.Errorf("failed to read configuration file at %q: %w", m.configPath, err)
 	}
+	// Take a defensive copy before preprocessing. hujson.Standardize rewrites
+	// comment characters to spaces in-place via sub-slices that alias the
+	// original buffer, so without a copy the comments would be silently
+	// overwritten in originalData before Serialize ever sees them.
+	m.originalData = bytes.Clone(data)
 
 	// If the config knows how to preprocess its raw bytes (e.g. strip JSONC
 	// comments and trailing commas), do that before standard JSON parsing.
@@ -171,14 +189,21 @@ func (m *Manager[S, C]) saveConfig() error {
 		return fmt.Errorf("failed to create directory for configuration file at %q: %w", filepath.Dir(m.configPath), err)
 	}
 
-	data, err := json.MarshalIndent(m.config, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal configuration to JSON: %w", err)
+	var (
+		data       []byte
+		marshalErr error
+	)
+	if s, ok := any(m.config).(Serializer); ok {
+		data, marshalErr = s.Serialize(m.originalData)
+	} else {
+		data, marshalErr = json.MarshalIndent(m.config, "", "  ")
+	}
+	if marshalErr != nil {
+		return fmt.Errorf("failed to marshal configuration to JSON: %w", marshalErr)
 	}
 
 	// backup file
-	err = m.backupConfig()
-	if err != nil {
+	if err := m.backupConfig(); err != nil {
 		return err
 	}
 

@@ -426,15 +426,15 @@ func TestZedManager(t *testing.T) {
 		assert.True(t, m2.config.HasServer("pre-existing"))
 		assert.True(t, m2.config.HasServer("new-server"))
 
-		// Verify the written file is strict JSON (loadable without JSONC handling)
+		// Verify the written file preserved JSONC (comments and trailing commas
+		// from the original should still be present).
 		data, err := os.ReadFile(jsoncPath)
 		require.NoError(t, err)
-		var raw map[string]json.RawMessage
-		err = json.Unmarshal(data, &raw)
-		require.NoError(t, err)
-		assert.Contains(t, raw, "theme")
-		assert.Contains(t, raw, "ui_font_size")
-		assert.Contains(t, raw, "context_servers")
+		written := string(data)
+		assert.Contains(t, written, "// Zed settings")
+		assert.Contains(t, written, `"theme"`)
+		assert.Contains(t, written, `"ui_font_size"`)
+		assert.Contains(t, written, `"context_servers"`)
 	})
 
 	t.Run("loadConfig handles invalid content", func(t *testing.T) {
