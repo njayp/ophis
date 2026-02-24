@@ -11,6 +11,7 @@ import (
 	"github.com/njayp/ophis/internal/cfgmgr/manager/claude"
 	"github.com/njayp/ophis/internal/cfgmgr/manager/cursor"
 	"github.com/njayp/ophis/internal/cfgmgr/manager/vscode"
+	"github.com/njayp/ophis/internal/cfgmgr/manager/zed"
 )
 
 // Config represents MCP server configuration that can be managed.
@@ -24,6 +25,14 @@ type Config[S Server] interface {
 // Server represents an individual MCP server entry.
 type Server interface {
 	Print()
+}
+
+// Preprocessor is an optional interface that a Config may implement to
+// transform raw file bytes before JSON unmarshaling. This is used by
+// configs whose backing file is not strict JSON (e.g. Zed's settings.json
+// is JSONC — JSON with comments and trailing commas).
+type Preprocessor interface {
+	Preprocess(data []byte) ([]byte, error)
 }
 
 // Manager provides generic configuration management for MCP servers.
@@ -60,6 +69,22 @@ func NewCursorManager(configPath string, workspace bool) (*Manager[cursor.Server
 
 	m := &Manager[cursor.Server, *cursor.Config]{
 		config:     &cursor.Config{},
+		configPath: configPath,
+	}
+
+	return m, m.loadConfig()
+}
+
+// NewZedManager creates a new Manager configured for Zed MCP context servers.
+// If workspace is true, uses workspace configuration (.zed/settings.json),
+// otherwise uses user-level configuration (~/.config/zed/settings.json).
+func NewZedManager(configPath string, workspace bool) (*Manager[zed.Server, *zed.Config], error) {
+	if configPath == "" {
+		configPath = zed.ConfigPath(workspace)
+	}
+
+	m := &Manager[zed.Server, *zed.Config]{
+		config:     &zed.Config{},
 		configPath: configPath,
 	}
 
@@ -121,6 +146,15 @@ func (m *Manager[S, C]) loadConfig() error {
 	data, err := os.ReadFile(m.configPath)
 	if err != nil {
 		return fmt.Errorf("failed to read configuration file at %q: %w", m.configPath, err)
+	}
+
+	// If the config knows how to preprocess its raw bytes (e.g. strip JSONC
+	// comments and trailing commas), do that before standard JSON parsing.
+	if pp, ok := any(m.config).(Preprocessor); ok {
+		data, err = pp.Preprocess(data)
+		if err != nil {
+			return fmt.Errorf("failed to preprocess configuration file at %q: %w", m.configPath, err)
+		}
 	}
 
 	if err := json.Unmarshal(data, m.config); err != nil {
