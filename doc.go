@@ -88,6 +88,7 @@
 //
 // The selector system allows different commands to have different flag filtering
 // rules and middleware, enabling precise control over the exposed tool surface.
-// Each selector defines which commands to match, which flags to include, and optional
-// middleware for wrapping execution with timeouts, logging, and response filtering.
+// Each selector defines which commands to match, which flags to include, and
+// optional middleware for wrapping execution with timeouts, logging, and response
+// filtering.
 package ophis
