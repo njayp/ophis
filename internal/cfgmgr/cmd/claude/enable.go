@@ -10,18 +10,20 @@ import (
 )
 
 type enableFlags struct {
-	commandName string
-	defaultEnv  map[string]string
-	configPath  string
-	logLevel    string
-	serverName  string
-	env         map[string]string
+	commandName       string
+	defaultServerName string
+	defaultEnv        map[string]string
+	configPath        string
+	logLevel          string
+	serverName        string
+	env               map[string]string
 }
 
 // enableCommand creates a Cobra command for adding an MCP server to Claude Desktop.
+// serverName is the default MCP server entry name; the --server-name flag overrides it.
 // defaultEnv is merged into the server env; user-provided --env values take precedence.
-func enableCommand(commandName string, defaultEnv map[string]string) *cobra.Command {
-	f := &enableFlags{commandName: commandName, defaultEnv: defaultEnv}
+func enableCommand(commandName, serverName string, defaultEnv map[string]string) *cobra.Command {
+	f := &enableFlags{commandName: commandName, defaultServerName: serverName, defaultEnv: defaultEnv}
 	cmd := &cobra.Command{
 		Use:   "enable",
 		Short: "Add server to Claude config",
@@ -35,7 +37,7 @@ func enableCommand(commandName string, defaultEnv map[string]string) *cobra.Comm
 	flags := cmd.Flags()
 	flags.StringVar(&f.logLevel, "log-level", "", "Log level (debug, info, warn, error)")
 	flags.StringVar(&f.configPath, "config-path", "", "Path to Claude config file")
-	flags.StringVar(&f.serverName, "server-name", "", "Name for the MCP server (default: derived from executable name)")
+	flags.StringVar(&f.serverName, "server-name", "", manager.ServerNameUsage(serverName))
 	flags.StringToStringVarP(&f.env, "env", "e", nil, "Environment variables (e.g., --env KEY1=value1 --env KEY2=value2)")
 	return cmd
 }
@@ -76,8 +78,10 @@ func (f *enableFlags) run(cmd *cobra.Command) error {
 		server.Env = env
 	}
 
-	if f.serverName == "" {
-		f.serverName = manager.DeriveServerName(executablePath)
+	// Resolve the server name (flag → configured default → executable name).
+	f.serverName, err = manager.ResolveServerName(f.serverName, f.defaultServerName)
+	if err != nil {
+		return err
 	}
 
 	m, err := manager.NewClaudeManager(f.configPath)

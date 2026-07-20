@@ -13,8 +13,10 @@ func Command(config *Config) *cobra.Command {
 	name := config.commandName()
 
 	var defaultEnv map[string]string
+	var serverName string
 	if config != nil {
 		defaultEnv = config.DefaultEnv
+		serverName = config.ServerName
 	}
 
 	cmd := &cobra.Command{
@@ -28,9 +30,9 @@ func Command(config *Config) *cobra.Command {
 		startCommand(config),
 		toolCommand(config),
 		streamCommand(config),
-		claude.Command(name, defaultEnv),
-		vscode.Command(name, defaultEnv),
-		cursor.Command(name, defaultEnv),
+		claude.Command(name, serverName, defaultEnv),
+		vscode.Command(name, serverName, defaultEnv),
+		cursor.Command(name, serverName, defaultEnv),
 	)
 	return cmd
 }

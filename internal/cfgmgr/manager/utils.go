@@ -2,6 +2,7 @@ package manager
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -17,6 +18,49 @@ func DeriveServerName(executablePath string) string {
 		serverName = serverName[:len(serverName)-len(ext)]
 	}
 	return serverName
+}
+
+// ResolveServerName determines the MCP server entry name using the precedence:
+// the --server-name flag wins, then the configured default, then a name derived
+// from the current executable's file name. Keeping this in one place ensures
+// enable and disable resolve the name identically across all editors.
+func ResolveServerName(flag, defaultName string) (string, error) {
+	if flag != "" {
+		return flag, nil
+	}
+	if defaultName != "" {
+		return defaultName, nil
+	}
+	executablePath, err := os.Executable()
+	if err != nil {
+		return "", fmt.Errorf("failed to determine executable path: %w", err)
+	}
+	return DeriveServerName(executablePath), nil
+}
+
+// ServerNameUsage returns the help text for the `--server-name` flag on
+// `enable`, describing the default that applies when the flag is omitted.
+// defaultServerName is the name configured via Config.ServerName; when empty,
+// the name is derived from the executable's file name instead.
+func ServerNameUsage(defaultServerName string) string {
+	return serverNameUsage("Name for the MCP server", defaultServerName)
+}
+
+// ServerNameRemoveUsage returns the help text for the `--server-name` flag on
+// `disable`, describing the default that applies when the flag is omitted.
+// defaultServerName is the name configured via Config.ServerName; when empty,
+// the name is derived from the executable's file name instead.
+func ServerNameRemoveUsage(defaultServerName string) string {
+	return serverNameUsage("Name of the MCP server to remove", defaultServerName)
+}
+
+// serverNameUsage renders the shared default clause for the `--server-name`
+// flag onto the given prefix.
+func serverNameUsage(prefix, defaultServerName string) string {
+	if defaultServerName != "" {
+		return fmt.Sprintf("%s (default: %q)", prefix, defaultServerName)
+	}
+	return fmt.Sprintf("%s (default: derived from executable name)", prefix)
 }
 
 // GetCmdPath builds the command path to the ophis command.

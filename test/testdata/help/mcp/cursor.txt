@@ -1,0 +1,11 @@
+Manage MCP server configuration for Cursor
+
+Usage:
+  mcp cursor [command]
+
+Available Commands:
+  disable     Remove server from Cursor config
+  enable      Add server to Cursor config
+  list        Show Cursor MCP servers
+
+Use "mcp cursor [command] --help" for more information about a command.

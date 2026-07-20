@@ -1,0 +1,9 @@
+Start HTTP server to expose CLI commands to AI assistants
+
+Usage:
+  mcp stream [flags]
+
+Flags:
+      --host string        host to listen on
+      --log-level string   Log level (debug, info, warn, error)
+      --port int           port number to listen on (default 8080)

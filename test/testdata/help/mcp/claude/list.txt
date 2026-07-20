@@ -1,0 +1,7 @@
+Show all MCP servers configured in Claude Desktop
+
+Usage:
+  mcp claude list [flags]
+
+Flags:
+      --config-path string   Path to Claude config file

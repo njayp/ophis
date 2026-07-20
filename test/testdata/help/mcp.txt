@@ -1,0 +1,14 @@
+Manage MCP servers for AI assistants and code editors
+
+Usage:
+  mcp [command]
+
+Available Commands:
+  claude      Manage Claude Desktop MCP servers
+  cursor      Manage Cursor MCP servers
+  start       Start the MCP server
+  stream      Stream the MCP server over HTTP
+  tools       Export tools as JSON
+  vscode      Manage VSCode MCP servers
+
+Use "mcp [command] --help" for more information about a command.

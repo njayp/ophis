@@ -10,20 +10,22 @@ import (
 )
 
 type enableFlags struct {
-	commandName string
-	defaultEnv  map[string]string
-	configPath  string
-	logLevel    string
-	serverName  string
-	workspace   bool
-	env         map[string]string
+	commandName       string
+	defaultServerName string
+	defaultEnv        map[string]string
+	configPath        string
+	logLevel          string
+	serverName        string
+	workspace         bool
+	env               map[string]string
 }
 
 // enableCommand creates a Cobra command for adding an MCP server to VSCode.
 // commandName is the Use name of the ophis root command (e.g. "mcp" or "agent").
+// serverName is the default MCP server entry name; the --server-name flag overrides it.
 // defaultEnv is merged into the server env; user-provided --env values take precedence.
-func enableCommand(commandName string, defaultEnv map[string]string) *cobra.Command {
-	f := &enableFlags{commandName: commandName, defaultEnv: defaultEnv}
+func enableCommand(commandName, serverName string, defaultEnv map[string]string) *cobra.Command {
+	f := &enableFlags{commandName: commandName, defaultServerName: serverName, defaultEnv: defaultEnv}
 	cmd := &cobra.Command{
 		Use:   "enable",
 		Short: "Add server to VSCode config",
@@ -37,7 +39,7 @@ func enableCommand(commandName string, defaultEnv map[string]string) *cobra.Comm
 	flags := cmd.Flags()
 	flags.StringVar(&f.logLevel, "log-level", "", "Log level (debug, info, warn, error)")
 	flags.StringVar(&f.configPath, "config-path", "", "Path to VSCode config file")
-	flags.StringVar(&f.serverName, "server-name", "", "Name for the MCP server (default: derived from executable name)")
+	flags.StringVar(&f.serverName, "server-name", "", manager.ServerNameUsage(serverName))
 	flags.BoolVar(&f.workspace, "workspace", false, "Add to workspace settings (.vscode/mcp.json) instead of user settings")
 	flags.StringToStringVarP(&f.env, "env", "e", nil, "Environment variables (e.g., --env KEY1=value1 --env KEY2=value2)")
 
@@ -81,8 +83,10 @@ func (f *enableFlags) run(cmd *cobra.Command) error {
 		server.Env = env
 	}
 
-	if f.serverName == "" {
-		f.serverName = manager.DeriveServerName(executablePath)
+	// Resolve the server name (flag → configured default → executable name).
+	f.serverName, err = manager.ResolveServerName(f.serverName, f.defaultServerName)
+	if err != nil {
+		return err
 	}
 
 	m, err := manager.NewVSCodeManager(f.configPath, f.workspace)

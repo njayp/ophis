@@ -1,0 +1,9 @@
+Remove this application from Cursor MCP servers
+
+Usage:
+  mcp cursor disable [flags]
+
+Flags:
+      --config-path string   Path to Cursor config file
+      --server-name string   Name of the MCP server to remove (default: derived from executable name)
+      --workspace            Remove from workspace settings (.cursor/mcp.json) instead of user settings
