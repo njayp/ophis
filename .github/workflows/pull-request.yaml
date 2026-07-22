@@ -24,6 +24,8 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
+          # Reviewing fork PRs with secrets is intentional; credentials are not persisted
+          allow-unsafe-pr-checkout: true
 
       - name: Claude Code Review
         uses: anthropics/claude-code-action@v1
