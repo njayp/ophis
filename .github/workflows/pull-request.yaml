@@ -33,7 +33,8 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           allowed_non_write_users: '*'
-          claude_args: '--allowedTools "Bash"'
+          show_full_output: true
+          claude_args: '--allowedTools "Bash,mcp__github_comment__update_claude_comment,mcp__github_inline_comment__create_inline_comment"'
           prompt: |
             Review this PR. Don't nitpick style. Either:
             - Approve if there are no significant issues
