@@ -1,0 +1,8 @@
+Show all MCP servers configured in Cursor
+
+Usage:
+  mcp cursor list [flags]
+
+Flags:
+      --config-path string   Path to Cursor config file
+      --workspace            List from workspace settings (.cursor/mcp.json) instead of user settings

@@ -1,21 +1,20 @@
 package claude
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/njayp/ophis/internal/cfgmgr/manager"
 	"github.com/spf13/cobra"
 )
 
 type disableFlags struct {
-	configPath string
-	serverName string
+	defaultServerName string
+	configPath        string
+	serverName        string
 }
 
 // disableCommand creates a Cobra command for removing an MCP server from Claude Desktop.
-func disableCommand() *cobra.Command {
-	f := &disableFlags{}
+// serverName is the default MCP server entry name; the --server-name flag overrides it.
+func disableCommand(serverName string) *cobra.Command {
+	f := &disableFlags{defaultServerName: serverName}
 	cmd := &cobra.Command{
 		Use:   "disable",
 		Short: "Remove server from Claude config",
@@ -28,18 +27,15 @@ func disableCommand() *cobra.Command {
 	// Add flags
 	flags := cmd.Flags()
 	flags.StringVar(&f.configPath, "config-path", "", "Path to Claude config file")
-	flags.StringVar(&f.serverName, "server-name", "", "Name of the MCP server to remove (default: derived from executable name)")
+	flags.StringVar(&f.serverName, "server-name", "", manager.ServerNameRemoveUsage(serverName))
 	return cmd
 }
 
 func (f *disableFlags) run() error {
-	if f.serverName == "" {
-		executablePath, err := os.Executable()
-		if err != nil {
-			return fmt.Errorf("failed to determine executable path: %w", err)
-		}
-
-		f.serverName = manager.DeriveServerName(executablePath)
+	// Resolve the server name (flag → configured default → executable name).
+	serverName, err := manager.ResolveServerName(f.serverName, f.defaultServerName)
+	if err != nil {
+		return err
 	}
 
 	m, err := manager.NewClaudeManager(f.configPath)
@@ -47,5 +43,5 @@ func (f *disableFlags) run() error {
 		return err
 	}
 
-	return m.DisableServer(f.serverName)
+	return m.DisableServer(serverName)
 }

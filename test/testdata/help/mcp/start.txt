@@ -1,0 +1,7 @@
+Start stdio server to expose CLI commands to AI assistants
+
+Usage:
+  mcp start [flags]
+
+Flags:
+      --log-level string   Log level (debug, info, warn, error)

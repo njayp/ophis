@@ -54,6 +54,14 @@ type Config struct {
 	// If nil, no default environment variables are added (current behavior).
 	DefaultEnv map[string]string
 
+	// ServerName is the default name used for the MCP server entry that
+	// `enable` writes into (and `disable` removes from) an editor's config
+	// file (Claude Desktop, VSCode, Cursor). It is overridden by the
+	// `--server-name` flag when provided.
+	//
+	// If empty, the server name is derived from the executable's file name.
+	ServerName string
+
 	// ToolNamePrefix replaces the root command name in tool names.
 	// This is useful for shortening tool names to comply with API limits (e.g., Claude's 64 char limit).
 	// For example, if root command is "omnistrate-ctl" and ToolNamePrefix is "omctl",

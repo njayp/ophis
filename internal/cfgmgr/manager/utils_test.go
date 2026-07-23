@@ -50,6 +50,28 @@ func TestDeriveServerName(t *testing.T) {
 	}
 }
 
+func TestResolveServerName(t *testing.T) {
+	t.Run("flag wins over default", func(t *testing.T) {
+		name, err := ResolveServerName("from-flag", "from-config")
+		require.NoError(t, err)
+		assert.Equal(t, "from-flag", name)
+	})
+
+	t.Run("configured default used when flag empty", func(t *testing.T) {
+		name, err := ResolveServerName("", "from-config")
+		require.NoError(t, err)
+		assert.Equal(t, "from-config", name)
+	})
+
+	t.Run("falls back to executable name", func(t *testing.T) {
+		// With neither flag nor default set, the name is derived from the
+		// running test binary; assert it resolves to a non-empty value.
+		name, err := ResolveServerName("", "")
+		require.NoError(t, err)
+		assert.NotEmpty(t, name)
+	})
+}
+
 func TestGetCmdPath(t *testing.T) {
 	tests := []struct {
 		name         string

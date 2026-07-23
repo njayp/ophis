@@ -8,6 +8,7 @@ Selectors control which commands and flags become MCP tools. Ophis evaluates sel
 
 - If `Config.Selectors` is nil/empty, all commands and flags are exposed
 - If `Config.DefaultEnv` is nil, no default environment variables are added to editor configs
+- If `Config.ServerName` is empty, the MCP server entry name is derived from the executable's file name
 - If `CmdSelector` is nil, the selector matches all commands
 - If `LocalFlagSelector` or `InheritedFlagSelector` is nil, all flags are included
 
@@ -60,6 +61,35 @@ User-provided `--env` values always take precedence over `DefaultEnv`:
 # Overrides DefaultEnv PATH with user value, keeps other DefaultEnv vars
 ./my-cli mcp claude enable --env PATH=/custom/path
 ```
+
+## ServerName
+
+`enable` writes an MCP server entry into each editor's config file (Claude Desktop, VSCode, Cursor). By default, the entry name is derived from the executable's file name. `ServerName` sets a default name instead:
+
+```go
+config := &ophis.Config{
+    ServerName: "my-cli",
+}
+```
+
+The `--server-name` flag on `enable` always takes precedence over `ServerName`:
+
+```bash
+# Uses ServerName from Config
+./my-cli mcp claude enable
+
+# Overrides ServerName with the flag value
+./my-cli mcp claude enable --server-name custom-name
+```
+
+`disable` uses the same precedence, so an entry created by `enable` is removed by `disable` without needing to repeat the name:
+
+```bash
+# Removes the entry named by ServerName from Config
+./my-cli mcp claude disable
+```
+
+When both `ServerName` and `--server-name` are empty, the name falls back to the executable's file name.
 
 ## Examples
 

@@ -1,0 +1,5 @@
+Usage:
+  mcp claude list [flags]
+
+Flags:
+      --config-path string   Path to Claude config file
