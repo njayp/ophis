@@ -2,7 +2,7 @@
 
 **Transform any Cobra CLI into an MCP server**
 
-Ophis automatically converts your Cobra commands into MCP tools, and provides CLI commands for integration with Claude Desktop, VSCode, and Cursor.
+Ophis automatically converts your Cobra commands into MCP tools, and provides CLI commands for integration with Claude Desktop, VSCode, Cursor, and Zed.
 
 ## Quick Start
 
@@ -32,7 +32,7 @@ func main() {
 }
 ```
 
-### Enable in Claude Desktop, VSCode, or Cursor
+### Enable in Claude Desktop, VSCode, Cursor, or Zed
 
 ```bash
 # Claude Desktop
@@ -44,6 +44,9 @@ func main() {
 
 # Cursor
 ./my-cli mcp cursor enable
+
+# Zed
+./my-cli mcp zed enable
 ```
 
 Your CLI commands are now available as MCP tools!
@@ -73,10 +76,14 @@ mcp
 │   ├── enable       # Add server to VSCode config
 │   ├── disable      # Remove server from VSCode config
 │   └── list         # List VSCode MCP servers
-└── cursor
-    ├── enable       # Add server to Cursor config
-    ├── disable      # Remove server from Cursor config
-    └── list         # List Cursor MCP servers
+├── cursor
+│   ├── enable       # Add server to Cursor config
+│   ├── disable      # Remove server from Cursor config
+│   └── list         # List Cursor MCP servers
+└── zed
+    ├── enable       # Add server to Zed config
+    ├── disable      # Remove server from Zed config
+    └── list         # List Zed MCP servers
 ```
 
 ## Configuration

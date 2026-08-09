@@ -21,7 +21,7 @@ Always filtered regardless of configuration:
 
 ## DefaultEnv
 
-Editors like Claude Desktop, VSCode, and Cursor launch MCP server subprocesses with a minimal environment. On macOS this typically means a PATH of just `/usr/bin:/bin:/usr/sbin:/sbin`, which cannot find executables managed by mise, asdf, homebrew, nix, or installed to non-standard paths.
+Editors like Claude Desktop, VSCode, Cursor, and Zed launch MCP server subprocesses with a minimal environment. On macOS this typically means a PATH of just `/usr/bin:/bin:/usr/sbin:/sbin`, which cannot find executables managed by mise, asdf, homebrew, nix, or installed to non-standard paths.
 
 `DefaultEnv` specifies environment variables that are automatically included when `enable` writes a server config for any editor. These are merged with user-provided `--env` values; user values take precedence on conflict.
 

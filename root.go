@@ -4,6 +4,7 @@ import (
 	"github.com/njayp/ophis/internal/cfgmgr/cmd/claude"
 	"github.com/njayp/ophis/internal/cfgmgr/cmd/cursor"
 	"github.com/njayp/ophis/internal/cfgmgr/cmd/vscode"
+	"github.com/njayp/ophis/internal/cfgmgr/cmd/zed"
 	"github.com/spf13/cobra"
 )
 
@@ -31,6 +32,7 @@ func Command(config *Config) *cobra.Command {
 		claude.Command(name, defaultEnv),
 		vscode.Command(name, defaultEnv),
 		cursor.Command(name, defaultEnv),
+		zed.Command(name, defaultEnv),
 	)
 	return cmd
 }
