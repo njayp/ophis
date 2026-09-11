@@ -8,6 +8,7 @@ Selectors control which commands and flags become MCP tools. Ophis evaluates sel
 
 - If `Config.Selectors` is nil/empty, all commands and flags are exposed
 - If `Config.DefaultEnv` is nil, no default environment variables are added to editor configs
+- `Config.InferArgConstraints` defaults to false; see [argument schema generation](schema.md#arguments) for its safety requirements
 - If `CmdSelector` is nil, the selector matches all commands
 - If `LocalFlagSelector` or `InheritedFlagSelector` is nil, all flags are included
 

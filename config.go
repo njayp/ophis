@@ -62,6 +62,12 @@ type Config struct {
 	// If empty, the root command name is used as-is.
 	ToolNamePrefix string
 
+	// InferArgConstraints derives schema bounds by invoking each command's Args validator.
+	// Enable only when validators are pure and depend only on the number of arguments,
+	// not their values or flag state.
+	// Default: false.
+	InferArgConstraints bool
+
 	// SloggerOptions configures logging to stderr.
 	// Default: Info level logging.
 	SloggerOptions *slog.HandlerOptions
@@ -178,7 +184,7 @@ func (c *Config) registerToolsRecursive(cmd *cobra.Command) {
 		}
 
 		// create tool from cmd
-		tool := s.createToolFromCmd(cmd, c.toolNamePrefix)
+		tool := s.createToolFromCmd(cmd, c.toolNamePrefix, c.InferArgConstraints)
 		slog.Debug("created tool", "tool_name", tool.Name, "selector_index", i)
 
 		// register tool with server

@@ -189,7 +189,7 @@ func TestCreateToolFromCmd_Annotations(t *testing.T) {
 		root := &cobra.Command{Use: "app"}
 		root.AddCommand(cmd)
 
-		tool := Selector{}.createToolFromCmd(cmd, "app")
+		tool := Selector{}.createToolFromCmd(cmd, "app", false)
 		require.NotNil(t, tool.Annotations)
 		assert.Equal(t, "Delete Resource", tool.Annotations.Title)
 		assert.Equal(t, boolPtr(true), tool.Annotations.DestructiveHint)
@@ -205,7 +205,7 @@ func TestCreateToolFromCmd_Annotations(t *testing.T) {
 		root := &cobra.Command{Use: "app"}
 		root.AddCommand(cmd)
 
-		tool := Selector{}.createToolFromCmd(cmd, "app")
+		tool := Selector{}.createToolFromCmd(cmd, "app", false)
 		assert.Nil(t, tool.Annotations)
 	})
 }

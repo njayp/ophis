@@ -21,11 +21,12 @@ Each flag becomes a property with:
 - `int`, `uint` → `integer`
 - `float` → `number`
 - `string` → `string`
-- `string` → `<JSON schema>` if the flag has an annotation called `jsonschema` with a value that is the JSON string representation of the schema
+- any flag type → `<JSON schema>` if the flag has an annotation called `jsonschema` with a value that is the JSON string representation of the schema
 - `stringSlice`, `intSlice` → `array`
-- `duration`, `ip`, `ipNet` → `string` with pattern validation
+- `duration` → `string` with pattern validation
+- `ip`, `ipNet` → `string`; pflag validates their values
 
-Flags marked as required (via `cmd.MarkFlagRequired()`) are included in the schema's `required` array. Default values are included in the schema, except for empty strings (`""`) and empty arrays (`[]`).
+Flags marked as required (via `cmd.MarkFlagRequired()`) are included in the schema's `required` array. Default values are included in the schema, except for empty strings (`""`) and empty arrays (`[]`). A valid default supplied by a `jsonschema` annotation takes precedence over the pflag default.
 
 **Example:**
 
@@ -80,20 +81,23 @@ if err != nil {
 cmd.Flags().String("a_json_obj", "", "Some JSON Object")
 jsonobj := cmd.Flags().Lookup("a_json_obj")
 jsonobj.Annotations = make(map[string][]string)
-jsonobj.Annotations["jsonschema"] = []string{string(bytes)}
+jsonobj.Annotations[ophis.FlagAnnotationJSONSchema] = []string{string(bytes)}
 
 ```
 
 ### Arguments
 
-Positional arguments are a string array:
+Positional arguments are a string array. When `Config.InferArgConstraints` is enabled, required, optional, and variadic argument counts are derived from recognizable Cobra `Use` patterns and emitted as `required`, `minItems`, and `maxItems` constraints when corroborated by the command's `Args` validator. Ambiguous, undocumented, or unenforced bounds remain unconstrained.
+
+Constraint inference invokes each command's `Args` validator with synthetic placeholder arguments during tool registration. Enable it only for validators that are pure and depend only on the number of arguments, not their values or flag state. Output written through the probed command is discarded, and panics leave argument bounds unconstrained; direct process I/O and exits cannot be contained.
 
 ```json
 {
   "args": {
     "type": "array",
-    "description": "Positional arguments\nUsage: [NAME] [flags]",
-    "items": { "type": "string" }
+    "description": "Positional command line arguments\nUsage pattern: [NAME]",
+    "items": { "type": "string" },
+    "maxItems": 1
   }
 }
 ```

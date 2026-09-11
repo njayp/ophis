@@ -3,6 +3,8 @@ package ophis
 import (
 	"context"
 	"fmt"
+	"io"
+	"log/slog"
 	"strings"
 
 	"github.com/google/jsonschema-go/jsonschema"
@@ -117,10 +119,10 @@ func (s Selector) enhanceFlagsSchema(schema *jsonschema.Schema, cmd *cobra.Comma
 
 // createToolFromCmd creates an MCP tool from a Cobra command.
 // The toolNamePrefix is used to replace the root command name in the tool name.
-func (s Selector) createToolFromCmd(cmd *cobra.Command, toolNamePrefix string) *mcp.Tool {
+func (s Selector) createToolFromCmd(cmd *cobra.Command, toolNamePrefix string, inferArgConstraints bool) *mcp.Tool {
 	schema := inputSchema.Copy()
 	s.enhanceFlagsSchema(schema.Properties["flags"], cmd)
-	enhanceArgsSchema(schema.Properties["args"], cmd)
+	enhanceArgsSchema(schema, cmd, inferArgConstraints)
 
 	// Create the tool
 	return &mcp.Tool{
@@ -133,11 +135,12 @@ func (s Selector) createToolFromCmd(cmd *cobra.Command, toolNamePrefix string) *
 }
 
 // enhanceArgsSchema adds detailed argument information to the args property.
-func enhanceArgsSchema(schema *jsonschema.Schema, cmd *cobra.Command) {
+func enhanceArgsSchema(input *jsonschema.Schema, cmd *cobra.Command, inferConstraints bool) {
+	schema := input.Properties["args"]
 	description := "Positional command line arguments"
 
 	// remove "[flags]" from usage
-	usage := strings.Replace(cmd.Use, " [flags]", "", 1)
+	usage := strings.ReplaceAll(cmd.Use, " [flags]", "")
 
 	// Extract argument pattern from cmd.Use
 	if usage != "" {
@@ -145,11 +148,122 @@ func enhanceArgsSchema(schema *jsonschema.Schema, cmd *cobra.Command) {
 			argsPattern := usage[spaceIdx+1:]
 			if argsPattern != "" {
 				description += fmt.Sprintf("\nUsage pattern: %s", argsPattern)
+				if inferConstraints && cmd.Args != nil {
+					minItems, maxItems, ok := argumentBounds(argsPattern)
+					if !ok {
+						schema.Description = description
+						return
+					}
+					minConfirmed := false
+					for count := 0; minItems > 0 && !minConfirmed && count <= minItems; count++ {
+						accepted, probed := validatorAllowsArgCount(cmd, count)
+						if !probed || accepted != (count == minItems) {
+							break
+						}
+						minConfirmed = count == minItems
+					}
+					if minItems > 0 && minConfirmed {
+						schema.MinItems = &minItems
+					}
+					if maxItems != nil {
+						atMax, maxProbed := minConfirmed, minConfirmed
+						if *maxItems != minItems || !minConfirmed {
+							atMax, maxProbed = validatorAllowsArgCount(cmd, *maxItems)
+						}
+						if maxProbed {
+							aboveMax, aboveProbed := validatorAllowsArgCount(cmd, *maxItems+1)
+							if aboveProbed && atMax && !aboveMax {
+								schema.MaxItems = maxItems
+							}
+						}
+					}
+					if minItems > 0 && minConfirmed {
+						schema.Type = "array"
+						schema.Types = nil
+						input.Required = append(input.Required, "args")
+					}
+				}
 			}
 		}
 	}
 
 	schema.Description = description
+}
+
+// validatorAllowsArgCount invokes user code during registration with synthetic placeholder arguments.
+func validatorAllowsArgCount(cmd *cobra.Command, count int) (accepted, probed bool) {
+	probe := *cmd
+	probe.SetOut(io.Discard)
+	probe.SetErr(io.Discard)
+	args := make([]string, count)
+	for i := range args {
+		args[i] = "arg"
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			slog.Warn("args validator panicked during probe, skipping bounds", "command", cmd.CommandPath(), "count", count, "panic", r)
+			probed = false
+		}
+	}()
+	return cmd.Args(&probe, args) == nil, true
+}
+
+func argumentBounds(pattern string) (int, *int, bool) {
+	fields := strings.Fields(pattern)
+	minItems, maxItems := 0, 0
+	variadic := false
+	for i := 0; i < len(fields); i++ {
+		if fields[i] == "..." {
+			variadic = true
+			continue
+		}
+
+		argument := fields[i]
+		if strings.HasSuffix(argument, "...") {
+			variadic = true
+			argument = strings.TrimSuffix(argument, "...")
+		}
+		optional := strings.HasPrefix(argument, "[")
+		closing := ""
+		switch {
+		case optional:
+			closing = "]"
+		case strings.HasPrefix(argument, "<"):
+			closing = ">"
+		case strings.ContainsAny(argument, "[]<>"):
+			return 0, nil, false
+		}
+		for closing != "" && !strings.HasSuffix(argument, closing) {
+			i++
+			if i == len(fields) {
+				return 0, nil, false
+			}
+			argument += " " + fields[i]
+		}
+		if strings.ContainsAny(argument, "()|") {
+			return 0, nil, false
+		}
+		content := strings.Trim(argument, "[]<>")
+		if content == "" || strings.ContainsAny(content, "[]<>") {
+			return 0, nil, false
+		}
+		for _, field := range strings.Fields(content) {
+			if strings.HasPrefix(field, "-") {
+				return 0, nil, false
+			}
+		}
+		if strings.Contains(argument, "...") {
+			variadic = true
+		}
+		if !optional {
+			minItems++
+		}
+		maxItems++
+	}
+	if variadic {
+		return minItems, nil, true
+	}
+	return minItems, &maxItems, true
 }
 
 // toolName creates a tool name from the command path.

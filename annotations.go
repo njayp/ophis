@@ -5,8 +5,12 @@ import (
 	"strconv"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/njayp/ophis/internal/bridge/flags"
 	"github.com/spf13/cobra"
 )
+
+// FlagAnnotationJSONSchema overrides the generated schema for a Cobra flag.
+const FlagAnnotationJSONSchema = flags.FlagAnnotationJSONSchema
 
 // Cobra command annotation keys for MCP tool annotations.
 // Set these in cmd.Annotations to populate mcp.ToolAnnotations on the generated tool.

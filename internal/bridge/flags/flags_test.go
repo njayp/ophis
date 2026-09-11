@@ -1,6 +1,7 @@
 package flags
 
 import (
+	"net"
 	"testing"
 
 	"github.com/google/jsonschema-go/jsonschema"
@@ -105,6 +106,11 @@ func TestParseArrayDefault(t *testing.T) {
 			defValue:   "[item1,item2]",
 			itemSchema: &jsonschema.Schema{Type: "unknown"},
 			expected:   nil,
+		},
+		{
+			name:     "missing items schema",
+			defValue: "[item1,item2]",
+			expected: nil,
 		},
 	}
 
@@ -501,6 +507,10 @@ func TestParseObjectEdgeCases(t *testing.T) {
 	}
 }
 
+func TestParseObjectWithoutSchema(t *testing.T) {
+	assert.Nil(t, parseObject("[key=value]", nil))
+}
+
 func TestSetDefaultFromFlag_ScalarTypes(t *testing.T) {
 	tests := []struct {
 		name              string
@@ -602,6 +612,143 @@ func TestSetDefaultFromFlag_ScalarTypes(t *testing.T) {
 			} else {
 				assert.Nil(t, schema.Default, "Expected no default to be set")
 			}
+		})
+	}
+}
+
+func TestAddFlagToSchemaHonorsIntegerJSONSchemaAnnotation(t *testing.T) {
+	flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	flagSet.Int("limit", 20, "Maximum number of results")
+	flag := flagSet.Lookup("limit")
+	flag.Annotations = map[string][]string{
+		FlagAnnotationJSONSchema: {`{"type":"integer","minimum":1,"maximum":1000}`},
+	}
+	schema := &jsonschema.Schema{Properties: map[string]*jsonschema.Schema{}}
+
+	AddFlagToSchema(schema, flag)
+
+	limit := schema.Properties["limit"]
+	assert.Equal(t, "integer", limit.Type)
+	assert.Equal(t, "Maximum number of results", limit.Description)
+	assert.Equal(t, 1.0, *limit.Minimum)
+	assert.Equal(t, 1000.0, *limit.Maximum)
+	assert.JSONEq(t, "20", string(limit.Default))
+}
+
+func TestAddFlagToSchemaValidatesAnnotatedDefaults(t *testing.T) {
+	tests := []struct {
+		name       string
+		annotation string
+		want       string
+	}{
+		{name: "invalid generated default", annotation: `{"type":"integer","minimum":1}`},
+		{name: "invalid annotated default", annotation: `{"type":"integer","minimum":10,"default":1}`},
+		{name: "valid annotated default", annotation: `{"type":"integer","minimum":1,"default":10}`, want: "10"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
+			flagSet.Int("limit", 0, "Maximum number of results")
+			flag := flagSet.Lookup("limit")
+			flag.Annotations = map[string][]string{FlagAnnotationJSONSchema: {tt.annotation}}
+			schema := &jsonschema.Schema{Properties: map[string]*jsonschema.Schema{}}
+
+			AddFlagToSchema(schema, flag)
+
+			if tt.want == "" {
+				assert.Nil(t, schema.Properties["limit"].Default)
+			} else {
+				assert.JSONEq(t, tt.want, string(schema.Properties["limit"].Default))
+			}
+		})
+	}
+}
+
+func TestAddFlagToSchemaFallsBackFromUnusableAnnotations(t *testing.T) {
+	tests := []struct {
+		name       string
+		annotation string
+	}{
+		{name: "invalid pattern", annotation: `{"type":"string","pattern":"([unclosed"}`},
+		{name: "invalid property default", annotation: `{"type":"object","properties":{"n":{"type":"integer","default":"oops"}}}`},
+		{name: "invalid item default", annotation: `{"type":"array","items":{"type":"integer","default":"oops"}}`},
+		{name: "missing reference", annotation: `{"$ref":"#/definitions/missing"}`},
+		{name: "remote reference", annotation: `{"$ref":"https://example.com/schema.json"}`},
+		{name: "embedded internal reference", annotation: `{"$ref":"#/$defs/value","$defs":{"value":{"type":"string"}}}`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
+			flagSet.String("value", "fallback", "Value")
+			flag := flagSet.Lookup("value")
+			flag.Annotations = map[string][]string{FlagAnnotationJSONSchema: {tt.annotation}}
+			schema := &jsonschema.Schema{Properties: map[string]*jsonschema.Schema{}}
+
+			AddFlagToSchema(schema, flag)
+
+			value := schema.Properties["value"]
+			assert.Equal(t, "string", value.Type)
+			assert.JSONEq(t, `"fallback"`, string(value.Default))
+			_, err := value.Resolve(&jsonschema.ResolveOptions{ValidateDefaults: true})
+			require.NoError(t, err)
+		})
+	}
+}
+
+func TestAddFlagToSchemaPreservesDefaultForNullableAnnotation(t *testing.T) {
+	flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	flagSet.String("value", "fallback", "Value")
+	flag := flagSet.Lookup("value")
+	flag.Annotations = map[string][]string{FlagAnnotationJSONSchema: {`{"type":["string","null"]}`}}
+	schema := &jsonschema.Schema{Properties: map[string]*jsonschema.Schema{}}
+
+	AddFlagToSchema(schema, flag)
+
+	value := schema.Properties["value"]
+	assert.ElementsMatch(t, []string{"string", "null"}, value.Types)
+	assert.JSONEq(t, `"fallback"`, string(value.Default))
+}
+
+func TestAddFlagToSchemaPreservesCompressedIPv6Default(t *testing.T) {
+	flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
+	flagSet.IP("address", net.ParseIP("::1"), "IP address")
+	schema := &jsonschema.Schema{Properties: map[string]*jsonschema.Schema{}}
+
+	AddFlagToSchema(schema, flagSet.Lookup("address"))
+
+	assert.JSONEq(t, `"::1"`, string(schema.Properties["address"].Default))
+}
+
+func TestAddFlagToSchemaValidatesGeneratedDefaults(t *testing.T) {
+	tests := []struct {
+		name       string
+		defValue   string
+		createFlag func(*pflag.FlagSet)
+	}{
+		{name: "duration", defValue: "not-a-duration", createFlag: func(flags *pflag.FlagSet) {
+			flags.Duration("value", 0, "Value")
+		}},
+		{name: "hexadecimal bytes", defValue: "xyz", createFlag: func(flags *pflag.FlagSet) {
+			flags.BytesHex("value", nil, "Value")
+		}},
+		{name: "base64 bytes", defValue: "***", createFlag: func(flags *pflag.FlagSet) {
+			flags.BytesBase64("value", nil, "Value")
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			flagSet := pflag.NewFlagSet("test", pflag.ContinueOnError)
+			tt.createFlag(flagSet)
+			flag := flagSet.Lookup("value")
+			flag.DefValue = tt.defValue
+			schema := &jsonschema.Schema{Properties: map[string]*jsonschema.Schema{}}
+
+			AddFlagToSchema(schema, flag)
+
+			assert.Nil(t, schema.Properties["value"].Default)
 		})
 	}
 }

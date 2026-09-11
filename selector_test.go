@@ -1,6 +1,7 @@
 package ophis
 
 import (
+	"bytes"
 	"slices"
 	"testing"
 
@@ -82,7 +83,7 @@ func TestCreateToolFromCmd(t *testing.T) {
 	cmd.Flags().String("a_json_obj", "", "Some JSON Object")
 	jsonobj := cmd.Flags().Lookup("a_json_obj")
 	jsonobj.Annotations = make(map[string][]string)
-	jsonobj.Annotations["jsonschema"] = []string{string(bytes)}
+	jsonobj.Annotations[FlagAnnotationJSONSchema] = []string{string(bytes)}
 
 	// generate schema for a test array
 	aJSONArraySchema, err := jsonschema.For[SomeJSONArray](nil)
@@ -95,7 +96,7 @@ func TestCreateToolFromCmd(t *testing.T) {
 	cmd.Flags().String("a_json_array", "[]", "Some JSON Array")
 	jsonarray := cmd.Flags().Lookup("a_json_array")
 	jsonarray.Annotations = make(map[string][]string)
-	jsonarray.Annotations["jsonschema"] = []string{string(bytes)}
+	jsonarray.Annotations[FlagAnnotationJSONSchema] = []string{string(bytes)}
 
 	// Add a hidden flag
 	cmd.Flags().String("hidden", "secret", "Hidden flag")
@@ -122,7 +123,7 @@ func TestCreateToolFromCmd(t *testing.T) {
 
 	t.Run("Default Selector", func(t *testing.T) {
 		// Create tool from command with a selector that accepts all flags
-		tool := Selector{}.createToolFromCmd(cmd, "parent")
+		tool := Selector{}.createToolFromCmd(cmd, "parent", false)
 
 		// Verify tool properties
 		assert.Equal(t, "parent_test", tool.Name)
@@ -232,7 +233,7 @@ func TestCreateToolFromCmd(t *testing.T) {
 		}
 
 		// Create tool from command with the restricted selector
-		tool := selector.createToolFromCmd(cmd, "parent")
+		tool := selector.createToolFromCmd(cmd, "parent", false)
 
 		// Verify tool properties
 		assert.Equal(t, "parent_test", tool.Name)
@@ -272,6 +273,121 @@ func TestCreateToolFromCmd(t *testing.T) {
 		assert.NotNil(t, argsSchema.Items)
 		assert.Equal(t, "string", argsSchema.Items.Type)
 	})
+}
+
+func TestArgumentBoundsReachToolSchema(t *testing.T) {
+	tests := []struct {
+		use      string
+		args     cobra.PositionalArgs
+		min      *int
+		max      *int
+		required bool
+	}{
+		{use: "test"},
+		{use: "test", args: cobra.NoArgs},
+		{use: "test [flags]"},
+		{use: "test [flags]", args: cobra.ArbitraryArgs},
+		{use: "test FILE", args: cobra.ExactArgs(1), min: intPtr(1), max: intPtr(1), required: true},
+		{use: "test [FILE]", args: cobra.MaximumNArgs(1), max: intPtr(1)},
+		{use: "test FILE...", args: cobra.MinimumNArgs(1), min: intPtr(1), required: true},
+		{use: "test [FILE...]", args: cobra.ArbitraryArgs},
+		{use: "test NAME [KEY=VALUE]...", args: cobra.MinimumNArgs(1), min: intPtr(1), required: true},
+		{use: "test [file to read] [flags]", args: cobra.MaximumNArgs(1), max: intPtr(1)},
+		{use: "test <first name>", args: cobra.ExactArgs(1), min: intPtr(1), max: intPtr(1), required: true},
+		{use: "test -f FILE", args: cobra.ExactArgs(1)},
+		{use: "test -- COMMAND", args: cobra.ExactArgs(1)},
+		{use: "test (A|B)", args: cobra.ExactArgs(1)},
+		{use: "test [TYPE][.VERSION]", args: cobra.ExactArgs(1)},
+		{use: "test DOCUMENT", args: cobra.MaximumNArgs(1), max: intPtr(1)},
+		{use: "test SERVICE"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.use, func(t *testing.T) {
+			tool := Selector{}.createToolFromCmd(&cobra.Command{Use: tt.use, Args: tt.args}, "test", true)
+			input := tool.InputSchema.(*jsonschema.Schema)
+			args := input.Properties["args"]
+
+			assert.Equal(t, tt.min, args.MinItems)
+			assert.Equal(t, tt.max, args.MaxItems)
+			assert.Equal(t, tt.required, slices.Contains(input.Required, "args"))
+			if tt.required {
+				assert.Equal(t, "array", args.Type)
+				assert.Empty(t, args.Types)
+			}
+		})
+	}
+}
+
+func TestUndocumentedArgumentBoundsRemainUnconstrained(t *testing.T) {
+	cmd := &cobra.Command{Use: "test", ValidArgs: []string{"alpha", "beta"}, Args: cobra.OnlyValidArgs}
+
+	tool := Selector{}.createToolFromCmd(cmd, "test", true)
+	args := tool.InputSchema.(*jsonschema.Schema).Properties["args"]
+
+	assert.Nil(t, args.MinItems)
+	assert.Nil(t, args.MaxItems)
+}
+
+func TestExactArgumentCountIsProbedOnce(t *testing.T) {
+	probes := map[int]int{}
+	cmd := &cobra.Command{Use: "test FILE", Args: func(cmd *cobra.Command, args []string) error {
+		probes[len(args)]++
+		return cobra.ExactArgs(1)(cmd, args)
+	}}
+
+	Selector{}.createToolFromCmd(cmd, "test", true)
+
+	assert.Equal(t, map[int]int{0: 1, 1: 1, 2: 1}, probes)
+}
+
+func TestArgumentConstraintInferenceIsOptIn(t *testing.T) {
+	probes := 0
+	cmd := &cobra.Command{Use: "test FILE", Args: func(_ *cobra.Command, _ []string) error {
+		probes++
+		return nil
+	}}
+
+	tool := Selector{}.createToolFromCmd(cmd, "test", false)
+	args := tool.InputSchema.(*jsonschema.Schema).Properties["args"]
+
+	assert.Zero(t, probes)
+	assert.Nil(t, args.MinItems)
+	assert.Nil(t, args.MaxItems)
+}
+
+func intPtr(value int) *int { return &value }
+
+func TestValidatorProbeSuppressesOutput(t *testing.T) {
+	var output bytes.Buffer
+	root := &cobra.Command{Use: "root"}
+	root.SetOut(&output)
+	root.SetErr(&output)
+	cmd := &cobra.Command{Args: func(cmd *cobra.Command, _ []string) error {
+		cmd.Print("discarded")
+		cmd.PrintErr("discarded")
+		return nil
+	}}
+	root.AddCommand(cmd)
+
+	accepted, probed := validatorAllowsArgCount(cmd, 0)
+	cmd.Print("restored")
+
+	assert.True(t, accepted)
+	assert.True(t, probed)
+	assert.Equal(t, "restored", output.String())
+}
+
+func TestValidatorProbeUsesNonEmptyArguments(t *testing.T) {
+	cmd := &cobra.Command{Args: func(_ *cobra.Command, args []string) error {
+		assert.Equal(t, []string{"arg", "arg"}, args)
+		return nil
+	}}
+
+	accepted, probed := validatorAllowsArgCount(cmd, 2)
+
+	assert.True(t, accepted)
+	assert.True(t, probed)
 }
 
 func TestGenerateToolName(t *testing.T) {

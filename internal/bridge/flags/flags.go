@@ -9,6 +9,9 @@ import (
 	"github.com/spf13/pflag"
 )
 
+// FlagAnnotationJSONSchema identifies a flag's JSON schema override.
+const FlagAnnotationJSONSchema = "jsonschema"
+
 // isFlagRequired checks if a flag has been marked as required by Cobra.
 // Cobra uses the BashCompOneRequiredFlag annotation to track required flags.
 func isFlagRequired(flag *pflag.Flag) bool {
@@ -42,6 +45,31 @@ func AddFlagToSchema(schema *jsonschema.Schema, flag *pflag.Flag) {
 
 		schema.Required = append(schema.Required, flag.Name)
 	}
+	if values, ok := flag.Annotations[FlagAnnotationJSONSchema]; ok {
+		if len(values) == 0 {
+			slog.Warn(fmt.Sprintf("No value for jsonschema annotation for flag %s, using its native type", flag.Name))
+		} else {
+			var annotatedSchema jsonschema.Schema
+			if err := annotatedSchema.UnmarshalJSON([]byte(values[0])); err != nil {
+				slog.Error(fmt.Sprintf("Error when decoding JSON schema for flag %s (%v), using its native type", flag.Name, err))
+			} else {
+				if annotatedSchema.Description == "" {
+					annotatedSchema.Description = flag.Usage
+				}
+				setDefaultFromFlag(&annotatedSchema, flag)
+				validateDefault(&annotatedSchema, flag)
+				embeddedSchema := &jsonschema.Schema{Properties: map[string]*jsonschema.Schema{
+					"flags": {Properties: map[string]*jsonschema.Schema{flag.Name: &annotatedSchema}},
+				}}
+				if _, err := embeddedSchema.Resolve(&jsonschema.ResolveOptions{ValidateDefaults: true}); err != nil {
+					slog.Error(fmt.Sprintf("Annotated JSON schema for flag %s is unusable (%v), using its native type", flag.Name, err))
+				} else {
+					schema.Properties[flag.Name] = &annotatedSchema
+					return
+				}
+			}
+		}
+	}
 
 	// Set appropriate JSON schema type based on flag type
 	t := flag.Value.Type()
@@ -53,29 +81,7 @@ func AddFlagToSchema(schema *jsonschema.Schema, flag *pflag.Flag) {
 	case "float32", "float64":
 		flagSchema.Type = "number"
 	case "string":
-		if flag.Annotations != nil {
-			if schemaStrArray, ok := flag.Annotations["jsonschema"]; ok {
-				if len(schemaStrArray) == 0 {
-					slog.Warn(fmt.Sprintf("No value for jsonschema annotation for flag %s, treating as type string", flag.Name))
-					flagSchema.Type = "string"
-				} else {
-					var aSchema jsonschema.Schema
-					err := aSchema.UnmarshalJSON([]byte(schemaStrArray[0]))
-					if err != nil {
-						slog.Error(fmt.Sprintf("Error when decoding JSON schema for flag %s (%v), treating as type string", flag.Name, err))
-						flagSchema.Type = "string"
-					} else {
-						flagSchema = &aSchema
-					}
-				}
-			} else {
-				slog.Debug(fmt.Sprintf("No annotation called jsonschema for flag %s, treating as type string", flag.Name))
-				flagSchema.Type = "string"
-			}
-		} else {
-			flagSchema.Type = "string"
-		}
-
+		flagSchema.Type = "string"
 	case "stringSlice", "stringArray":
 		flagSchema.Type = "array"
 		flagSchema.Items = &jsonschema.Schema{Type: "string"}
@@ -101,17 +107,16 @@ func AddFlagToSchema(schema *jsonschema.Schema, flag *pflag.Flag) {
 		flagSchema.Type = "string"
 		flagSchema.Description += " (format: Go duration string, e.g., '10s', '2h45m')"
 		flagSchema.Pattern = `^-?([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$`
+	// pflag validates IP values; regexes reject valid compressed IPv6 addresses.
 	case "ip":
 		flagSchema.Type = "string"
 		flagSchema.Description += " (format: IPv4 or IPv6 address)"
-		flagSchema.Pattern = `^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.){3}(25[0-5]|(2[0-4]|1\d|[1-9]|)\d)$|^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4})$`
 	case "ipMask":
 		flagSchema.Type = "string"
 		flagSchema.Description += " (format: IP mask, e.g., '255.255.255.0')"
 	case "ipNet":
 		flagSchema.Type = "string"
 		flagSchema.Description += " (format: CIDR notation, e.g., '192.168.1.0/24')"
-		flagSchema.Pattern = `^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.){3}(25[0-5]|(2[0-4]|1\d|[1-9]|)\d)/([0-9]|[1-2][0-9]|3[0-2])$`
 	case "bytesHex":
 		flagSchema.Type = "string"
 		flagSchema.Description += " (format: hexadecimal string)"
@@ -128,5 +133,6 @@ func AddFlagToSchema(schema *jsonschema.Schema, flag *pflag.Flag) {
 	}
 
 	setDefaultFromFlag(flagSchema, flag)
+	validateDefault(flagSchema, flag)
 	schema.Properties[flag.Name] = flagSchema
 }
