@@ -3,10 +3,13 @@ package ophis
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
+	"math"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -95,7 +98,7 @@ func buildFlagArgs(flagMap map[string]any) []string {
 
 		if mapVal, ok := value.(map[string]any); ok {
 			for k, v := range mapVal {
-				args = append(args, fmt.Sprintf("--%s", name), fmt.Sprintf("%s=%v", k, v))
+				args = append(args, fmt.Sprintf("--%s", name), fmt.Sprintf("%s=%s", k, formatFlagValue(v)))
 			}
 
 			continue
@@ -115,9 +118,30 @@ func parseFlagArgValue(name string, value any) (retVal []string) {
 				retVal = append(retVal, fmt.Sprintf("--%s", name))
 			}
 		default:
-			retVal = append(retVal, fmt.Sprintf("--%s", name), fmt.Sprintf("%v", value))
+			retVal = append(retVal, fmt.Sprintf("--%s", name), formatFlagValue(value))
 		}
 	}
 
 	return retVal
+}
+
+// formatFlagValue renders a JSON-decoded argument as the string Cobra will parse.
+//
+// JSON numbers arrive as float64, and fmt's %v prints large ones in exponent form:
+// 9588350222588 (a Shopify product id) becomes "9.588350222588e+12", which an int64 flag
+// rejects. Integral values are printed as integers; anything else as a plain decimal.
+func formatFlagValue(value any) string {
+	switch v := value.(type) {
+	case float64:
+		if v == math.Trunc(v) && math.Abs(v) < 1<<53 {
+			return strconv.FormatInt(int64(v), 10)
+		}
+		return strconv.FormatFloat(v, 'f', -1, 64)
+	case float32:
+		return formatFlagValue(float64(v))
+	case json.Number:
+		return v.String()
+	default:
+		return fmt.Sprintf("%v", value)
+	}
 }
